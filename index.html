@@ -1,13 +1,14 @@
 <!DOCTYPE html>
+
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SV Lau-Brechte">
 <meta name="theme-color" content="#1F4E79">
-<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231F4E79'/><text y='.9em' font-size='70' x='50%' text-anchor='middle'>⚔</text></svg>">
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAABzklEQVR42u3TAQ0AIBADsTnBEX5QDy5gIV1yBp6SlG/MtdVVDGigDWiggRbQQAtooIE2oIEGGiCggRbQQAtooIE2oIEGWkADLaCBFtBAA21AAw20gAZaQAMtoIEG2oAGGmgBDbSABlpAAw20AQ000AIaaAENtIAGGmgDGmigBTTQAhpoAQ000AY00EALaKAFNNBAAyPd+GyOIKAloCWgJaAFtAS0BLQEtAS0gJaAloCWgJaAFtAS0BLQEtAS0AJaAloCWgJaAlpAS0BLQEtAS0ALaAloCWgJaAloAS0BLQEtAS2gHUJAS0BLQEtAC2gJaAloCWgJaAEtAS0BLQEtAS2gJaAloCWgJaAFtAS0BLQEtAS0gJaAloCWgJaAFtAS0BLQEtAS0AJaAloCWgJaQEtAS0BLQEtAC2gJaAloCWgJaAEtAS0BLQEtAS2gJaAloCWgJaAFtAS09AZ0+zwSNF8NIKCBFtBAC2iggTaggQZaQAMtoIEW0EADbUADDbSABlpAAy2ggQbagAYaaAENtIAGWkADDbQBDTTQAhpoAQ20gAYaaAMaaKAFNNACGmgBDTTQBjTQQAtooAU00EAb0EAb0EADLaCBFtBAA124A++6olt/NNynAAAAAElFTkSuQmCC">
 
 <title>Mitgliederverwaltung - SV Lau-Brechte</title>
 <style>
@@ -132,174 +133,328 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
 }
 
 .td-foto{width:52px;text-align:center;vertical-align:middle;padding:2px 4px}
-.member-foto{width:46px;height:46px;object-fit:cover;border-radius:50%;border:2px solid var(--navylt);display:block;margin:0 auto}
-.foto-placeholder{width:46px;height:46px;border-radius:50%;border:2px dashed var(--grey300);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--grey300);margin:0 auto;cursor:pointer;background:var(--grey50)}
-.foto-placeholder:hover{border-color:var(--navym);color:var(--navym);background:var(--navyp)}
+.member-foto{width:46px;height:46px;object-fit:cover;border-radius:50%;border:2px solid var(–navylt);display:block;margin:0 auto}
+.foto-placeholder{width:46px;height:46px;border-radius:50%;border:2px dashed var(–grey300);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(–grey300);margin:0 auto;cursor:pointer;background:var(–grey50)}
+.foto-placeholder:hover{border-color:var(–navym);color:var(–navym);background:var(–navyp)}
 .foto-upload-wrap{display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:.5rem 0}
-.foto-preview{width:90px;height:90px;object-fit:cover;border-radius:8px;border:2px solid var(--navylt)}
-.foto-preview-placeholder{width:90px;height:90px;border-radius:8px;border:2px dashed var(--grey300);display:flex;align-items:center;justify-content:center;font-size:2rem;color:var(--grey300);cursor:pointer}
-.foto-preview-placeholder:hover{border-color:var(--navym);color:var(--navym)}
+.foto-preview{width:90px;height:90px;object-fit:cover;border-radius:8px;border:2px solid var(–navylt)}
+.foto-preview-placeholder{width:90px;height:90px;border-radius:8px;border:2px dashed var(–grey300);display:flex;align-items:center;justify-content:center;font-size:2rem;color:var(–grey300);cursor:pointer}
+.foto-preview-placeholder:hover{border-color:var(–navym);color:var(–navym)}
 .foto-actions{display:flex;gap:.4rem;flex-wrap:wrap;justify-content:center}
-.btn-foto-sm{padding:.25rem .6rem;font-size:.75rem;border:1px solid var(--grey300);border-radius:4px;cursor:pointer;background:var(--grey50);font-family:inherit}
-.btn-foto-sm:hover{background:var(--grey100)}
+.btn-foto-sm{padding:.25rem .6rem;font-size:.75rem;border:1px solid var(–grey300);border-radius:4px;cursor:pointer;background:var(–grey50);font-family:inherit}
+.btn-foto-sm:hover{background:var(–grey100)}
 .btn-foto-del{border-color:#e74c3c;color:#e74c3c}
 .btn-foto-del:hover{background:#fdf0f0}
 
 /* ── PWA / MOBILE ───────────────────────────────────────────────── */
-:root { --safe-bottom: env(safe-area-inset-bottom, 0px); }
+:root { –safe-bottom: env(safe-area-inset-bottom, 0px); }
 
 /* Bottom navigation bar for mobile */
 .bottom-nav {
-  display: none;
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  background: var(--navy);
-  z-index: 200;
-  padding: 0 0 var(--safe-bottom) 0;
-  box-shadow: 0 -2px 12px rgba(0,0,0,.2);
+display: none;
+position: fixed;
+bottom: 0; left: 0; right: 0;
+background: var(–navy);
+z-index: 200;
+padding: 0 0 var(–safe-bottom) 0;
+box-shadow: 0 -2px 12px rgba(0,0,0,.2);
 }
 .bottom-nav-inner {
-  display: flex;
-  justify-content: space-around;
-  align-items: stretch;
+display: flex;
+justify-content: space-around;
+align-items: stretch;
 }
 .bnav-btn {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  padding: 8px 4px;
-  background: none;
-  border: none;
-  color: rgba(255,255,255,.6);
-  cursor: pointer;
-  font-family: inherit;
-  font-size: .62rem;
-  font-weight: 600;
-  letter-spacing: .02em;
-  transition: color .15s;
-  -webkit-tap-highlight-color: transparent;
+flex: 1;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+gap: 2px;
+padding: 8px 4px;
+background: none;
+border: none;
+color: rgba(255,255,255,.6);
+cursor: pointer;
+font-family: inherit;
+font-size: .62rem;
+font-weight: 600;
+letter-spacing: .02em;
+transition: color .15s;
+-webkit-tap-highlight-color: transparent;
 }
 .bnav-btn .ico { font-size: 1.4rem; line-height: 1; }
 .bnav-btn.on { color: #fff; }
 .bnav-btn.on .ico { transform: scale(1.1); }
 
 @media (max-width: 700px) {
-  /* Show bottom nav, hide top tabs */
-  .bottom-nav { display: block; }
-  .tabs { display: none; }
+/* Show bottom nav, hide top tabs */
+.bottom-nav { display: block; }
+.tabs { display: none; }
 
-  /* Adjust header */
-  .hdr { height: 52px; padding: 0 1rem; }
-  .hdr h1 { font-size: .9rem; }
-  .hdr .sub { display: none; }
-  .hdr-badge { font-size: .7rem; padding: 2px 10px; }
+/* Adjust header */
+.hdr { height: 52px; padding: 0 1rem; }
+.hdr h1 { font-size: .9rem; }
+.hdr .sub { display: none; }
+.hdr-badge { font-size: .7rem; padding: 2px 10px; }
 
-  /* Main content padding for bottom nav */
-  .wrap {
-    padding: .75rem .75rem calc(70px + var(--safe-bottom));
-    max-width: 100%;
-  }
+/* Main content padding for bottom nav */
+.wrap {
+padding: .75rem .75rem calc(70px + var(–safe-bottom));
+max-width: 100%;
+}
 
-  /* Stats: 2 columns on mobile */
-  .stats { grid-template-columns: repeat(2, 1fr); gap: .5rem; margin-bottom: 1rem; }
-  .sc { padding: .65rem .75rem; }
-  .sc .n { font-size: 1.5rem; }
-  .sc .l { font-size: .65rem; }
+/* Stats: 2 columns on mobile */
+.stats { grid-template-columns: repeat(2, 1fr); gap: .5rem; margin-bottom: 1rem; }
+.sc { padding: .65rem .75rem; }
+.sc .n { font-size: 1.5rem; }
+.sc .l { font-size: .65rem; }
 
-  /* Toolbar stacked */
-  .toolbar { flex-direction: column; gap: .5rem; }
-  .srch { max-width: 100%; }
+/* Toolbar stacked */
+.toolbar { flex-direction: column; gap: .5rem; }
+.srch { max-width: 100%; }
 
-  /* Table: hide less important columns */
-  .tbl-wrap { border-radius: var(--r); }
-  table { font-size: .8rem; }
-  thead th { padding: .5rem .5rem; font-size: .7rem; }
-  tbody td { padding: .45rem .5rem; }
+/* Table: hide less important columns */
+.tbl-wrap { border-radius: var(–r); }
+table { font-size: .8rem; }
+thead th { padding: .5rem .5rem; font-size: .7rem; }
+tbody td { padding: .45rem .5rem; }
 
-  /* Hide less critical columns on mobile */
-  .col-hide-mob { display: none; }
+/* Hide less critical columns on mobile */
+.col-hide-mob { display: none; }
 
-  /* Forms */
-  .fgrid { grid-template-columns: 1fr 1fr; gap: .65rem; }
-  .card-bd { padding: .85rem; }
+/* Forms */
+.fgrid { grid-template-columns: 1fr 1fr; gap: .65rem; }
+.card-bd { padding: .85rem; }
 
-  /* PDF bar stack */
-  .pdf-bar { flex-direction: column; }
+/* PDF bar stack */
+.pdf-bar { flex-direction: column; }
 
-  /* Bezirk grid: 1 column */
-  .bgrid { grid-template-columns: 1fr; }
+/* Bezirk grid: 1 column */
+.bgrid { grid-template-columns: 1fr; }
 
-  /* Modal full screen on mobile */
-  .modal { width: 100%; max-height: 100%; height: 100%; border-radius: 0; }
-  .modal-bg.open { align-items: flex-end; }
+/* Modal full screen on mobile */
+.modal { width: 100%; max-height: 100%; height: 100%; border-radius: 0; }
+.modal-bg.open { align-items: flex-end; }
 
-  /* Buttons full width in forms */
-  .form-btns { flex-direction: column; }
-  .form-btns .btn { justify-content: center; }
+/* Buttons full width in forms */
+.form-btns { flex-direction: column; }
+.form-btns .btn { justify-content: center; }
 
-  /* Touch-friendly edit button */
-  .btn-edit { padding: 5px 12px; font-size: .8rem; }
+/* Touch-friendly edit button */
+.btn-edit { padding: 5px 12px; font-size: .8rem; }
 
-  /* OneDrive section */
-  .onedrive-banner {
-    background: linear-gradient(135deg, #0078d4, #005a9e);
-    color: #fff;
-    border-radius: var(--r);
-    padding: 1rem;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: .75rem;
-  }
+/* OneDrive section */
+.onedrive-banner {
+background: linear-gradient(135deg, #0078d4, #005a9e);
+color: #fff;
+border-radius: var(–r);
+padding: 1rem;
+margin-bottom: 1rem;
+display: flex;
+align-items: center;
+gap: .75rem;
+}
 }
 
 /* OneDrive styling (all screens) */
 .onedrive-banner {
-  background: linear-gradient(135deg, #0078d4, #005a9e);
-  color: #fff;
-  border-radius: var(--r);
-  padding: 1rem 1.2rem;
-  margin-bottom: 1.2rem;
-  display: flex;
-  align-items: center;
-  gap: .85rem;
-  flex-wrap: wrap;
+background: linear-gradient(135deg, #0078d4, #005a9e);
+color: #fff;
+border-radius: var(–r);
+padding: 1rem 1.2rem;
+margin-bottom: 1.2rem;
+display: flex;
+align-items: center;
+gap: .85rem;
+flex-wrap: wrap;
 }
 .onedrive-banner h3 { font-size: .95rem; margin-bottom: .2rem; }
 .onedrive-banner p  { font-size: .8rem; opacity: .9; line-height: 1.4; }
 .btn-onedrive {
-  background: rgba(255,255,255,.2);
-  color: #fff;
-  border: 1.5px solid rgba(255,255,255,.5);
-  border-radius: 6px;
-  padding: .5rem 1rem;
-  font-size: .85rem;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-  font-family: inherit;
-  transition: background .15s;
+background: rgba(255,255,255,.2);
+color: #fff;
+border: 1.5px solid rgba(255,255,255,.5);
+border-radius: 6px;
+padding: .5rem 1rem;
+font-size: .85rem;
+font-weight: 700;
+cursor: pointer;
+white-space: nowrap;
+font-family: inherit;
+transition: background .15s;
 }
 .btn-onedrive:hover { background: rgba(255,255,255,.3); }
 .install-banner {
-  background: var(--green);
-  color: #fff;
-  border-radius: var(--r);
-  padding: .75rem 1rem;
-  margin-bottom: 1rem;
-  display: none;
-  align-items: center;
-  justify-content: space-between;
-  gap: .5rem;
-  font-size: .85rem;
+background: var(–green);
+color: #fff;
+border-radius: var(–r);
+padding: .75rem 1rem;
+margin-bottom: 1rem;
+display: none;
+align-items: center;
+justify-content: space-between;
+gap: .5rem;
+font-size: .85rem;
 }
 .install-banner.show { display: flex; }
 
+/* ── PASSWORD SCREEN ─────────────────────────────────────────── */
+#pw-screen {
+position: fixed;
+inset: 0;
+background: var(–navy);
+z-index: 9999;
+display: flex;
+align-items: center;
+justify-content: center;
+flex-direction: column;
+padding: 2rem;
+}
+#pw-screen.hidden { display: none; }
+.pw-card {
+background: #fff;
+border-radius: 16px;
+padding: 2rem 2rem 1.5rem;
+width: 100%;
+max-width: 340px;
+box-shadow: 0 20px 60px rgba(0,0,0,.3);
+text-align: center;
+}
+.pw-logo {
+font-size: 3rem;
+margin-bottom: .5rem;
+}
+.pw-title {
+font-size: 1.15rem;
+font-weight: 800;
+color: var(–navy);
+margin-bottom: .25rem;
+}
+.pw-sub {
+font-size: .82rem;
+color: var(–grey700);
+margin-bottom: 1.5rem;
+}
+.pw-input {
+width: 100%;
+padding: .75rem 1rem;
+border: 2px solid var(–grey300);
+border-radius: 10px;
+font-size: 1.1rem;
+font-family: inherit;
+text-align: center;
+letter-spacing: .15em;
+outline: none;
+transition: border-color .2s;
+margin-bottom: .75rem;
+}
+.pw-input:focus { border-color: var(–navym); }
+.pw-input.error { border-color: #e74c3c; animation: shake .3s; }
+@keyframes shake {
+0%,100%{transform:translateX(0)}
+25%{transform:translateX(-8px)}
+75%{transform:translateX(8px)}
+}
+.pw-btn {
+width: 100%;
+padding: .75rem;
+background: var(–navy);
+color: #fff;
+border: none;
+border-radius: 10px;
+font-size: 1rem;
+font-weight: 700;
+cursor: pointer;
+font-family: inherit;
+transition: background .15s;
+}
+.pw-btn:hover { background: var(–navym); }
+.pw-btn:active { transform: scale(.97); }
+.pw-error {
+color: #e74c3c;
+font-size: .82rem;
+margin-top: .5rem;
+min-height: 1.2rem;
+}
+.pw-hint {
+font-size: .75rem;
+color: var(–grey700);
+margin-top: 1rem;
+line-height: 1.5;
+}
+.pw-change-wrap {
+margin-top: .85rem;
+padding-top: .85rem;
+border-top: 1px solid var(–grey100);
+}
+.pw-change-link {
+font-size: .78rem;
+color: var(–navym);
+cursor: pointer;
+text-decoration: underline;
+}
+
 </style>
 </head>
+
+<!-- PASSWORD SCREEN -->
+
+<div id="pw-screen">
+  <div class="pw-card">
+    <div class="pw-logo">&#9876;</div>
+    <div class="pw-title">SV Lau-Brechte</div>
+    <div class="pw-sub">Mitgliederverwaltung</div>
+    <input
+      class="pw-input"
+      id="pw-input"
+      type="password"
+      placeholder="Passwort eingeben"
+      autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')checkPW()"
+    >
+    <button class="pw-btn" onclick="checkPW()">&#128275; Anmelden</button>
+    <div class="pw-error" id="pw-error"></div>
+    <div class="pw-hint">
+      Dieses Passwort sch&uuml;tzt die Mitgliederdaten.<br>
+      Bei Fragen: Administrator kontaktieren.
+    </div>
+    <div class="pw-change-wrap">
+      <span class="pw-change-link" onclick="showChangePW()">Passwort &auml;ndern</span>
+    </div>
+  </div>
+</div>
+
+<!-- CHANGE PASSWORD MODAL -->
+
+<div class="modal-bg" id="changePWModal" onclick="if(event.target===this)document.getElementById('changePWModal').classList.remove('open')">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-hd">
+      <h3>&#128274; Passwort &auml;ndern</h3>
+      <button class="modal-close" onclick="document.getElementById('changePWModal').classList.remove('open')">&#10005;</button>
+    </div>
+    <div class="modal-bd">
+      <div class="fg" style="margin-bottom:.85rem">
+        <label>Aktuelles Passwort</label>
+        <input type="password" id="cpw-old" class="pw-input" style="text-align:left;letter-spacing:normal;margin:0" placeholder="Aktuelles Passwort">
+      </div>
+      <div class="fg" style="margin-bottom:.85rem">
+        <label>Neues Passwort</label>
+        <input type="password" id="cpw-new" class="pw-input" style="text-align:left;letter-spacing:normal;margin:0" placeholder="Mindestens 4 Zeichen">
+      </div>
+      <div class="fg">
+        <label>Neues Passwort best&auml;tigen</label>
+        <input type="password" id="cpw-confirm" class="pw-input" style="text-align:left;letter-spacing:normal;margin:0" placeholder="Wiederholen">
+      </div>
+      <div class="pw-error" id="cpw-error"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-clear" onclick="document.getElementById('changePWModal').classList.remove('open')">Abbrechen</button>
+      <button class="btn btn-save" onclick="changePW()">&#10004; Passwort &auml;ndern</button>
+    </div>
+  </div>
+</div>
+
 <body>
 <header class="hdr">
   <div><h1>&#9876; SV Lau-Brechte &ndash; Mitgliederverwaltung</h1>
@@ -316,6 +471,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
   </div>
 
   <!-- UEBERSICHT -->
+
   <div class="sec on" id="sec-uebersicht">
     <div class="stats">
       <div class="sc"><div class="n" id="s-total">0</div><div class="l">Adressen gesamt</div></div>
@@ -349,6 +505,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
   </div>
 
   <!-- EINGABE -->
+
   <div class="sec" id="sec-eingabe">
     <div class="card">
       <div class="card-hd"><h2>&#10133; Neues Mitglied eintragen</h2>
@@ -396,6 +553,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
   </div>
 
   <!-- BEZIRKE -->
+
   <div class="sec" id="sec-bezirke">
     <div class="pdf-bar">
       <div>
@@ -419,175 +577,183 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
   </div>
 
   <!-- IMPORT / SPEICHERN -->
+
   <div class="sec" id="sec-import">
     <div class="card">
       <div class="card-hd"><h2>&#128229; Import &amp; Speichern</h2></div>
       <div class="card-bd">
-        
-        <!-- Install PWA Banner -->
-        <div class="install-banner" id="installBanner">
-          <span>&#128247; App auf Homescreen installieren</span>
-          <button class="btn-onedrive" onclick="installPWA()">Installieren</button>
-        </div>
 
-        <!-- OneDrive Section -->
-        <div class="onedrive-banner">
-          <div style="font-size:1.8rem">&#9729;</div>
-          <div style="flex:1">
-            <h3>OneDrive-Synchronisation</h3>
-            <p>Daten per CSV mit OneDrive synchronisieren &ndash; kein Login n&ouml;tig.</p>
-          </div>
-        </div>
-        <div class="card" style="margin-bottom:1rem">
-          <div class="card-hd" style="background:#0078d4"><h2>&#9729; OneDrive Workflow</h2></div>
-          <div class="card-bd" style="font-size:.875rem;line-height:1.7">
-            <p style="margin-bottom:.75rem"><strong>Daten sichern &rarr; OneDrive:</strong></p>
-            <ol style="margin-left:1.2rem;margin-bottom:1rem">
-              <li>Unten auf <strong>„Als CSV exportieren"</strong> klicken</li>
-              <li>CSV-Datei in deinen OneDrive-Ordner speichern/verschieben</li>
-              <li>Auf einem anderen Ger&auml;t die HTML-Datei &ouml;ffnen</li>
-              <li>Die CSV-Datei aus OneDrive &uuml;ber <strong>„CSV importieren"</strong> laden</li>
-            </ol>
-            <p style="margin-bottom:.75rem"><strong>Empfehlung: Fester Ordner in OneDrive</strong></p>
-            <p style="color:var(--grey700);font-size:.82rem">Lege einen Ordner an, z.B. <em>OneDrive/SV-Lau-Brechte/</em>, und speichere dort immer die aktuelle CSV. So haben alle Ger&auml;te Zugriff auf die neueste Version.</p>
-          </div>
-        </div>
+```
+    <!-- Install PWA Banner -->
+    <div class="install-banner" id="installBanner">
+      <span>&#128247; App auf Homescreen installieren</span>
+      <button class="btn-onedrive" onclick="installPWA()">Installieren</button>
+    </div>
 
-        <div style="background:var(--navyp);border-radius:var(--r);padding:.85rem 1rem;margin-bottom:1rem;font-size:.85rem">
-          <strong>&#128190; Lokaler Speicher (Browser)</strong><br>
-          <span id="save-info" style="font-size:.82rem">Wird geladen...</span>
-        </div>
-        <p style="margin-bottom:1rem;font-size:.88rem;line-height:1.65">
-          CSV-Datei aus Excel importieren (Datei &rarr; Speichern unter &rarr; CSV).<br>
-          <span style="color:var(--orange);font-size:.82rem">&#9888; &#196;nderungen mit &bdquo;Daten speichern&ldquo; sichern &ndash; werden beim n&#228;chsten &#214;ffnen automatisch geladen.</span>
-        </p>
-        <div class="dropzone" id="dz"
-             ondragover="event.preventDefault();this.classList.add('over')"
-             ondragleave="this.classList.remove('over')"
-             ondrop="doDrop(event)"
-             onclick="document.getElementById('fi').click()">
-          <div class="ico">&#128193;</div>
-          <strong>Klicken oder CSV-Datei hier hineinziehen</strong>
-          <p style="margin-top:.3rem;font-size:.85rem;color:var(--grey700)">CSV-Datei (Semikolon-getrennt, UTF-8)</p>
-        </div>
-        <input type="file" id="fi" accept=".csv,.txt" style="display:none" onchange="doFile(event)">
-        <div id="imp-status" style="margin-top:.9rem;font-size:.87rem"></div>
-        <div style="margin-top:1.2rem;display:flex;gap:.75rem;flex-wrap:wrap">
-          <button class="btn btn-save"   onclick="speichern()">&#128190; Daten speichern (Browser)</button>
-          <button class="btn btn-import" onclick="exportCSV()">&#128228; Als CSV exportieren</button>
-          <button class="btn btn-clear"  onclick="zuruecksetzen()">&#8635; Zur&#252;cksetzen</button>
-        </div>
-        <p style="margin-top:.75rem;font-size:.8rem;color:var(--grey700)">
-          &#128190; <strong>Daten speichern</strong>: Speichert im Browser &ndash; beim n&#228;chsten &#214;ffnen dieser Datei automatisch wiederhergestellt.<br>
-          &#128228; <strong>CSV exportieren</strong>: Exportiert als .csv &ndash; direkt in Excel &#246;ffenbar.<br>
-          &#8635; <strong>Zur&#252;cksetzen</strong>: L&#246;scht gespeicherte &#196;nderungen, stellt Originaldaten wieder her.
-        </p>
+    <!-- OneDrive Section -->
+    <div class="onedrive-banner">
+      <div style="font-size:1.8rem">&#9729;</div>
+      <div style="flex:1">
+        <h3>OneDrive-Synchronisation</h3>
+        <p>Daten per CSV mit OneDrive synchronisieren &ndash; kein Login n&ouml;tig.</p>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-hd" style="background:#0078d4"><h2>&#9729; OneDrive Workflow</h2></div>
+      <div class="card-bd" style="font-size:.875rem;line-height:1.7">
+        <p style="margin-bottom:.75rem"><strong>Daten sichern &rarr; OneDrive:</strong></p>
+        <ol style="margin-left:1.2rem;margin-bottom:1rem">
+          <li>Unten auf <strong>„Als CSV exportieren"</strong> klicken</li>
+          <li>CSV-Datei in deinen OneDrive-Ordner speichern/verschieben</li>
+          <li>Auf einem anderen Ger&auml;t die HTML-Datei &ouml;ffnen</li>
+          <li>Die CSV-Datei aus OneDrive &uuml;ber <strong>„CSV importieren"</strong> laden</li>
+        </ol>
+        <p style="margin-bottom:.75rem"><strong>Empfehlung: Fester Ordner in OneDrive</strong></p>
+        <p style="color:var(--grey700);font-size:.82rem">Lege einen Ordner an, z.B. <em>OneDrive/SV-Lau-Brechte/</em>, und speichere dort immer die aktuelle CSV. So haben alle Ger&auml;te Zugriff auf die neueste Version.</p>
       </div>
     </div>
 
+    <div style="background:var(--navyp);border-radius:var(--r);padding:.85rem 1rem;margin-bottom:1rem;font-size:.85rem">
+      <strong>&#128190; Lokaler Speicher (Browser)</strong><br>
+      <span id="save-info" style="font-size:.82rem">Wird geladen...</span>
+    </div>
+    <p style="margin-bottom:1rem;font-size:.88rem;line-height:1.65">
+      CSV-Datei aus Excel importieren (Datei &rarr; Speichern unter &rarr; CSV).<br>
+      <span style="color:var(--orange);font-size:.82rem">&#9888; &#196;nderungen mit &bdquo;Daten speichern&ldquo; sichern &ndash; werden beim n&#228;chsten &#214;ffnen automatisch geladen.</span>
+    </p>
+    <div class="dropzone" id="dz"
+         ondragover="event.preventDefault();this.classList.add('over')"
+         ondragleave="this.classList.remove('over')"
+         ondrop="doDrop(event)"
+         onclick="document.getElementById('fi').click()">
+      <div class="ico">&#128193;</div>
+      <strong>Klicken oder CSV-Datei hier hineinziehen</strong>
+      <p style="margin-top:.3rem;font-size:.85rem;color:var(--grey700)">CSV-Datei (Semikolon-getrennt, UTF-8)</p>
+    </div>
+    <input type="file" id="fi" accept=".csv,.txt" style="display:none" onchange="doFile(event)">
+    <div id="imp-status" style="margin-top:.9rem;font-size:.87rem"></div>
+    <div style="margin-top:1.2rem;display:flex;gap:.75rem;flex-wrap:wrap">
+      <button class="btn btn-save"   onclick="speichern()">&#128190; Daten speichern (Browser)</button>
+      <button class="btn btn-import" onclick="exportCSV()">&#128228; Als CSV exportieren</button>
+      <button class="btn btn-clear"  onclick="zuruecksetzen()">&#8635; Zur&#252;cksetzen</button>
+    </div>
+    <p style="margin-top:.75rem;font-size:.8rem;color:var(--grey700)">
+      &#128190; <strong>Daten speichern</strong>: Speichert im Browser &ndash; beim n&#228;chsten &#214;ffnen dieser Datei automatisch wiederhergestellt.<br>
+      &#128228; <strong>CSV exportieren</strong>: Exportiert als .csv &ndash; direkt in Excel &#246;ffenbar.<br>
+      &#8635; <strong>Zur&#252;cksetzen</strong>: L&#246;scht gespeicherte &#196;nderungen, stellt Originaldaten wieder her.
+    </p>
+  </div>
+</div>
+```
+
   <!-- SERIENBRIEF-EXPORT -->
+
   <div class="sec" id="sec-export">
     <div class="card">
       <div class="card-hd"><h2>&#128228; Serienbrief-Export (VCF / CSV)</h2></div>
       <div class="card-bd">
 
-        <!-- Filter options -->
-        <div style="margin-bottom:1.2rem">
-          <div style="font-size:.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.65rem">Filter &ndash; welche Adressen exportieren?</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.6rem">
+```
+    <!-- Filter options -->
+    <div style="margin-bottom:1.2rem">
+      <div style="font-size:.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.65rem">Filter &ndash; welche Adressen exportieren?</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.6rem">
 
-            <div class="fg">
-              <label>Bezirk</label>
-              <select id="ex-bz" onchange="exPreview()">
-                <option value="">Alle Bezirke</option>
-                <option value="1">Bezirk 1</option>
-                <option value="2">Bezirk 2</option>
-                <option value="3">Bezirk 3</option>
-                <option value="4">Bezirk 4</option>
-              </select>
-            </div>
-
-            <div class="fg">
-              <label>Anrede</label>
-              <select id="ex-anrede" onchange="exPreview()">
-                <option value="">Alle Anreden</option>
-                <option value="Familie">Familie</option>
-                <option value="Frau">Frau</option>
-                <option value="Sch&#252;tzenbruder">Sch&#252;tzenbruder</option>
-              </select>
-            </div>
-
-            <div class="fg">
-              <label>Ehrenmitglied</label>
-              <select id="ex-ehren"  onchange="exPreview()">
-                <option value="">Alle</option>
-                <option value="ja">Nur Ehrenmitglieder</option>
-                <option value="nein">Keine Ehrenmitglieder</option>
-              </select>
-            </div>
-
-            <div class="fg">
-              <label>Helga-Liste</label>
-              <select id="ex-helga"  onchange="exPreview()">
-                <option value="">Alle</option>
-                <option value="ja">Nur Helga-Liste</option>
-                <option value="nein">Nicht auf Helga-Liste</option>
-              </select>
-            </div>
-
-            <div class="fg">
-              <label>Nur mit E-Mail</label>
-              <select id="ex-email"  onchange="exPreview()">
-                <option value="">Alle</option>
-                <option value="ja">Nur mit E-Mail-Adresse</option>
-              </select>
-            </div>
-
-            <div class="fg">
-              <label>Nur mit Handy/Tel</label>
-              <select id="ex-tel"    onchange="exPreview()">
-                <option value="">Alle</option>
-                <option value="ja">Nur mit Telefonnummer</option>
-              </select>
-            </div>
-
-          </div>
+        <div class="fg">
+          <label>Bezirk</label>
+          <select id="ex-bz" onchange="exPreview()">
+            <option value="">Alle Bezirke</option>
+            <option value="1">Bezirk 1</option>
+            <option value="2">Bezirk 2</option>
+            <option value="3">Bezirk 3</option>
+            <option value="4">Bezirk 4</option>
+          </select>
         </div>
 
-        <!-- Preview count -->
-        <div style="background:var(--navyp);border-radius:var(--r);padding:.7rem 1rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
-          <span style="font-size:.9rem"><strong id="ex-count">0</strong> Adressen entsprechen den Filterkriterien</span>
-          <button class="btn btn-clear" style="padding:.3rem .8rem;font-size:.82rem" onclick="exPreview()">&#128269; Vorschau aktualisieren</button>
+        <div class="fg">
+          <label>Anrede</label>
+          <select id="ex-anrede" onchange="exPreview()">
+            <option value="">Alle Anreden</option>
+            <option value="Familie">Familie</option>
+            <option value="Frau">Frau</option>
+            <option value="Sch&#252;tzenbruder">Sch&#252;tzenbruder</option>
+          </select>
         </div>
 
-        <!-- Export format -->
-        <div style="font-size:.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.65rem">Format &amp; Export</div>
-        <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem">
-          <button class="btn btn-save" onclick="exExportCSV()">&#128228; Als CSV exportieren<br><small style="font-weight:400;opacity:.85">f&#252;r Word Serienbrief, Excel</small></button>
-          <button class="btn btn-navy" onclick="exExportVCF()">&#128101; Als VCF exportieren<br><small style="font-weight:400;opacity:.85">f&#252;r Kontakte, Outlook, iPhone</small></button>
+        <div class="fg">
+          <label>Ehrenmitglied</label>
+          <select id="ex-ehren"  onchange="exPreview()">
+            <option value="">Alle</option>
+            <option value="ja">Nur Ehrenmitglieder</option>
+            <option value="nein">Keine Ehrenmitglieder</option>
+          </select>
         </div>
-        <p style="font-size:.8rem;color:var(--grey700);line-height:1.6">
-          <strong>CSV</strong>: Enthält alle Felder (Name, Adresse, Tel., E-Mail). Direkt als Datenquelle f&#252;r Word-Serienbriefe nutzbar.<br>
-          <strong>VCF</strong>: Standard-Visitenkartenformat &ndash; importierbar in Outlook, Apple Kontakte, Android, iPhone.<br>
-          Je nach Filter werden nur die gew&#228;hlten Adressen exportiert.
-        </p>
 
-        <!-- Preview table -->
-        <div style="margin-top:1.2rem">
-          <div style="font-size:.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.5rem">Vorschau (max. 10)</div>
-          <div class="tbl-wrap card">
-            <table><thead><tr>
-              <th>Nr.</th><th>Bz.</th><th>Name</th><th>Vorname</th><th>Stra&#223;e</th><th>PLZ</th><th>Ort</th><th>Tel.</th><th>E-Mail</th>
-            </tr></thead><tbody id="ex-preview-tbody"></tbody></table>
-          </div>
+        <div class="fg">
+          <label>Helga-Liste</label>
+          <select id="ex-helga"  onchange="exPreview()">
+            <option value="">Alle</option>
+            <option value="ja">Nur Helga-Liste</option>
+            <option value="nein">Nicht auf Helga-Liste</option>
+          </select>
+        </div>
+
+        <div class="fg">
+          <label>Nur mit E-Mail</label>
+          <select id="ex-email"  onchange="exPreview()">
+            <option value="">Alle</option>
+            <option value="ja">Nur mit E-Mail-Adresse</option>
+          </select>
+        </div>
+
+        <div class="fg">
+          <label>Nur mit Handy/Tel</label>
+          <select id="ex-tel"    onchange="exPreview()">
+            <option value="">Alle</option>
+            <option value="ja">Nur mit Telefonnummer</option>
+          </select>
         </div>
 
       </div>
     </div>
+
+    <!-- Preview count -->
+    <div style="background:var(--navyp);border-radius:var(--r);padding:.7rem 1rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+      <span style="font-size:.9rem"><strong id="ex-count">0</strong> Adressen entsprechen den Filterkriterien</span>
+      <button class="btn btn-clear" style="padding:.3rem .8rem;font-size:.82rem" onclick="exPreview()">&#128269; Vorschau aktualisieren</button>
+    </div>
+
+    <!-- Export format -->
+    <div style="font-size:.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.65rem">Format &amp; Export</div>
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem">
+      <button class="btn btn-save" onclick="exExportCSV()">&#128228; Als CSV exportieren<br><small style="font-weight:400;opacity:.85">f&#252;r Word Serienbrief, Excel</small></button>
+      <button class="btn btn-navy" onclick="exExportVCF()">&#128101; Als VCF exportieren<br><small style="font-weight:400;opacity:.85">f&#252;r Kontakte, Outlook, iPhone</small></button>
+    </div>
+    <p style="font-size:.8rem;color:var(--grey700);line-height:1.6">
+      <strong>CSV</strong>: Enthält alle Felder (Name, Adresse, Tel., E-Mail). Direkt als Datenquelle f&#252;r Word-Serienbriefe nutzbar.<br>
+      <strong>VCF</strong>: Standard-Visitenkartenformat &ndash; importierbar in Outlook, Apple Kontakte, Android, iPhone.<br>
+      Je nach Filter werden nur die gew&#228;hlten Adressen exportiert.
+    </p>
+
+    <!-- Preview table -->
+    <div style="margin-top:1.2rem">
+      <div style="font-size:.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.5rem">Vorschau (max. 10)</div>
+      <div class="tbl-wrap card">
+        <table><thead><tr>
+          <th>Nr.</th><th>Bz.</th><th>Name</th><th>Vorname</th><th>Stra&#223;e</th><th>PLZ</th><th>Ort</th><th>Tel.</th><th>E-Mail</th>
+        </tr></thead><tbody id="ex-preview-tbody"></tbody></table>
+      </div>
+    </div>
+
+  </div>
+</div>
+```
+
   </div>
   </div>
 
 <!-- BOTTOM NAVIGATION (mobile) -->
+
 <nav class="bottom-nav">
   <div class="bottom-nav-inner">
     <button class="bnav-btn on" id="bn-uebersicht" onclick="showTab('uebersicht',this,'bn-uebersicht')">
@@ -613,6 +779,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
 <div class="toast" id="toast"></div>
 
 <!-- EDIT MODAL -->
+
 <div class="modal-bg" id="editModal" onclick="if(event.target===this)closeModal()">
   <div class="modal">
     <div class="modal-hd">
@@ -1158,27 +1325,6 @@ function installPWA(){
 }
 
 // ── Service Worker ────────────────────────────────────────────────────────
-if('serviceWorker' in navigator){
-  var swCode = `
-const CACHE = 'sv-lau-v1';
-self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./'])));
-  self.skipWaiting();
-});
-self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys =>
-    Promise.all(keys.filter(k => k!==CACHE).map(k => caches.delete(k)))
-  ));
-  self.clients.claim();
-});
-self.addEventListener('fetch', e => {
-  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
-});
-  `;
-  var swBlob = new Blob([swCode], {type:'text/javascript'});
-  var swUrl  = URL.createObjectURL(swBlob);
-  navigator.serviceWorker.register(swUrl).catch(function(){});
-}
 
 // ── iOS install hint ──────────────────────────────────────────────────────
 (function(){
@@ -1196,15 +1342,102 @@ self.addEventListener('fetch', e => {
 })();
 
 
-(function(){
-  var m = '{\n  "name": "SV Lau-Brechte Mitgliederverwaltung",\n  "short_name": "SV Lau-Brechte",\n  "start_url": ".",\n  "display": "standalone",\n  "background_color": "#1F4E79",\n  "theme_color": "#1F4E79",\n  "orientation": "portrait",\n  "icons": [{"src":"data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' rx=\'20\' fill=\'%231F4E79\'/><text y=\'.9em\' font-size=\'70\' x=\'50%25\' text-anchor=\'middle\'>%E2%9A%94</text></svg>","sizes":"any","type":"image/svg+xml"}]\n}';
-  var b = new Blob([m],{type:'application/json'});
-  var u = URL.createObjectURL(b);
-  var l = document.createElement('link');
-  l.rel='manifest'; l.href=u;
-  document.head.appendChild(l);
+
+// ── PASSWORD PROTECTION ───────────────────────────────────────────────────
+var PW_HASH_DEFAULT = 'd7f07018cf6d10a2866ea8b3842819bca8775099b24bd7fe20a6ab880a4c67e8';
+var SESSION_KEY     = 'svLauAuth';
+var PW_HASH_KEY     = 'svLauPWHash';
+
+async function sha256(msg) {
+  var buf = await crypto.subtle.digest('SHA-256',
+    new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf))
+    .map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function getStoredHash() {
+  return localStorage.getItem(PW_HASH_KEY) || PW_HASH_DEFAULT;
+}
+
+function isAuthenticated() {
+  var ts = sessionStorage.getItem(SESSION_KEY);
+  if (!ts) return false;
+  // Session valid for 8 hours
+  return (Date.now() - parseInt(ts)) < 8 * 60 * 60 * 1000;
+}
+
+async function checkPW() {
+  var input = document.getElementById('pw-input').value;
+  var err   = document.getElementById('pw-error');
+  var inp   = document.getElementById('pw-input');
+  if (!input) { err.textContent = 'Bitte Passwort eingeben.'; return; }
+  var hash = await sha256(input);
+  if (hash === getStoredHash()) {
+    sessionStorage.setItem(SESSION_KEY, Date.now().toString());
+    document.getElementById('pw-screen').classList.add('hidden');
+    err.textContent = '';
+    inp.value = '';
+    init();
+  } else {
+    err.textContent = 'Falsches Passwort. Bitte erneut versuchen.';
+    inp.classList.add('error');
+    inp.value = '';
+    setTimeout(function(){ inp.classList.remove('error'); }, 500);
+  }
+}
+
+function showChangePW() {
+  if (!isAuthenticated()) return;
+  document.getElementById('changePWModal').classList.add('open');
+}
+
+async function changePW() {
+  var oldVal  = document.getElementById('cpw-old').value;
+  var newVal  = document.getElementById('cpw-new').value;
+  var confirm = document.getElementById('cpw-confirm').value;
+  var err     = document.getElementById('cpw-error');
+
+  if (!oldVal || !newVal || !confirm) {
+    err.textContent = 'Bitte alle Felder ausf\u00fcllen.'; return;
+  }
+  if (newVal.length < 4) {
+    err.textContent = 'Neues Passwort muss mind. 4 Zeichen haben.'; return;
+  }
+  if (newVal !== confirm) {
+    err.textContent = 'Passw\u00f6rter stimmen nicht \u00fcberein.'; return;
+  }
+  var oldHash = await sha256(oldVal);
+  if (oldHash !== getStoredHash()) {
+    err.textContent = 'Aktuelles Passwort ist falsch.'; return;
+  }
+  var newHash = await sha256(newVal);
+  localStorage.setItem(PW_HASH_KEY, newHash);
+  document.getElementById('changePWModal').classList.remove('open');
+  ['cpw-old','cpw-new','cpw-confirm'].forEach(function(id){
+    document.getElementById(id).value='';
+  });
+  err.textContent = '';
+  toast('\u2714 Passwort erfolgreich ge\u00e4ndert!');
+}
+
+// ── Start: check auth before init ────────────────────────────────────────
+(function() {
+  if (isAuthenticated()) {
+    document.getElementById('pw-screen').classList.add('hidden');
+    // init() will be called normally
+  } else {
+    // Block init() until authenticated - focus input
+    setTimeout(function(){
+      var inp = document.getElementById('pw-input');
+      if (inp) inp.focus();
+    }, 300);
+  }
 })();
-init();
+
+
+// init() is called by checkPW() or immediately if already authenticated
+if(isAuthenticated()) init();
 </script>
+
 </body>
 </html>
