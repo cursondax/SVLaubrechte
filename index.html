@@ -3,12 +3,12 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SV Lau-Brechte">
 <meta name="theme-color" content="#1F4E79">
-<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAABzklEQVR42u3TAQ0AIBADsTnBEX5QDy5gIV1yBp6SlG/MtdVVDGigDWiggRbQQAtooIE2oIEGGiCggRbQQAtooIE2oIEGWkADLaCBFtBAA21AAw20gAZaQAMtoIEG2oAGGmgBDbSABlpAAw20AQ000AIaaAENtIAGGmgDGmigBTTQAhpoAQ000AY00EALaKAFNNBAAyPd+GyOIKAloCWgJaAFtAS0BLQEtAS0gJaAloCWgJaAFtAS0BLQEtAS0AJaAloCWgJaAlpAS0BLQEtAS0ALaAloCWgJaAloAS0BLQEtAS2gHUJAS0BLQEtAC2gJaAloCWgJaAEtAS0BLQEtAS2gJaAloCWgJaAFtAS0BLQEtAS0gJaAloCWgJaAFtAS0BLQEtAS0AJaAloCWgJaQEtAS0BLQEtAC2gJaAloCWgJaAEtAS0BLQEtAS2gJaAloCWgJaAFtAS09AZ0+zwSNF8NIKCBFtBAC2iggTaggQZaQAMtoIEW0EADbUADDbSABlpAAy2ggQbagAYaaAENtIAGWkADDbQBDTTQAhpoAQ20gAYaaAMaaKAFNNACGmgBDTTQBjTQQAtooAU00EAb0EAb0EADLaCBFtBAA124A++6olt/NNynAAAAAElFTkSuQmCC">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231F4E79'/><text y='.9em' font-size='70' x='50%' text-anchor='middle'>⚔</text></svg>">
 
 <title>Mitgliederverwaltung - SV Lau-Brechte</title>
 <style>
@@ -117,12 +117,12 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
   .print-page:first-child{page-break-before:avoid}
   .page-hd{font-size:13pt;font-weight:bold;color:#1F4E79;margin:0 0 4pt 0;border-bottom:2pt solid #1F4E79;padding-bottom:3pt}
   .page-sub{font-size:8pt;color:#666;margin-bottom:6pt}
-  .print-tbl{width:100%;border-collapse:collapse;font-size:10pt;table-layout:auto}
+  .print-tbl{width:100%;border-collapse:collapse;font-size:10pt;table-layout:auto;border:1pt solid #555;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .print-tbl thead{display:table-header-group}
-  .print-tbl th{background:#2E75B6!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:4pt 5pt;text-align:left;font-size:9pt;font-family:Arial,sans-serif;border-right:.5pt solid rgba(255,255,255,.4);white-space:nowrap}
+  .print-tbl th{background:#2E75B6!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:4pt 5pt;text-align:left;font-size:9pt;font-family:Arial,sans-serif;border-right:1.5pt solid #ffffff;border-bottom:2pt solid #1a5276;white-space:nowrap}
   .print-tbl th:last-child{border-right:none}
-  .print-tbl td{padding:4pt 5pt;border-bottom:.4pt solid #ccc;border-right:.5pt solid #bbb;font-size:10pt}
-  .print-tbl td:last-child{border-right:none}
+  .print-tbl td{padding:4pt 5pt;border-bottom:1pt solid #999;border-right:1pt solid #999;font-size:10pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .print-tbl td:last-child{border-right:1pt solid #555}
   .print-tbl td.td-nr{text-align:center;color:#888;width:22pt;white-space:nowrap;font-size:9pt}
   .print-tbl td.td-name{white-space:nowrap;font-family:Calibri,Arial,sans-serif;font-size:12pt}
   .print-tbl td.td-verm{min-width:100pt}
@@ -299,162 +299,8 @@ font-size: .85rem;
 }
 .install-banner.show { display: flex; }
 
-/* ── PASSWORD SCREEN ─────────────────────────────────────────── */
-#pw-screen {
-position: fixed;
-inset: 0;
-background: var(–navy);
-z-index: 9999;
-display: flex;
-align-items: center;
-justify-content: center;
-flex-direction: column;
-padding: 2rem;
-}
-#pw-screen.hidden { display: none; }
-.pw-card {
-background: #fff;
-border-radius: 16px;
-padding: 2rem 2rem 1.5rem;
-width: 100%;
-max-width: 340px;
-box-shadow: 0 20px 60px rgba(0,0,0,.3);
-text-align: center;
-}
-.pw-logo {
-font-size: 3rem;
-margin-bottom: .5rem;
-}
-.pw-title {
-font-size: 1.15rem;
-font-weight: 800;
-color: var(–navy);
-margin-bottom: .25rem;
-}
-.pw-sub {
-font-size: .82rem;
-color: var(–grey700);
-margin-bottom: 1.5rem;
-}
-.pw-input {
-width: 100%;
-padding: .75rem 1rem;
-border: 2px solid var(–grey300);
-border-radius: 10px;
-font-size: 1.1rem;
-font-family: inherit;
-text-align: center;
-letter-spacing: .15em;
-outline: none;
-transition: border-color .2s;
-margin-bottom: .75rem;
-}
-.pw-input:focus { border-color: var(–navym); }
-.pw-input.error { border-color: #e74c3c; animation: shake .3s; }
-@keyframes shake {
-0%,100%{transform:translateX(0)}
-25%{transform:translateX(-8px)}
-75%{transform:translateX(8px)}
-}
-.pw-btn {
-width: 100%;
-padding: .75rem;
-background: var(–navy);
-color: #fff;
-border: none;
-border-radius: 10px;
-font-size: 1rem;
-font-weight: 700;
-cursor: pointer;
-font-family: inherit;
-transition: background .15s;
-}
-.pw-btn:hover { background: var(–navym); }
-.pw-btn:active { transform: scale(.97); }
-.pw-error {
-color: #e74c3c;
-font-size: .82rem;
-margin-top: .5rem;
-min-height: 1.2rem;
-}
-.pw-hint {
-font-size: .75rem;
-color: var(–grey700);
-margin-top: 1rem;
-line-height: 1.5;
-}
-.pw-change-wrap {
-margin-top: .85rem;
-padding-top: .85rem;
-border-top: 1px solid var(–grey100);
-}
-.pw-change-link {
-font-size: .78rem;
-color: var(–navym);
-cursor: pointer;
-text-decoration: underline;
-}
-
 </style>
 </head>
-
-<!-- PASSWORD SCREEN -->
-
-<div id="pw-screen">
-  <div class="pw-card">
-    <div class="pw-logo">&#9876;</div>
-    <div class="pw-title">SV Lau-Brechte</div>
-    <div class="pw-sub">Mitgliederverwaltung</div>
-    <input
-      class="pw-input"
-      id="pw-input"
-      type="password"
-      placeholder="Passwort eingeben"
-      autocomplete="current-password"
-      onkeydown="if(event.key==='Enter')checkPW()"
-    >
-    <button class="pw-btn" onclick="checkPW()">&#128275; Anmelden</button>
-    <div class="pw-error" id="pw-error"></div>
-    <div class="pw-hint">
-      Dieses Passwort sch&uuml;tzt die Mitgliederdaten.<br>
-      Bei Fragen: Administrator kontaktieren.
-    </div>
-    <div class="pw-change-wrap">
-      <span class="pw-change-link" onclick="showChangePW()">Passwort &auml;ndern</span>
-    </div>
-  </div>
-</div>
-
-<!-- CHANGE PASSWORD MODAL -->
-
-<div class="modal-bg" id="changePWModal" onclick="if(event.target===this)document.getElementById('changePWModal').classList.remove('open')">
-  <div class="modal" style="max-width:360px">
-    <div class="modal-hd">
-      <h3>&#128274; Passwort &auml;ndern</h3>
-      <button class="modal-close" onclick="document.getElementById('changePWModal').classList.remove('open')">&#10005;</button>
-    </div>
-    <div class="modal-bd">
-      <div class="fg" style="margin-bottom:.85rem">
-        <label>Aktuelles Passwort</label>
-        <input type="password" id="cpw-old" class="pw-input" style="text-align:left;letter-spacing:normal;margin:0" placeholder="Aktuelles Passwort">
-      </div>
-      <div class="fg" style="margin-bottom:.85rem">
-        <label>Neues Passwort</label>
-        <input type="password" id="cpw-new" class="pw-input" style="text-align:left;letter-spacing:normal;margin:0" placeholder="Mindestens 4 Zeichen">
-      </div>
-      <div class="fg">
-        <label>Neues Passwort best&auml;tigen</label>
-        <input type="password" id="cpw-confirm" class="pw-input" style="text-align:left;letter-spacing:normal;margin:0" placeholder="Wiederholen">
-      </div>
-      <div class="pw-error" id="cpw-error"></div>
-    </div>
-    <div class="modal-ft">
-      <button class="btn btn-clear" onclick="document.getElementById('changePWModal').classList.remove('open')">Abbrechen</button>
-      <button class="btn btn-save" onclick="changePW()">&#10004; Passwort &auml;ndern</button>
-    </div>
-  </div>
-</div>
-
 <body>
 <header class="hdr">
   <div><h1>&#9876; SV Lau-Brechte &ndash; Mitgliederverwaltung</h1>
@@ -1325,6 +1171,27 @@ function installPWA(){
 }
 
 // ── Service Worker ────────────────────────────────────────────────────────
+if('serviceWorker' in navigator){
+  var swCode = `
+const CACHE = 'sv-lau-v1';
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./'])));
+  self.skipWaiting();
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(caches.keys().then(keys =>
+    Promise.all(keys.filter(k => k!==CACHE).map(k => caches.delete(k)))
+  ));
+  self.clients.claim();
+});
+self.addEventListener('fetch', e => {
+  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+});
+  `;
+  var swBlob = new Blob([swCode], {type:'text/javascript'});
+  var swUrl  = URL.createObjectURL(swBlob);
+  navigator.serviceWorker.register(swUrl).catch(function(){});
+}
 
 // ── iOS install hint ──────────────────────────────────────────────────────
 (function(){
@@ -1342,101 +1209,15 @@ function installPWA(){
 })();
 
 
-
-// ── PASSWORD PROTECTION ───────────────────────────────────────────────────
-var PW_HASH_DEFAULT = 'd7f07018cf6d10a2866ea8b3842819bca8775099b24bd7fe20a6ab880a4c67e8';
-var SESSION_KEY     = 'svLauAuth';
-var PW_HASH_KEY     = 'svLauPWHash';
-
-async function sha256(msg) {
-  var buf = await crypto.subtle.digest('SHA-256',
-    new TextEncoder().encode(msg));
-  return Array.from(new Uint8Array(buf))
-    .map(b => b.toString(16).padStart(2,'0')).join('');
-}
-
-function getStoredHash() {
-  return localStorage.getItem(PW_HASH_KEY) || PW_HASH_DEFAULT;
-}
-
-function isAuthenticated() {
-  var ts = sessionStorage.getItem(SESSION_KEY);
-  if (!ts) return false;
-  // Session valid for 8 hours
-  return (Date.now() - parseInt(ts)) < 8 * 60 * 60 * 1000;
-}
-
-async function checkPW() {
-  var input = document.getElementById('pw-input').value;
-  var err   = document.getElementById('pw-error');
-  var inp   = document.getElementById('pw-input');
-  if (!input) { err.textContent = 'Bitte Passwort eingeben.'; return; }
-  var hash = await sha256(input);
-  if (hash === getStoredHash()) {
-    sessionStorage.setItem(SESSION_KEY, Date.now().toString());
-    document.getElementById('pw-screen').classList.add('hidden');
-    err.textContent = '';
-    inp.value = '';
-    init();
-  } else {
-    err.textContent = 'Falsches Passwort. Bitte erneut versuchen.';
-    inp.classList.add('error');
-    inp.value = '';
-    setTimeout(function(){ inp.classList.remove('error'); }, 500);
-  }
-}
-
-function showChangePW() {
-  if (!isAuthenticated()) return;
-  document.getElementById('changePWModal').classList.add('open');
-}
-
-async function changePW() {
-  var oldVal  = document.getElementById('cpw-old').value;
-  var newVal  = document.getElementById('cpw-new').value;
-  var confirm = document.getElementById('cpw-confirm').value;
-  var err     = document.getElementById('cpw-error');
-
-  if (!oldVal || !newVal || !confirm) {
-    err.textContent = 'Bitte alle Felder ausf\u00fcllen.'; return;
-  }
-  if (newVal.length < 4) {
-    err.textContent = 'Neues Passwort muss mind. 4 Zeichen haben.'; return;
-  }
-  if (newVal !== confirm) {
-    err.textContent = 'Passw\u00f6rter stimmen nicht \u00fcberein.'; return;
-  }
-  var oldHash = await sha256(oldVal);
-  if (oldHash !== getStoredHash()) {
-    err.textContent = 'Aktuelles Passwort ist falsch.'; return;
-  }
-  var newHash = await sha256(newVal);
-  localStorage.setItem(PW_HASH_KEY, newHash);
-  document.getElementById('changePWModal').classList.remove('open');
-  ['cpw-old','cpw-new','cpw-confirm'].forEach(function(id){
-    document.getElementById(id).value='';
-  });
-  err.textContent = '';
-  toast('\u2714 Passwort erfolgreich ge\u00e4ndert!');
-}
-
-// ── Start: check auth before init ────────────────────────────────────────
-(function() {
-  if (isAuthenticated()) {
-    document.getElementById('pw-screen').classList.add('hidden');
-    // init() will be called normally
-  } else {
-    // Block init() until authenticated - focus input
-    setTimeout(function(){
-      var inp = document.getElementById('pw-input');
-      if (inp) inp.focus();
-    }, 300);
-  }
+(function(){
+  var m = '{\n  "name": "SV Lau-Brechte Mitgliederverwaltung",\n  "short_name": "SV Lau-Brechte",\n  "start_url": ".",\n  "display": "standalone",\n  "background_color": "#1F4E79",\n  "theme_color": "#1F4E79",\n  "orientation": "portrait",\n  "icons": [{"src":"data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' rx=\'20\' fill=\'%231F4E79\'/><text y=\'.9em\' font-size=\'70\' x=\'50%25\' text-anchor=\'middle\'>%E2%9A%94</text></svg>","sizes":"any","type":"image/svg+xml"}]\n}';
+  var b = new Blob([m],{type:'application/json'});
+  var u = URL.createObjectURL(b);
+  var l = document.createElement('link');
+  l.rel='manifest'; l.href=u;
+  document.head.appendChild(l);
 })();
-
-
-// init() is called by checkPW() or immediately if already authenticated
-if(isAuthenticated()) init();
+init();
 </script>
 
 </body>
