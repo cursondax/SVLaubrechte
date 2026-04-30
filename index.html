@@ -44,70 +44,81 @@ tbody tr:nth-child(even){background:var(--navyp)}
 .btn{display:inline-flex;align-items:center;gap:.4rem;padding:.6rem 1.2rem;border:none;border-radius:6px;font-size:.9rem;font-weight:700;cursor:pointer;transition:var(--ease)}
 .btn-save{background:var(--green);color:#fff}
 .btn-navy{background:var(--navy);color:#fff}
+.btn-pdf{background:var(--orange);color:#fff}
 
-/* DRUCKVERSION KORREKTUR */
+/* DRUCKVERSION - KORRIGIERTE LINIEN */
 @media print{
   body{background:#fff;font-family:Arial,sans-serif;font-size:10pt}
-  .hdr,.tabs,.toolbar,.stats,.pdf-bar,#sec-eingabe,#sec-import,#sec-uebersicht,.btn,.bottom-nav{display:none!important}
-  .wrap{padding:0;max-width:100%}
+  .hdr,.tabs,.toolbar,.stats,.pdf-bar,#sec-eingabe,#sec-import,#sec-uebersicht,.btn,.bottom-nav,.no-print{display:none!important}
+  .wrap{padding:0;max-width:100%;margin:0}
   #sec-bezirke{display:block!important}
-  .print-bezirk{page-break-before:always}
+  .card{box-shadow:none;border:none}
+  .print-bezirk{page-break-before:always; padding-top:10px}
   .print-bezirk:first-child{page-break-before:avoid}
   
-  .print-tbl{width:100%;border-collapse:collapse;table-layout:fixed}
-  .print-tbl th{background:#2E75B6!important;color:#fff!important;border:0.5pt solid #333;padding:4pt}
-  
-  /* Sichtbare Trennung der Spalten durch Linien */
-  .print-tbl td{
-    padding:4pt 5pt;
-    border-bottom: 0.5pt solid #666;
-    border-right: 1pt solid #000; /* Deutliche vertikale Linie */
+  .print-tbl{width:100%;border-collapse:collapse;table-layout:fixed;border:1.5pt solid #000}
+  .print-tbl th{
+    background:#2E75B6!important;
+    color:#fff!important;
+    border:1pt solid #000;
+    padding:6pt 4pt;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
   }
-  .print-tbl td:last-child{border-right:none}
   
-  .td-nr{width:25pt; text-align:center; border-right:0.5pt solid #999!important}
-  .td-name{width:140pt; font-weight:bold}
+  /* DEUTLICHE VERTIKALE LINIEN */
+  .print-tbl td{
+    padding:5pt 4pt;
+    border-bottom: 0.5pt solid #333;
+    border-right: 1.5pt solid #000 !important; /* Dicke schwarze Linie zwischen Spalten */
+    word-wrap: break-word;
+  }
+  .print-tbl td:last-child{border-right:none !important}
+  
+  /* Spaltenbreiten */
+  .td-nr{width:30pt; text-align:center}
+  .td-name{width:160pt; font-weight:bold}
   .td-verm{width:auto}
-  .td-beit{width:45pt; text-align:center}
-  .td-suppe{width:45pt; text-align:center}
+  .td-beit{width:50pt; text-align:center}
+  .td-suppe{width:50pt; text-align:center}
+
+  h2 { color: #1F4E79; border-bottom: 2pt solid #1F4E79; margin-bottom: 10pt; padding-bottom: 5pt }
 }
 
 .sec{display:none}.sec.on{display:block}
+.toolbar { display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap }
+.srch { flex:1; padding:10px; border-radius:6px; border:1px solid #ccc }
 </style>
 </head>
 <body>
 
 <header class="hdr">
   <h1>⚔ SV Lau-Brechte Admin</h1>
-  <div class="hdr-badge" id="hdrbadge">Wird geladen...</div>
+  <div class="hdr-badge" id="hdrbadge">0 Personen</div>
 </header>
 
 <div class="wrap">
   <div class="tabs">
     <button class="tab on" onclick="showTab('uebersicht',this)">📋 Übersicht</button>
-    <button class="tab" onclick="showTab('eingabe',this)">➕ Neuaufnahme</button>
     <button class="tab" onclick="showTab('bezirke',this)">📂 Bezirke</button>
-    <button class="tab" onclick="showTab('export',this)">✉️ Export</button>
-    <button class="tab" onclick="showTab('import',this)">⚙️ Daten</button>
+    <button class="tab" onclick="showTab('import',this)">⚙️ Daten & Import</button>
   </div>
 
   <div class="sec on" id="sec-uebersicht">
-    <div class="card" style="padding:1rem">
-        <div style="display:flex; gap:10px">
-            <input type="text" id="q" placeholder="🔍 Suche..." style="flex:1; padding:.7rem; border-radius:6px; border:1px solid var(--grey300)" oninput="renderTable()">
-            <select id="fa" class="btn" style="background:#fff; border:1px solid var(--grey300)" onchange="renderTable()">
-                <option value="">Alle Anreden</option>
-                <option>Familie</option>
-                <option>Frau</option>
-                <option>Schützenbruder</option>
+    <div class="card card-bd">
+        <div class="toolbar">
+            <input type="text" id="q" class="srch" placeholder="🔍 Suche nach Name, Ort oder Straße..." oninput="renderTable()">
+            <select id="fa" class="btn" style="background:#fff; border:1px solid #ccc; font-family:inherit" onchange="renderTable()">
+                <option value="">Alle Anreden (Filter)</option>
+                <option value="Familie">Familie</option>
+                <option value="Frau">Frau</option>
+                <option value="Schützenbruder">Schützenbruder</option>
             </select>
         </div>
-    </div>
-    <div class="card">
         <div class="tbl-wrap">
             <table>
                 <thead>
-                    <tr><th>Bz.</th><th>Anrede</th><th>Name</th><th>Vorname</th><th>Straße</th><th>Aktion</th></tr>
+                    <tr><th>Bz.</th><th>Anrede</th><th>Name</th><th>Vorname</th><th>Straße</th><th>Ort</th></tr>
                 </thead>
                 <tbody id="tbody"></tbody>
             </table>
@@ -116,20 +127,31 @@ tbody tr:nth-child(even){background:var(--navyp)}
   </div>
 
   <div class="sec" id="sec-bezirke">
-    <div class="card card-bd">
-        <button class="btn btn-navy" onclick="window.print()">🖨️ Jetzt Drucken / PDF speichern</button>
-        <p style="margin-top:10px; font-size:0.8rem">Hinweis: Spalten im Druck sind durch Linien getrennt.</p>
+    <div class="card card-bd no-print">
+        <div style="display:flex; justify-content:space-between; align-items:center">
+            <div>
+                <h3>Bezirkslisten Druckansicht</h3>
+                <p>Spalten sind durch dicke Linien getrennt.</p>
+            </div>
+            <button class="btn btn-pdf" onclick="window.print()">🖨️ Liste Drucken / PDF</button>
+        </div>
     </div>
     <div id="print-area"></div>
   </div>
 
-  <div class="sec" id="sec-eingabe">
-    <div class="card"><div class="card-hd">Neues Mitglied</div>
-    <div class="card-bd">Formularfelder... (Hier wie im Original)</div></div>
+  <div class="sec" id="sec-import">
+    <div class="card card-bd">
+        <h3>Datenverwaltung</h3>
+        <p>Hier können CSV-Daten importiert werden.</p>
+        <input type="file" id="csvFile" accept=".csv" style="margin-top:10px">
+        <button class="btn btn-navy" onclick="handleImport()" style="margin-top:10px">📥 Importieren</button>
+        <button class="btn btn-save" onclick="localStorage.removeItem('sv_data'); location.reload()" style="margin-top:10px; background:#c0392b">🗑️ Alle Daten löschen</button>
+    </div>
   </div>
 </div>
 
 <script>
+// Daten laden
 let mitglieder = JSON.parse(localStorage.getItem('sv_data') || '[]');
 
 function showTab(id, btn) {
@@ -140,6 +162,7 @@ function showTab(id, btn) {
     if(id === 'bezirke') preparePrint();
 }
 
+// Filter korrigiert: Prüft nun exakt die Anrede
 function renderTable() {
     const tbody = document.getElementById('tbody');
     const q = document.getElementById('q').value.toLowerCase();
@@ -148,14 +171,15 @@ function renderTable() {
     tbody.innerHTML = '';
     
     const gefiltert = mitglieder.filter(m => {
-        const matchSearch = (m.nachname + m.vorname + m.strasse).toLowerCase().includes(q);
+        const matchSearch = (m.nachname + m.vorname + m.strasse + (m.ort||'')).toLowerCase().includes(q);
+        // Exakter Vergleich für den Anrede-Filter
         const matchAnrede = filterAnrede === "" || m.anrede === filterAnrede;
         return matchSearch && matchAnrede;
     });
 
     gefiltert.forEach(m => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${m.bezirk}</td><td>${m.anrede}</td><td>${m.nachname}</td><td>${m.vorname}</td><td>${m.strasse}</td><td><button onclick="del(${m.id})">🗑️</button></td>`;
+        tr.innerHTML = `<td>${m.bezirk}</td><td>${m.anrede}</td><td>${m.nachname}</td><td>${m.vorname}</td><td>${m.strasse}</td><td>${m.ort || ''}</td>`;
         tbody.appendChild(tr);
     });
     document.getElementById('hdrbadge').innerText = gefiltert.length + ' Personen';
@@ -164,35 +188,80 @@ function renderTable() {
 function preparePrint() {
     const area = document.getElementById('print-area');
     area.innerHTML = '';
-    [1,2,3,4].forEach(bz => {
+    
+    const bezirke = [...new Set(mitglieder.map(m => m.bezirk))].sort();
+    
+    bezirke.forEach(bz => {
+        if(!bz) return;
         const div = document.createElement('div');
         div.className = 'print-bezirk';
-        let html = `<h2>Bezirk ${bz}</h2><table class="print-tbl"><thead><tr>
-            <th class="td-nr">Nr</th><th class="td-name">Name, Vorname</th><th class="td-verm">Vermerke / E-Mail</th><th class="td-beit">Beitrag</th><th class="td-suppe">Suppe</th>
-        </tr></thead><tbody>`;
         
-        mitglieder.filter(m => m.bezirk == bz).forEach((m, idx) => {
+        let html = `<h2>Bezirk ${bz}</h2>`;
+        html += `<table class="print-tbl">
+            <thead>
+                <tr>
+                    <th class="td-nr">Nr</th>
+                    <th class="td-name">Name, Vorname</th>
+                    <th class="td-verm">Vermerke / E-Mail</th>
+                    <th class="td-beit">Beitrag</th>
+                    <th class="td-suppe">Suppe</th>
+                </tr>
+            </thead>
+            <tbody>`;
+        
+        const bzMitglieder = mitglieder.filter(m => m.bezirk == bz)
+            .sort((a,b) => a.nachname.localeCompare(b.nachname));
+
+        bzMitglieder.forEach((m, idx) => {
             html += `<tr>
                 <td class="td-nr">${idx+1}</td>
                 <td class="td-name">${m.nachname}, ${m.vorname}</td>
-                <td class="td-verm">${m.email || ''}</td>
+                <td class="td-verm">${m.email || ''} ${m.handy ? '/ '+m.handy : ''}</td>
                 <td class="td-beit"></td>
                 <td class="td-suppe"></td>
             </tr>`;
         });
+        
         html += `</tbody></table>`;
         div.innerHTML = html;
         area.appendChild(div);
     });
 }
 
-function del(id) {
-    mitglieder = mitglieder.filter(m => m.id !== id);
-    localStorage.setItem('sv_data', JSON.stringify(mitglieder));
-    renderTable();
+function handleImport() {
+    const file = document.getElementById('csvFile').files[0];
+    if(!file) return alert("Bitte Datei wählen");
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const text = e.target.result;
+        const lines = text.split('\n');
+        const data = [];
+        // Einfacher Parser (Annahme: Semikolon Trennung)
+        for(let i=1; i<lines.length; i++) {
+            const cols = lines[i].split(';');
+            if(cols.length > 3) {
+                data.push({
+                    id: Date.now() + i,
+                    bezirk: cols[0],
+                    anrede: cols[1],
+                    nachname: cols[2],
+                    vorname: cols[3],
+                    strasse: cols[4],
+                    ort: cols[5],
+                    email: cols[6]
+                });
+            }
+        }
+        mitglieder = data;
+        localStorage.setItem('sv_data', JSON.stringify(mitglieder));
+        alert(data.length + " Mitglieder geladen");
+        renderTable();
+    };
+    reader.readAsText(file);
 }
 
-// Initialer Aufruf
+// Start
 renderTable();
 </script>
 </body>
