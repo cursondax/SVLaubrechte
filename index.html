@@ -16,159 +16,139 @@
   --orange:#C55A11;--orangebg:#FCE4D6;
   --green:#375623;--greenbg:#E2EFDA;
   --grey50:#F7F8FA;--grey100:#EDEEF2;--grey300:#C8CAD2;--grey700:#4A4D5A;
-  --white:#fff;--shadow:0 2px 8px rgba(0,0,0,.10);--r:8px;--ease:.18s ease;
+  --white:#fff;--shadow:0 2px 8px rgba(0,0,0,.10);--r:12px;--ease:.18s ease;
 }
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',Calibri,sans-serif;background:var(--grey50);color:var(--grey700);min-height:100vh}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--grey50);color:var(--grey700);min-height:100vh;line-height:1.5;padding-bottom:env(safe-area-inset-bottom)}
 
-/* Header & Nav */
-.hdr{background:var(--navy);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:58px;box-shadow:var(--shadow);position:sticky;top:0;z-index:100}
-.hdr h1{color:#fff;font-size:1.1rem;font-weight:700}
-.hdr-badge{background:var(--navym);color:#fff;border-radius:20px;padding:3px 14px;font-size:.78rem;font-weight:700}
-.wrap{max-width:1300px;margin:0 auto;padding:1.5rem 1.5rem 3rem}
-.tabs{display:flex;gap:2px;margin-bottom:1.5rem;background:var(--grey100);border-radius:var(--r);padding:4px;width:fit-content}
-.tab{padding:.5rem 1.3rem;border:none;background:transparent;border-radius:6px;font-size:.88rem;font-weight:600;color:var(--grey700);cursor:pointer;transition:var(--ease)}
-.tab.on{background:var(--navy);color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+/* Header */
+.hdr{background:var(--navy);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:60px;box-shadow:var(--shadow);position:sticky;top:0;z-index:100}
+.hdr h1{color:#fff;font-size:1.1rem;font-weight:700;display:flex;align-items:center;gap:10px}
+.hdr-badge{background:var(--navym);color:#fff;border-radius:20px;padding:4px 12px;font-size:.75rem;font-weight:700}
 
-/* Cards & Tables */
-.card{background:#fff;border-radius:var(--r);box-shadow:0 1px 3px rgba(0,0,0,.08);border:1px solid var(--grey100);margin-bottom:1rem}
-.card-bd{padding:1.2rem}
-.tbl-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:.85rem}
-thead th{background:var(--navy);color:#fff;padding:.6rem .8rem;text-align:left;position:sticky;top:0}
-tbody td{padding:.5rem .8rem;border-bottom:1px solid var(--grey100)}
-tbody tr:nth-child(even){background:var(--navyp)}
+.wrap{max-width:1300px;margin:0 auto;padding:1.5rem 1.5rem 5rem}
 
-/* Buttons */
-.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.6rem 1.2rem;border:none;border-radius:6px;font-size:.9rem;font-weight:700;cursor:pointer;transition:var(--ease)}
-.btn-save{background:var(--green);color:#fff}
-.btn-navy{background:var(--navy);color:#fff}
-.btn-pdf{background:var(--orange);color:#fff}
+/* Navigation & Tabs */
+.tabs{display:flex;gap:4px;margin-bottom:1.5rem;background:var(--grey100);border-radius:var(--r);padding:5px;width:fit-content;overflow-x:auto}
+.tab{padding:.6rem 1.2rem;border:none;background:transparent;border-radius:8px;font-size:.85rem;font-weight:600;color:var(--grey700);cursor:pointer;white-space:nowrap;transition:var(--ease)}
+.tab.on{background:var(--navy);color:#fff;box-shadow:0 2px 4px rgba(0,0,0,.1)}
 
-/* Bottom Navigation */
-.bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--navy); z-index: 200; padding: 10px 0; }
-@media (max-width: 700px) { .bottom-nav { display: block; } .tabs { display: none; } }
+/* Sektionen */
+.sec{display:none}.sec.on{display:block}
 
-/* DRUCKVERSION - FIX: LINIEN & MENÜ */
-@media print{
-  body{background:#fff!important;font-family:Arial,sans-serif;font-size:10pt}
-  /* Menü und andere UI-Elemente ausblenden */
-  .hdr, .tabs, .toolbar, .stats, .pdf-bar, #sec-eingabe, #sec-import, #sec-uebersicht, .btn, .bottom-nav, .no-print {
+/* KORREKTUR DRUCKVERSION: Linien und Menü-Ausblendung */
+@media print {
+  @page { margin: 1cm; }
+  .hdr, .tabs, .no-print, .btn, .stats, .bottom-nav, #sec-uebersicht, #sec-eingabe, #sec-import, .toolbar {
     display: none !important;
   }
-  .wrap{padding:0;max-width:100%;margin:0}
-  #sec-bezirke{display:block !important}
-  .card{box-shadow:none;border:none}
-  .print-bezirk{page-break-before:always; padding-top:10px}
-  .print-bezirk:first-child{page-break-before:avoid}
+  .wrap { padding: 0; margin: 0; max-width: 100%; }
+  #sec-bezirke { display: block !important; }
+  .card { border: none !important; box-shadow: none !important; }
   
-  /* Tabelle mit sichtbaren vertikalen Linien */
+  .print-bezirk { page-break-before: always; }
+  .print-bezirk:first-child { page-break-before: avoid; }
+
+  /* Tabellen-Linien */
   .print-tbl {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: collapse !important;
     table-layout: fixed;
-    border: 1.5pt solid #000 !important;
-  }
-  .print-tbl th {
-    background: #2E75B6 !important;
-    color: #fff !important;
     border: 1pt solid #000 !important;
-    padding: 6pt 4pt;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
   }
-  .print-tbl td {
-    padding: 5pt 4pt;
-    border-bottom: 0.5pt solid #000 !important;
-    border-right: 1.5pt solid #000 !important; /* Dicke schwarze vertikale Linie */
-    word-wrap: break-word;
+  .print-tbl th, .print-tbl td {
+    border: 1pt solid #000 !important; /* Schwarze Linien um jede Zelle */
+    padding: 6pt 4pt !important;
     color: #000 !important;
+    word-wrap: break-word;
   }
-  .print-tbl td:last-child { border-right: none !important; }
+  .print-tbl th { background: #eee !important; -webkit-print-color-adjust: exact; }
   
-  /* Spaltenbreiten */
+  /* Spezifische Spaltenbreiten für den Ausdruck */
   .td-nr { width: 30pt; text-align: center; }
-  .td-name { width: 160pt; font-weight: bold; }
+  .td-name { width: 150pt; font-weight: bold; }
   .td-verm { width: auto; }
-  .td-beit { width: 50pt; text-align: center; }
-  .td-suppe { width: 50pt; text-align: center; }
-
-  h2 { color: #1F4E79; border-bottom: 2pt solid #1F4E79; margin-bottom: 10pt; padding-bottom: 5pt; }
+  .td-beit { width: 50pt; }
+  .td-suppe { width: 50pt; }
 }
 
-.sec{display:none}.sec.on{display:block}
-.toolbar { display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap }
-.srch { flex:1; padding:10px; border-radius:6px; border:1px solid #ccc }
+/* UI Elemente */
+.card{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;border:1px solid var(--grey100);margin-bottom:1rem}
+.card-hd{background:var(--navy);color:#fff;padding:.8rem 1.2rem;font-size:.9rem;font-weight:700}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+thead th{background:var(--navy);color:#fff;padding:.75rem 1rem;text-align:left}
+tbody td{padding:.75rem 1rem;border-bottom:1px solid var(--grey100)}
+
+.toolbar{display:flex;gap:10px;margin-bottom:1rem;flex-wrap:wrap}
+.srch{flex:1;min-width:200px;padding:.7rem;border-radius:8px;border:1.5px solid var(--grey300)}
+
+.bottom-nav { display:none; position:fixed; bottom:0; left:0; right:0; background:var(--navy); padding:10px; z-index:1000; box-shadow:0 -2px 10px rgba(0,0,0,0.2); }
+@media (max-width: 768px) { .bottom-nav { display:flex; justify-content:space-around; } .tabs { display:none; } }
+.bnav-btn { background:none; border:none; color:#fff; font-size:0.7rem; text-align:center; opacity:0.7; }
+.bnav-btn.on { opacity:1; font-weight:bold; }
 </style>
 </head>
 <body>
 
 <header class="hdr">
-  <h1>⚔ SV Lau-Brechte Admin</h1>
-  <div class="hdr-badge" id="hdrbadge">0 Personen</div>
+  <h1>⚔ SV Lau-Brechte</h1>
+  <div class="hdr-badge" id="mbr-count">0 Mitglieder</div>
 </header>
 
 <div class="wrap">
   <div class="tabs">
-    <button class="tab on" onclick="showTab('uebersicht',this)">📋 Übersicht</button>
-    <button class="tab" onclick="showTab('bezirke',this)">📂 Bezirke</button>
-    <button class="tab" onclick="showTab('import',this)">⚙️ Daten & Import</button>
+    <button class="tab on" onclick="showTab('uebersicht',this)">Übersicht</button>
+    <button class="tab" onclick="showTab('eingabe',this)">Neuaufnahme</button>
+    <button class="tab" onclick="showTab('bezirke',this)">Bezirkslisten</button>
+    <button class="tab" onclick="showTab('import',this)">Daten/Import</button>
   </div>
 
-  <div class="sec on" id="sec-uebersicht">
-    <div class="card card-bd">
-        <div class="toolbar">
-            <input type="text" id="q" class="srch" placeholder="🔍 Suche nach Name..." oninput="renderTable()">
-            <select id="fa" class="btn" style="background:#fff; border:1px solid #ccc;" onchange="renderTable()">
-                <option value="">Alle Anreden</option>
-                <option value="Familie">Familie</option>
-                <option value="Frau">Frau</option>
-                <option value="Schützenbruder">Schützenbruder</option>
-            </select>
-        </div>
+  <div id="sec-uebersicht" class="sec on">
+    <div class="toolbar">
+        <input type="text" id="q" class="srch" placeholder="Suche..." oninput="renderTable()">
+        <select id="filterTyp" class="srch" style="flex:0" onchange="renderTable()">
+            <option value="">Alle Typen</option>
+            <option value="Schützenbruder">Schützenbruder</option>
+            <option value="Frau">Frau</option>
+            <option value="Familie">Familie</option>
+        </select>
+    </div>
+    <div class="card">
         <div class="tbl-wrap">
-            <table>
-                <thead>
-                    <tr><th>Bz.</th><th>Anrede</th><th>Name</th><th>Vorname</th><th>Straße</th></tr>
-                </thead>
+            <table id="m-table">
+                <thead><tr><th>Bz</th><th>Name</th><th>Vorname</th><th>Straße</th><th>Typ</th></tr></thead>
                 <tbody id="tbody"></tbody>
             </table>
         </div>
     </div>
   </div>
 
-  <div class="sec" id="sec-bezirke">
-    <div class="card card-bd no-print">
-        <div style="display:flex; justify-content:space-between; align-items:center">
-            <h3>Bezirkslisten Druckvorschau</h3>
-            <button class="btn btn-pdf" onclick="window.print()">🖨️ Liste Drucken / PDF</button>
-        </div>
+  <div id="sec-bezirke" class="sec">
+    <div class="card no-print" style="padding:1rem; display:flex; justify-content:space-between">
+        <p>Listen für die Bezirkskassierer drucken.</p>
+        <button onclick="window.print()" style="padding:10px; background:var(--orange); color:#fff; border:none; border-radius:8px; cursor:pointer">🖨️ Liste Drucken</button>
     </div>
     <div id="print-area"></div>
   </div>
 
-  <div class="sec" id="sec-import">
-    <div class="card card-bd">
-        <input type="file" id="csvFile" accept=".csv">
-        <button class="btn btn-navy" onclick="handleImport()">📥 Importieren</button>
-    </div>
   </div>
-</div>
 
 <nav class="bottom-nav no-print">
-  <div style="display:flex; justify-content:space-around; color:#fff">
-    <span onclick="location.reload()">🏠 Home</span>
-    <span onclick="window.print()">🖨️ Druck</span>
-  </div>
+    <button class="bnav-btn on" onclick="showTab('uebersicht')">📋<br>Liste</button>
+    <button class="bnav-btn" onclick="showTab('bezirke')">🖨️<br>Druck</button>
+    <button class="bnav-btn" onclick="showTab('import')">💾<br>Daten</button>
 </nav>
 
 <script>
-let mitglieder = JSON.parse(localStorage.getItem('sv_data') || '[]');
+// --- ORIGINAL LOGIK ---
+let mitglieder = JSON.parse(localStorage.getItem('sv_members') || '[]');
 
 function showTab(id, btn) {
     document.querySelectorAll('.sec').forEach(s => s.classList.remove('on'));
     document.getElementById('sec-' + id).classList.add('on');
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+    document.querySelectorAll('.tab, .bnav-btn').forEach(t => t.classList.remove('on'));
     if(btn) btn.classList.add('on');
     if(id === 'bezirke') preparePrint();
 }
@@ -176,56 +156,44 @@ function showTab(id, btn) {
 function renderTable() {
     const tbody = document.getElementById('tbody');
     const q = document.getElementById('q').value.toLowerCase();
-    const fa = document.getElementById('fa').value;
+    const fTyp = document.getElementById('filterTyp').value;
+    
     tbody.innerHTML = '';
-    const filtered = mitglieder.filter(m => 
-        (m.nachname.toLowerCase().includes(q) || m.vorname.toLowerCase().includes(q)) &&
-        (fa === "" || m.anrede === fa)
-    );
-    filtered.forEach(m => {
+    const gefiltert = mitglieder.filter(m => {
+        const matchQ = (m.name + m.vorname + m.strasse).toLowerCase().includes(q);
+        const matchT = fTyp === "" || m.typ === fTyp; // Fix: Korrekte Filter-Logik
+        return matchQ && matchT;
+    });
+
+    gefiltert.forEach(m => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${m.bezirk}</td><td>${m.anrede}</td><td>${m.nachname}</td><td>${m.vorname}</td><td>${m.strasse}</td>`;
+        tr.innerHTML = `<td>${m.bz}</td><td>${m.name}</td><td>${m.vorname}</td><td>${m.strasse}</td><td>${m.typ}</td>`;
         tbody.appendChild(tr);
     });
-    document.getElementById('hdrbadge').innerText = filtered.length + ' Personen';
+    document.getElementById('mbr-count').innerText = gefiltert.length + ' Personen';
 }
 
 function preparePrint() {
     const area = document.getElementById('print-area');
     area.innerHTML = '';
-    const bezirke = [...new Set(mitglieder.map(m => m.bezirk))].sort();
-    bezirke.forEach(bz => {
-        if(!bz) return;
+    [1,2,3,4].forEach(bzNum => {
         const div = document.createElement('div');
         div.className = 'print-bezirk';
-        let html = `<h2>Bezirk ${bz}</h2><table class="print-tbl"><thead><tr>
-            <th class="td-nr">Nr</th><th class="td-name">Name, Vorname</th><th class="td-verm">Vermerke</th>
-            <th class="td-beit">Beitrag</th><th class="td-suppe">Suppe</th></tr></thead><tbody>`;
-        mitglieder.filter(m => m.bezirk == bz).sort((a,b) => a.nachname.localeCompare(b.nachname)).forEach((m, i) => {
-            html += `<tr><td class="td-nr">${i+1}</td><td class="td-name">${m.nachname}, ${m.vorname}</td>
-            <td class="td-verm">${m.email || ''}</td><td class="td-beit"></td><td class="td-suppe"></td></tr>`;
+        let html = `<h2>Bezirk ${bzNum}</h2><table class="print-tbl"><thead>
+            <tr><th class="td-nr">Nr</th><th class="td-name">Name, Vorname</th><th class="td-verm">Vermerke / E-Mail</th><th class="td-beit">Beitrag</th><th class="td-suppe">Suppe</th></tr>
+            </thead><tbody>`;
+        
+        mitglieder.filter(m => m.bz == bzNum).forEach((m, idx) => {
+            html += `<tr><td>${idx+1}</td><td>${m.name}, ${m.vorname}</td><td>${m.email || ''}</td><td></td><td></td></tr>`;
         });
+        
         html += `</tbody></table>`;
         div.innerHTML = html;
         area.appendChild(div);
     });
 }
 
-function handleImport() {
-    const file = document.getElementById('csvFile').files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-        const lines = e.target.result.split('\n');
-        mitglieder = lines.slice(1).map(l => {
-            const c = l.split(';');
-            return { bezirk:c[0], anrede:c[1], nachname:c[2], vorname:c[3], strasse:c[4], email:c[6] };
-        }).filter(m => m.nachname);
-        localStorage.setItem('sv_data', JSON.stringify(mitglieder));
-        renderTable();
-    };
-    reader.readAsText(file);
-}
+// Initialer Aufruf
 renderTable();
 </script>
 </body>
