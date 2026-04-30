@@ -2,16 +2,15 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SV Lau-Brechte">
 <meta name="theme-color" content="#1F4E79">
-<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231F4E79'/><text y='.9em' font-size='70' x='50%' text-anchor='middle'>⚔</text></svg>">
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAABzklEQVR42u3TAQ0AIBADsTnBEX5QDy5gIV1yBp6SlG/MtdVVDGigDWiggRbQQAtooIE2oIEGGiCggRbQQAtooIE2oIEGWkADLaCBFtBAA21AAw20gAZaQAMtoIEG2oAGGmgBDbSABlpAAw20AQ000AIaaAENtIAGGmgDGmigBTTQAhpoAQ000AY00EALaKAFNNBAAyPd+GyOIKAloCWgJaAFtAS0BLQEtAS0gJaAloCWgJaAFtAS0BLQEtAS0AJaAloCWgJaAlpAS0BLQEtAS0ALaAloCWgJaAloAS0BLQEtAS2gHUJAS0BLQEtAC2gJaAloCWgJaAEtAS0BLQEtAS2gJaAloCWgJaAFtAS0BLQEtAS0gJaAloCWgJaAFtAS0BLQEtAS0AJaAloCWgJaQEtAS0BLQEtAC2gJaAloCWgJaAEtAS0BLQEtAS2gJaAloCWgJaAFtAS09AZ0+zwSNF8NIKCBFtBAC2iggTaggQZaQAMtoIEW0EADbUADDbSABlpAAy2ggQbagAYaaAENtIAGWkADDbQBDTTQAhpoAQ20gAYaaAMaaKAFNNACGmgBDTTQBjTQQAtooAU00EAb0EAb0EADLaCBFtBAA124A++6olt/NNynAAAAAElFTkSuQmCC">
 
 <title>Mitgliederverwaltung - SV Lau-Brechte</title>
 <style>
-/* ... (Dein gesamtes CSS bleibt unverändert bis zum media print) ... */
 :root{
   --navy:#1F4E79;--navym:#2E75B6;--navyp:#EBF3FA;--navylt:#9DC3E6;
   --orange:#C55A11;--orangebg:#FCE4D6;
@@ -21,34 +20,284 @@
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',Calibri,sans-serif;background:var(--grey50);color:var(--grey700);min-height:100vh}
-/* [Hier folgen deine weiteren CSS Regeln aus dem Original] */
 .hdr{background:var(--navy);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:58px;box-shadow:var(--shadow);position:sticky;top:0;z-index:100}
-/* ... */
-
+.hdr h1{color:#fff;font-size:1.1rem;font-weight:700}
+.hdr .sub{color:var(--navylt);font-size:.78rem;margin-top:2px}
+.hdr-badge{background:var(--navym);color:#fff;border-radius:20px;padding:3px 14px;font-size:.78rem;font-weight:700}
+.wrap{max-width:1300px;margin:0 auto;padding:1.5rem 1.5rem 3rem}
+.tabs{display:flex;gap:2px;margin-bottom:1.5rem;background:var(--grey100);border-radius:var(--r);padding:4px;width:fit-content}
+.tab{padding:.5rem 1.3rem;border:none;background:transparent;border-radius:6px;font-size:.88rem;font-weight:600;color:var(--grey700);cursor:pointer;transition:var(--ease)}
+.tab:hover{background:#fff;color:var(--navy)}.tab.on{background:var(--navy);color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.card{background:#fff;border-radius:var(--r);box-shadow:0 1px 3px rgba(0,0,0,.08);border:1px solid var(--grey100)}
+.card-hd{background:var(--navy);color:#fff;padding:.7rem 1.2rem;border-radius:var(--r) var(--r) 0 0;display:flex;align-items:center;justify-content:space-between}
+.card-hd h2{font-size:.95rem;font-weight:700}
+.card-bd{padding:1.2rem}
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.58rem 1.2rem;border:none;border-radius:6px;font-size:.9rem;font-weight:700;cursor:pointer;transition:var(--ease);font-family:inherit}
+.btn:hover{filter:brightness(1.1)}.btn:active{transform:scale(.97)}
+.btn-navy{background:var(--navy);color:#fff}
+.btn-pdf{background:var(--orange);color:#fff;font-size:1rem;padding:.75rem 1.8rem}
+.btn-save{background:var(--green);color:#fff}
+.btn-clear{background:var(--grey100);color:var(--grey700);border:1px solid var(--grey300)}
+.btn-import{background:var(--navym);color:#fff}
+.btn-danger{background:#c0392b;color:#fff}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:.85rem}
+.fg{display:flex;flex-direction:column;gap:.28rem}
+.fg label{font-size:.75rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.04em}
+.fg input,.fg select{padding:.48rem .72rem;border:1.5px solid var(--grey300);border-radius:6px;font-size:.9rem;color:var(--grey700);background:#fff;transition:var(--ease);font-family:inherit}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--navym);box-shadow:0 0 0 3px rgba(46,117,182,.15)}
+.tbl-wrap{overflow-x:auto;border-radius:0 0 var(--r) var(--r)}
+table{width:100%;border-collapse:collapse;font-size:.855rem}
+thead th{background:var(--navy);color:#fff;padding:.58rem .85rem;text-align:left;font-size:.76rem;font-weight:700;letter-spacing:.04em;white-space:nowrap}
+tbody tr{transition:background var(--ease)}
+tbody tr:nth-child(even){background:var(--navyp)}
+tbody tr:hover{background:#d4e8f5}
+tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-align:middle}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:.72rem;font-weight:700}
+.b1{background:#dce9f6;color:var(--navy)}.b2{background:#fce9d6;color:var(--orange)}
+.b3{background:var(--greenbg);color:var(--green)}.b4{background:#f3e6f7;color:#6b2e8a}
+.be{background:var(--orangebg);color:var(--orange);font-size:.68rem}
+.bgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.25rem;margin-bottom:1.5rem}
+@media(max-width:700px){.bgrid{grid-template-columns:1fr}}
+.bcnt{background:rgba(255,255,255,.22);border-radius:20px;padding:2px 10px;font-size:.78rem;font-weight:700}
+.blist{list-style:none;max-height:260px;overflow-y:auto}
+.blist li{padding:.42rem .85rem;font-size:.855rem;border-bottom:1px solid var(--grey100);display:flex;align-items:center;gap:.45rem}
+.blist li:last-child{border-bottom:none}.blist li:nth-child(even){background:var(--navyp)}
+.lnr{color:var(--grey300);font-size:.73rem;min-width:22px;text-align:right}
+.em{color:var(--orange);font-size:.72rem;font-weight:700}
+.pdf-bar{background:#fff;border:1.5px solid var(--orange);border-radius:var(--r);padding:1.2rem 1.4rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem}
+.pdf-bar h3{color:var(--orange);font-size:1rem;margin-bottom:.25rem}
+.pdf-bar p{font-size:.84rem;line-height:1.5}
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:.75rem;margin-bottom:1.5rem}
+@media(max-width:900px){.stats{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:500px){.stats{grid-template-columns:repeat(2,1fr)}}
+.sc{background:#fff;border-radius:var(--r);padding:.85rem 1rem;box-shadow:0 1px 3px rgba(0,0,0,.08);text-align:center;border:1px solid var(--grey100)}
+.sc .n{font-size:1.85rem;font-weight:800;color:var(--navy);line-height:1}
+.sc .l{font-size:.72rem;font-weight:700;color:var(--grey700);margin-top:4px;text-transform:uppercase;letter-spacing:.04em}
+.sc-blue{border-top:3px solid var(--navym)}.sc-blue .n{color:var(--navym)}
+.sc-pink{border-top:3px solid #b5468b}.sc-pink .n{color:#b5468b}
+.sc-green{border-top:3px solid var(--green)}.sc-green .n{color:var(--green)}
+.toolbar{display:flex;gap:.7rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
+.srch{flex:1;min-width:200px;max-width:340px;padding:.48rem .85rem;border:1.5px solid var(--grey300);border-radius:6px;font-size:.9rem;font-family:inherit}
+.srch:focus{outline:none;border-color:var(--navym);box-shadow:0 0 0 3px rgba(46,117,182,.15)}
+.fsel{padding:.48rem .85rem;border:1.5px solid var(--grey300);border-radius:6px;font-size:.9rem;font-family:inherit;background:#fff}
+.dropzone{border:2px dashed var(--grey300);border-radius:var(--r);padding:2rem;text-align:center;cursor:pointer;transition:var(--ease)}
+.dropzone:hover,.dropzone.over{border-color:var(--navym);background:var(--navyp)}
+.dropzone .ico{font-size:2.4rem;margin-bottom:.5rem}
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--green);color:#fff;padding:.72rem 1.2rem;border-radius:var(--r);font-size:.9rem;font-weight:600;box-shadow:var(--shadow);z-index:999;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.err{background:#c0392b}
+.sec{display:none}.sec.on{display:block}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:var(--r);box-shadow:0 8px 40px rgba(0,0,0,.22);width:min(520px,95vw);max-height:90vh;overflow-y:auto}
+.modal-hd{background:var(--navy);color:#fff;padding:.85rem 1.2rem;border-radius:var(--r) var(--r) 0 0;display:flex;align-items:center;justify-content:space-between}
+.modal-hd h3{font-size:1rem;font-weight:700}
+.modal-close{background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer;line-height:1;padding:0 4px}
+.modal-close:hover{opacity:.7}
+.modal-bd{padding:1.2rem}
+.modal-ft{padding:.9rem 1.2rem;border-top:1px solid var(--grey100);display:flex;gap:.7rem;justify-content:flex-end}
+.btn-edit{background:none;border:1px solid var(--navylt);border-radius:5px;padding:2px 8px;font-size:.75rem;color:var(--navy);cursor:pointer;transition:var(--ease)}
+.btn-edit:hover{background:var(--navy);color:#fff}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--grey100)}
+::-webkit-scrollbar-thumb{background:var(--navylt);border-radius:3px}
 @media print{
   body{background:#fff;font-family:Arial,sans-serif;font-size:10pt}
-  /* FIX: bottom-nav wird nun ausgeblendet */
   .hdr,.tabs,.toolbar,.stats,.pdf-bar,#sec-eingabe,#sec-import,
-  #sec-uebersicht,.btn,.btn-edit,.tab,.toast,.modal-bg, .bottom-nav {display:none!important}
-  
+  #sec-uebersicht,.btn,.btn-edit,.tab,.toast,.modal-bg{display:none!important}
   .wrap{padding:0;max-width:100%}
   #sec-bezirke{display:block!important}
   .card{box-shadow:none;border:none}
   .card-hd{background:var(--navy)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  
-  /* FIX: Sichtbare Tabellenlinien beim Drucken */
-  .print-tbl{width:100%;border-collapse:collapse;font-size:10pt;table-layout:auto; border: 1pt solid #000 !important;}
-  .print-tbl th{background:#2E75B6!important;color:#fff!important;border: 1pt solid #000 !important; padding:4pt 5pt;}
-  .print-tbl td{padding:4pt 5pt; border: 1pt solid #000 !important; font-size:10pt; color:#000 !important;}
-  
+  .blist{max-height:none!important;overflow:visible!important}
+  .bgrid{display:block!important}
   .print-bezirk{page-break-before:always}
   .print-bezirk:first-child{page-break-before:avoid}
+  .print-page{page-break-before:always}
+  .print-page:first-child{page-break-before:avoid}
+  .page-hd{font-size:13pt;font-weight:bold;color:#1F4E79;margin:0 0 4pt 0;border-bottom:2pt solid #1F4E79;padding-bottom:3pt}
+  .page-sub{font-size:8pt;color:#666;margin-bottom:6pt}
+  .print-tbl{width:100%;border-collapse:collapse;font-size:10pt;table-layout:auto}
+  .print-tbl thead{display:table-header-group}
+  .print-tbl th{background:#2E75B6!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:4pt 5pt;text-align:left;font-size:9pt;font-family:Arial,sans-serif;border-right:.5pt solid rgba(255,255,255,.4);white-space:nowrap}
+  .print-tbl th:last-child{border-right:none}
+  .print-tbl td{padding:4pt 5pt;border-bottom:.4pt solid #ccc;border-right:.5pt solid #bbb;font-size:10pt}
+  .print-tbl td:last-child{border-right:none}
+  .print-tbl td.td-nr{text-align:center;color:#888;width:22pt;white-space:nowrap;font-size:9pt}
+  .print-tbl td.td-name{white-space:nowrap;font-family:Calibri,Arial,sans-serif;font-size:12pt}
+  .print-tbl td.td-verm{min-width:100pt}
+  .print-tbl td.td-beit{width:30pt;white-space:nowrap}
+  .print-tbl td.td-suppe{width:36pt;white-space:nowrap}
+  .print-tbl tr:nth-child(even) td{background:#EBF3FA!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .print-tbl .nm{font-weight:bold;color:#1F4E79;font-family:Calibri,Arial,sans-serif;font-size:12pt}
 }
 
-/* [Restliches CSS inkl. PWA/Mobile Styling bleibt wie im Original] */
-.bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--navy); z-index: 200; padding: 0 0 var(--safe-bottom) 0; box-shadow: 0 -2px 12px rgba(0,0,0,.2); }
-@media (max-width: 700px) { .bottom-nav { display: block; } .tabs { display: none; } }
-/* ... */
+.td-foto{width:52px;text-align:center;vertical-align:middle;padding:2px 4px}
+.member-foto{width:46px;height:46px;object-fit:cover;border-radius:50%;border:2px solid var(--navylt);display:block;margin:0 auto}
+.foto-placeholder{width:46px;height:46px;border-radius:50%;border:2px dashed var(--grey300);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--grey300);margin:0 auto;cursor:pointer;background:var(--grey50)}
+.foto-placeholder:hover{border-color:var(--navym);color:var(--navym);background:var(--navyp)}
+.foto-upload-wrap{display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:.5rem 0}
+.foto-preview{width:90px;height:90px;object-fit:cover;border-radius:8px;border:2px solid var(--navylt)}
+.foto-preview-placeholder{width:90px;height:90px;border-radius:8px;border:2px dashed var(--grey300);display:flex;align-items:center;justify-content:center;font-size:2rem;color:var(--grey300);cursor:pointer}
+.foto-preview-placeholder:hover{border-color:var(--navym);color:var(--navym)}
+.foto-actions{display:flex;gap:.4rem;flex-wrap:wrap;justify-content:center}
+.btn-foto-sm{padding:.25rem .6rem;font-size:.75rem;border:1px solid var(--grey300);border-radius:4px;cursor:pointer;background:var(--grey50);font-family:inherit}
+.btn-foto-sm:hover{background:var(--grey100)}
+.btn-foto-del{border-color:#e74c3c;color:#e74c3c}
+.btn-foto-del:hover{background:#fdf0f0}
+
+/* ── PWA / MOBILE ───────────────────────────────────────────────── */
+:root { --safe-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* Bottom navigation bar for mobile */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--navy);
+  z-index: 200;
+  padding: 0 0 var(--safe-bottom) 0;
+  box-shadow: 0 -2px 12px rgba(0,0,0,.2);
+}
+.bottom-nav-inner {
+  display: flex;
+  justify-content: space-around;
+  align-items: stretch;
+}
+.bnav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 4px;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,.6);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: .62rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  transition: color .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.bnav-btn .ico { font-size: 1.4rem; line-height: 1; }
+.bnav-btn.on { color: #fff; }
+.bnav-btn.on .ico { transform: scale(1.1); }
+
+@media (max-width: 700px) {
+  /* Show bottom nav, hide top tabs */
+  .bottom-nav { display: block; }
+  .tabs { display: none; }
+
+  /* Adjust header */
+  .hdr { height: 52px; padding: 0 1rem; }
+  .hdr h1 { font-size: .9rem; }
+  .hdr .sub { display: none; }
+  .hdr-badge { font-size: .7rem; padding: 2px 10px; }
+
+  /* Main content padding for bottom nav */
+  .wrap {
+    padding: .75rem .75rem calc(70px + var(--safe-bottom));
+    max-width: 100%;
+  }
+
+  /* Stats: 2 columns on mobile */
+  .stats { grid-template-columns: repeat(2, 1fr); gap: .5rem; margin-bottom: 1rem; }
+  .sc { padding: .65rem .75rem; }
+  .sc .n { font-size: 1.5rem; }
+  .sc .l { font-size: .65rem; }
+
+  /* Toolbar stacked */
+  .toolbar { flex-direction: column; gap: .5rem; }
+  .srch { max-width: 100%; }
+
+  /* Table: hide less important columns */
+  .tbl-wrap { border-radius: var(--r); }
+  table { font-size: .8rem; }
+  thead th { padding: .5rem .5rem; font-size: .7rem; }
+  tbody td { padding: .45rem .5rem; }
+
+  /* Hide less critical columns on mobile */
+  .col-hide-mob { display: none; }
+
+  /* Forms */
+  .fgrid { grid-template-columns: 1fr 1fr; gap: .65rem; }
+  .card-bd { padding: .85rem; }
+
+  /* PDF bar stack */
+  .pdf-bar { flex-direction: column; }
+
+  /* Bezirk grid: 1 column */
+  .bgrid { grid-template-columns: 1fr; }
+
+  /* Modal full screen on mobile */
+  .modal { width: 100%; max-height: 100%; height: 100%; border-radius: 0; }
+  .modal-bg.open { align-items: flex-end; }
+
+  /* Buttons full width in forms */
+  .form-btns { flex-direction: column; }
+  .form-btns .btn { justify-content: center; }
+
+  /* Touch-friendly edit button */
+  .btn-edit { padding: 5px 12px; font-size: .8rem; }
+
+  /* OneDrive section */
+  .onedrive-banner {
+    background: linear-gradient(135deg, #0078d4, #005a9e);
+    color: #fff;
+    border-radius: var(--r);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+  }
+}
+
+/* OneDrive styling (all screens) */
+.onedrive-banner {
+  background: linear-gradient(135deg, #0078d4, #005a9e);
+  color: #fff;
+  border-radius: var(--r);
+  padding: 1rem 1.2rem;
+  margin-bottom: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  flex-wrap: wrap;
+}
+.onedrive-banner h3 { font-size: .95rem; margin-bottom: .2rem; }
+.onedrive-banner p  { font-size: .8rem; opacity: .9; line-height: 1.4; }
+.btn-onedrive {
+  background: rgba(255,255,255,.2);
+  color: #fff;
+  border: 1.5px solid rgba(255,255,255,.5);
+  border-radius: 6px;
+  padding: .5rem 1rem;
+  font-size: .85rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: background .15s;
+}
+.btn-onedrive:hover { background: rgba(255,255,255,.3); }
+.install-banner {
+  background: var(--green);
+  color: #fff;
+  border-radius: var(--r);
+  padding: .75rem 1rem;
+  margin-bottom: 1rem;
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  font-size: .85rem;
+}
+.install-banner.show { display: flex; }
+
 </style>
 </head>
 <body>
@@ -57,62 +306,876 @@ body{font-family:'Segoe UI',Calibri,sans-serif;background:var(--grey50);color:va
   <div class="sub">Adressliste &amp; Bezirkslisten</div></div>
   <div class="hdr-badge" id="hdrbadge">&#8230;</div>
 </header>
+<div class="wrap">
+  <div class="tabs">
+    <button class="tab on" onclick="showTab('uebersicht',this)">&#128203; &#220;bersicht</button>
+    <button class="tab"    onclick="showTab('eingabe',this)">&#10133; Neues Mitglied</button>
+    <button class="tab"    onclick="showTab('bezirke',this)">&#128193; Bezirke</button>
+    <button class="tab"    onclick="showTab('import',this)">&#128229; Import / Speichern</button>
+    <button class="tab" onclick="showTab('export',this)">&#128228; Serienbrief-Export</button>
+  </div>
+
+  <!-- UEBERSICHT -->
+  <div class="sec on" id="sec-uebersicht">
+    <div class="stats">
+      <div class="sc"><div class="n" id="s-total">0</div><div class="l">Adressen gesamt</div></div>
+      <div class="sc sc-blue"><div class="n" id="s-mbr">0</div><div class="l">Mitglieder (ohne Frauen)</div></div>
+      <div class="sc sc-green"><div class="n" id="s-zahlend">0</div><div class="l">Zahlende Mitglieder</div></div>
+      <div class="sc sc-pink"><div class="n" id="s-frauen">0</div><div class="l">Frauen</div></div>
+      <div class="sc"><div class="n" id="s-ehren">0</div><div class="l">Ehrenmitglieder</div></div>
+      <div class="sc"><div class="n" id="s-orte">0</div><div class="l">Orte</div></div>
+    </div>
+    <div class="toolbar">
+      <input class="srch" id="q" type="text" placeholder="&#128269; Suchen: Name, Ort, Stra&#223;e..." oninput="renderTable()">
+      <select class="fsel" id="fb" onchange="renderTable()">
+        <option value="">Alle Bezirke</option>
+        <option value="1">Bezirk 1</option><option value="2">Bezirk 2</option>
+        <option value="3">Bezirk 3</option><option value="4">Bezirk 4</option>
+      </select>
+      <select class="fsel" id="fa" onchange="renderTable()">
+        <option value="">Alle Anreden</option>
+        <option>Familie</option><option>Frau</option><option>Sch&#252;tzenbruder</option>
+      </select>
+      <span id="rcnt" style="font-size:.8rem;margin-left:auto"></span>
+    </div>
+    <div class="card">
+      <div class="tbl-wrap">
+        <table><thead><tr>
+          <th style="width:52px">Foto</th><th>Nr.</th><th>Bz.</th><th class="col-hide-mob">Anrede</th><th>Nachname</th><th>Vorname</th>
+          <th>Stra&#223;e</th><th>PLZ</th><th>Ort</th><th>Tel./Handy</th><th>E-Mail</th><th class="col-hide-mob">E</th><th class="col-hide-mob">H</th><th></th>
+        </tr></thead><tbody id="tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- EINGABE -->
+  <div class="sec" id="sec-eingabe">
+    <div class="card">
+      <div class="card-hd"><h2>&#10133; Neues Mitglied eintragen</h2>
+        <span style="font-size:.8rem;opacity:.8">Pflichtfelder: Bezirk + Nachname</span></div>
+      <div class="card-bd">
+        <div class="fgrid">
+          <div class="fg"><label>Bezirk *</label>
+            <select id="f-bz"><option value="">- bitte w&#228;hlen -</option>
+              <option value="1">Bezirk 1</option><option value="2">Bezirk 2</option>
+              <option value="3">Bezirk 3</option><option value="4">Bezirk 4</option>
+            </select></div>
+          <div class="fg"><label>Anrede 1</label>
+            <select id="f-a1"><option value="">-</option>
+              <option>Familie</option><option>Frau</option><option>Sch&#252;tzenbruder</option>
+            </select></div>
+          <div class="fg"><label>Anrede 2</label>
+            <select id="f-a2"><option value="">-</option>
+              <option>Familie</option><option>Frau</option><option>Herrn</option><option>Hern</option>
+            </select></div>
+          <div class="fg"><label>Nachname *</label><input type="text" id="f-na" placeholder="Mustermann"></div>
+          <div class="fg"><label>Vorname</label><input type="text" id="f-vo" placeholder="Max"></div>
+          <div class="fg"><label>Stra&#223;e &amp; Hausnummer</label><input type="text" id="f-st" placeholder="Musterstr. 12"></div>
+          <div class="fg"><label>PLZ</label><input type="text" id="f-plz" placeholder="48607"></div>
+          <div class="fg"><label>Ort</label><input type="text" id="f-ort" placeholder="Lau-Brechte"></div>
+          <div class="fg"><label>Ehrenmitglied</label>
+            <select id="f-eh"><option value="">Nein</option><option value="x">Ja (x)</option></select></div>
+          <div class="fg"><label>Helga-Liste</label>
+            <select id="f-hg"><option value="">Nein</option><option value="Helga">Ja</option></select></div>
+          <div class="fg"><label>Handy / Tel.</label><input type="text" id="f-tel" placeholder="+49 123 456789"></div>
+          <div class="fg"><label>E-Mail</label><input type="email" id="f-email" placeholder="name@example.com"></div>
+        </div>
+        <div style="display:flex;gap:.75rem;margin-top:1.4rem">
+          <button class="btn btn-save" onclick="saveMember()">&#10004; SPEICHERN</button>
+          <button class="btn btn-clear" onclick="clearForm()">&#10005; Felder leeren</button>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:1.2rem">
+      <div class="card-hd"><h2>&#128336; Zuletzt hinzugef&#252;gt</h2></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Nr.</th><th>Bz.</th><th>Name</th><th>Stra&#223;e</th><th>PLZ</th><th>Ort</th></tr></thead>
+        <tbody id="tbody-recent"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- BEZIRKE -->
+  <div class="sec" id="sec-bezirke">
+    <div class="pdf-bar">
+      <div>
+        <h3>&#128438; Bezirklisten drucken / als PDF speichern</h3>
+        <p>&#214;ffnet die Druckansicht. Im Browser-Druckdialog &bdquo;Als PDF speichern&ldquo; w&#228;hlen.<br>
+        Jeder Bezirk beginnt auf einer neuen Seite mit Kopfzeile und Spalten&#252;berschriften.</p>
+        <div style="margin-top:.75rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+          <label style="font-size:.88rem;font-weight:600;color:var(--grey700)">Spalte &bdquo;Suppe&ldquo; einblenden in:</label>
+          <select id="suppe-bezirk" style="padding:.4rem .75rem;border:1.5px solid var(--grey300);border-radius:6px;font-size:.88rem;font-family:inherit;background:#fff">
+            <option value="0">&#8211; kein Bezirk (Suppe weglassen)</option>
+            <option value="1">Bezirk 1</option>
+            <option value="2">Bezirk 2</option>
+            <option value="3">Bezirk 3</option>
+            <option value="4">Bezirk 4</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-pdf" onclick="exportPDF()">&#128438; Drucken / Als PDF speichern</button>
+    </div>
+    <div class="bgrid" id="bgrid"></div>
+  </div>
+
+  <!-- IMPORT / SPEICHERN -->
+  <div class="sec" id="sec-import">
+    <div class="card">
+      <div class="card-hd"><h2>&#128229; Import &amp; Speichern</h2></div>
+      <div class="card-bd">
+        
+        <!-- Install PWA Banner -->
+        <div class="install-banner" id="installBanner">
+          <span>&#128247; App auf Homescreen installieren</span>
+          <button class="btn-onedrive" onclick="installPWA()">Installieren</button>
+        </div>
+
+        <!-- OneDrive Section -->
+        <div class="onedrive-banner">
+          <div style="font-size:1.8rem">&#9729;</div>
+          <div style="flex:1">
+            <h3>OneDrive-Synchronisation</h3>
+            <p>Daten per CSV mit OneDrive synchronisieren &ndash; kein Login n&ouml;tig.</p>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:1rem">
+          <div class="card-hd" style="background:#0078d4"><h2>&#9729; OneDrive Workflow</h2></div>
+          <div class="card-bd" style="font-size:.875rem;line-height:1.7">
+            <p style="margin-bottom:.75rem"><strong>Daten sichern &rarr; OneDrive:</strong></p>
+            <ol style="margin-left:1.2rem;margin-bottom:1rem">
+              <li>Unten auf <strong>„Als CSV exportieren"</strong> klicken</li>
+              <li>CSV-Datei in deinen OneDrive-Ordner speichern/verschieben</li>
+              <li>Auf einem anderen Ger&auml;t die HTML-Datei &ouml;ffnen</li>
+              <li>Die CSV-Datei aus OneDrive &uuml;ber <strong>„CSV importieren"</strong> laden</li>
+            </ol>
+            <p style="margin-bottom:.75rem"><strong>Empfehlung: Fester Ordner in OneDrive</strong></p>
+            <p style="color:var(--grey700);font-size:.82rem">Lege einen Ordner an, z.B. <em>OneDrive/SV-Lau-Brechte/</em>, und speichere dort immer die aktuelle CSV. So haben alle Ger&auml;te Zugriff auf die neueste Version.</p>
+          </div>
+        </div>
+
+        <div style="background:var(--navyp);border-radius:var(--r);padding:.85rem 1rem;margin-bottom:1rem;font-size:.85rem">
+          <strong>&#128190; Lokaler Speicher (Browser)</strong><br>
+          <span id="save-info" style="font-size:.82rem">Wird geladen...</span>
+        </div>
+        <p style="margin-bottom:1rem;font-size:.88rem;line-height:1.65">
+          CSV-Datei aus Excel importieren (Datei &rarr; Speichern unter &rarr; CSV).<br>
+          <span style="color:var(--orange);font-size:.82rem">&#9888; &#196;nderungen mit &bdquo;Daten speichern&ldquo; sichern &ndash; werden beim n&#228;chsten &#214;ffnen automatisch geladen.</span>
+        </p>
+        <div class="dropzone" id="dz"
+             ondragover="event.preventDefault();this.classList.add('over')"
+             ondragleave="this.classList.remove('over')"
+             ondrop="doDrop(event)"
+             onclick="document.getElementById('fi').click()">
+          <div class="ico">&#128193;</div>
+          <strong>Klicken oder CSV-Datei hier hineinziehen</strong>
+          <p style="margin-top:.3rem;font-size:.85rem;color:var(--grey700)">CSV-Datei (Semikolon-getrennt, UTF-8)</p>
+        </div>
+        <input type="file" id="fi" accept=".csv,.txt" style="display:none" onchange="doFile(event)">
+        <div id="imp-status" style="margin-top:.9rem;font-size:.87rem"></div>
+        <div style="margin-top:1.2rem;display:flex;gap:.75rem;flex-wrap:wrap">
+          <button class="btn btn-save"   onclick="speichern()">&#128190; Daten speichern (Browser)</button>
+          <button class="btn btn-import" onclick="exportCSV()">&#128228; Als CSV exportieren</button>
+          <button class="btn btn-clear"  onclick="zuruecksetzen()">&#8635; Zur&#252;cksetzen</button>
+        </div>
+        <p style="margin-top:.75rem;font-size:.8rem;color:var(--grey700)">
+          &#128190; <strong>Daten speichern</strong>: Speichert im Browser &ndash; beim n&#228;chsten &#214;ffnen dieser Datei automatisch wiederhergestellt.<br>
+          &#128228; <strong>CSV exportieren</strong>: Exportiert als .csv &ndash; direkt in Excel &#246;ffenbar.<br>
+          &#8635; <strong>Zur&#252;cksetzen</strong>: L&#246;scht gespeicherte &#196;nderungen, stellt Originaldaten wieder her.
+        </p>
+      </div>
+    </div>
+
+  <!-- SERIENBRIEF-EXPORT -->
+  <div class="sec" id="sec-export">
+    <div class="card">
+      <div class="card-hd"><h2>&#128228; Serienbrief-Export (VCF / CSV)</h2></div>
+      <div class="card-bd">
+
+        <!-- Filter options -->
+        <div style="margin-bottom:1.2rem">
+          <div style="font-size:.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.65rem">Filter &ndash; welche Adressen exportieren?</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.6rem">
+
+            <div class="fg">
+              <label>Bezirk</label>
+              <select id="ex-bz" onchange="exPreview()">
+                <option value="">Alle Bezirke</option>
+                <option value="1">Bezirk 1</option>
+                <option value="2">Bezirk 2</option>
+                <option value="3">Bezirk 3</option>
+                <option value="4">Bezirk 4</option>
+              </select>
+            </div>
+
+            <div class="fg">
+              <label>Anrede</label>
+              <select id="ex-anrede" onchange="exPreview()">
+                <option value="">Alle Anreden</option>
+                <option value="Familie">Familie</option>
+                <option value="Frau">Frau</option>
+                <option value="Sch&#252;tzenbruder">Sch&#252;tzenbruder</option>
+              </select>
+            </div>
+
+            <div class="fg">
+              <label>Ehrenmitglied</label>
+              <select id="ex-ehren"  onchange="exPreview()">
+                <option value="">Alle</option>
+                <option value="ja">Nur Ehrenmitglieder</option>
+                <option value="nein">Keine Ehrenmitglieder</option>
+              </select>
+            </div>
+
+            <div class="fg">
+              <label>Helga-Liste</label>
+              <select id="ex-helga"  onchange="exPreview()">
+                <option value="">Alle</option>
+                <option value="ja">Nur Helga-Liste</option>
+                <option value="nein">Nicht auf Helga-Liste</option>
+              </select>
+            </div>
+
+            <div class="fg">
+              <label>Nur mit E-Mail</label>
+              <select id="ex-email"  onchange="exPreview()">
+                <option value="">Alle</option>
+                <option value="ja">Nur mit E-Mail-Adresse</option>
+              </select>
+            </div>
+
+            <div class="fg">
+              <label>Nur mit Handy/Tel</label>
+              <select id="ex-tel"    onchange="exPreview()">
+                <option value="">Alle</option>
+                <option value="ja">Nur mit Telefonnummer</option>
+              </select>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Preview count -->
+        <div style="background:var(--navyp);border-radius:var(--r);padding:.7rem 1rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+          <span style="font-size:.9rem"><strong id="ex-count">0</strong> Adressen entsprechen den Filterkriterien</span>
+          <button class="btn btn-clear" style="padding:.3rem .8rem;font-size:.82rem" onclick="exPreview()">&#128269; Vorschau aktualisieren</button>
+        </div>
+
+        <!-- Export format -->
+        <div style="font-size:.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.65rem">Format &amp; Export</div>
+        <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem">
+          <button class="btn btn-save" onclick="exExportCSV()">&#128228; Als CSV exportieren<br><small style="font-weight:400;opacity:.85">f&#252;r Word Serienbrief, Excel</small></button>
+          <button class="btn btn-navy" onclick="exExportVCF()">&#128101; Als VCF exportieren<br><small style="font-weight:400;opacity:.85">f&#252;r Kontakte, Outlook, iPhone</small></button>
+        </div>
+        <p style="font-size:.8rem;color:var(--grey700);line-height:1.6">
+          <strong>CSV</strong>: Enthält alle Felder (Name, Adresse, Tel., E-Mail). Direkt als Datenquelle f&#252;r Word-Serienbriefe nutzbar.<br>
+          <strong>VCF</strong>: Standard-Visitenkartenformat &ndash; importierbar in Outlook, Apple Kontakte, Android, iPhone.<br>
+          Je nach Filter werden nur die gew&#228;hlten Adressen exportiert.
+        </p>
+
+        <!-- Preview table -->
+        <div style="margin-top:1.2rem">
+          <div style="font-size:.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.5rem">Vorschau (max. 10)</div>
+          <div class="tbl-wrap card">
+            <table><thead><tr>
+              <th>Nr.</th><th>Bz.</th><th>Name</th><th>Vorname</th><th>Stra&#223;e</th><th>PLZ</th><th>Ort</th><th>Tel.</th><th>E-Mail</th>
+            </tr></thead><tbody id="ex-preview-tbody"></tbody></table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  </div>
+
+<!-- BOTTOM NAVIGATION (mobile) -->
+<nav class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <button class="bnav-btn on" id="bn-uebersicht" onclick="showTab('uebersicht',this,'bn-uebersicht')">
+      <span class="ico">&#128203;</span><span>Übersicht</span>
+    </button>
+    <button class="bnav-btn" id="bn-eingabe" onclick="showTab('eingabe',this,'bn-eingabe')">
+      <span class="ico">&#10133;</span><span>Neu</span>
+    </button>
+    <button class="bnav-btn" id="bn-bezirke" onclick="showTab('bezirke',this,'bn-bezirke')">
+      <span class="ico">&#128193;</span><span>Bezirke</span>
+    </button>
+    <button class="bnav-btn" id="bn-export" onclick="showTab('export',this,'bn-export')">
+      <span class="ico">&#128228;</span><span>Export</span>
+    </button>
+    <button class="bnav-btn" id="bn-import" onclick="showTab('import',this,'bn-import')">
+      <span class="ico">&#128229;</span><span>Mehr</span>
+    </button>
+  </div>
+</nav>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- EDIT MODAL -->
+<div class="modal-bg" id="editModal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3>&#9998; Adresse bearbeiten</h3>
+      <button class="modal-close" onclick="closeModal()">&#10005;</button>
+    </div>
+    <div class="modal-bd">
+      <div class="fgrid">
+        <div class="fg"><label>Bezirk *</label>
+          <select id="e-bz">
+            <option value="1">Bezirk 1</option><option value="2">Bezirk 2</option>
+            <option value="3">Bezirk 3</option><option value="4">Bezirk 4</option>
+          </select></div>
+        <div class="fg"><label>Anrede 1</label>
+          <select id="e-a1"><option value="">-</option>
+            <option>Familie</option><option>Frau</option><option>Sch&#252;tzenbruder</option>
+          </select></div>
+        <div class="fg"><label>Anrede 2</label>
+          <select id="e-a2"><option value="">-</option>
+            <option>Familie</option><option>Frau</option><option>Herrn</option><option>Hern</option>
+          </select></div>
+        <div class="fg"><label>Nachname *</label><input type="text" id="e-na"></div>
+        <div class="fg"><label>Vorname</label><input type="text" id="e-vo"></div>
+        <div class="fg"><label>Stra&#223;e &amp; Hausnummer</label><input type="text" id="e-st"></div>
+        <div class="fg"><label>PLZ</label><input type="text" id="e-plz"></div>
+        <div class="fg"><label>Ort</label><input type="text" id="e-ort"></div>
+        <div class="fg"><label>Ehrenmitglied</label>
+          <select id="e-eh"><option value="">Nein</option><option value="x">Ja (x)</option></select></div>
+        <div class="fg"><label>Helga-Liste</label>
+          <select id="e-hg"><option value="">Nein</option><option value="Helga">Ja</option></select></div>
+        <div class="fg"><label>Handy / Tel.</label><input type="text" id="e-tel" placeholder="+49 123 456789"></div>
+        <div class="fg"><label>E-Mail</label><input type="email" id="e-email" placeholder="name@example.com"></div>
+      </div>
+    </div>
+    <div style="padding:.75rem 1.2rem;border-top:1px solid var(--grey100);background:var(--grey50)">
+      <div style="font-size:.75rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.6rem">Foto (Porträt)</div>
+      <div class="foto-upload-wrap">
+        <div id="foto-preview-wrap">
+          <div class="foto-preview-placeholder" id="foto-placeholder" onclick="document.getElementById('foto-file-input').click()" title="Foto hochladen">&#128247;</div>
+          <img class="foto-preview" id="foto-preview-img" src="" alt="" style="display:none">
+        </div>
+        <input type="file" id="foto-file-input" accept="image/*" style="display:none" onchange="handleFotoUpload(event)">
+        <div class="foto-actions">
+          <button class="btn-foto-sm" onclick="document.getElementById('foto-file-input').click()">&#128247; Foto wählen</button>
+          <button class="btn-foto-sm btn-foto-del" id="foto-del-btn" onclick="deleteFoto()" style="display:none">&#10005; Löschen</button>
+        </div>
+        <div style="font-size:.75rem;color:var(--grey700);text-align:center">Wird automatisch auf 80×80px verkleinert</div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-danger" onclick="deleteMember()">&#128465; L&#246;schen</button>
+      <button class="btn btn-clear"  onclick="closeModal()">Abbrechen</button>
+      <button class="btn btn-save"   onclick="saveEdit()">&#10004; Speichern</button>
+    </div>
+  </div>
+</div>
 
 <script>
-/* DEINE ORIGINAL-DATEN UND LOGIK */
-var adr = []; // Wird durch deine doImport/LocalStorage Logik gefüllt
+var BZ_DATA = {"3": [{"name": "Albers, Hubert", "ehren": "x"}, {"name": "Albers, Peter", "ehren": ""}, {"name": "Altholtmann, Heinz", "ehren": "x"}, {"name": "Altholtmann, Willi", "ehren": "x"}, {"name": "Altholtmann, Marc", "ehren": ""}, {"name": "Brüggemann, Bernhard", "ehren": "x"}, {"name": "Bücker, Hermann", "ehren": ""}, {"name": "Duesmann, Walter", "ehren": "x"}, {"name": "Franke, Jan", "ehren": ""}, {"name": "Greitenevert, Michael", "ehren": ""}, {"name": "Grotegerd, Andreas", "ehren": ""}, {"name": "Grotegerd, Josef", "ehren": ""}, {"name": "Grotegerd, Lennart", "ehren": ""}, {"name": "Grotegerd, Adrian", "ehren": ""}, {"name": "Grotegerd, Alexander", "ehren": ""}, {"name": "Grotegerd, Alexandre", "ehren": ""}, {"name": "Haarmann, Christian", "ehren": ""}, {"name": "Hannekotte, Karl-Heinz", "ehren": "x"}, {"name": "Hannekotte, Hermann", "ehren": ""}, {"name": "Hipp, Petros", "ehren": ""}, {"name": "Holtmann, Bernhard", "ehren": ""}, {"name": "Holtmannspötter, Marco", "ehren": ""}, {"name": "Holtmannspötter, Lennart", "ehren": ""}, {"name": "Janmieling, Bernd", "ehren": ""}, {"name": "Janmieling, Markus", "ehren": ""}, {"name": "Kuhls, Andre´", "ehren": ""}, {"name": "Kuhr, Gerhard", "ehren": "x"}, {"name": "Lohenrich, Heinz", "ehren": ""}, {"name": "Lohenrich, Michael", "ehren": ""}, {"name": "Mieling, Bernhard", "ehren": "x"}, {"name": "Nobbenhuis, Hermann", "ehren": "x"}, {"name": "Quindt, Florian", "ehren": ""}, {"name": "Regelmann, Bernd", "ehren": ""}, {"name": "Regelmann, Matthias", "ehren": ""}, {"name": "Rotermann, Josef", "ehren": "x"}, {"name": "Rotermann, Heinrich", "ehren": ""}, {"name": "Rotermann, Ludger", "ehren": ""}, {"name": "Rotermann, Michael", "ehren": ""}, {"name": "Scheipers, Bennet", "ehren": ""}, {"name": "Scheipers, Patrick", "ehren": ""}, {"name": "Tillmann, Hans", "ehren": "x"}, {"name": "Tillmann, Karl", "ehren": "x"}, {"name": "Tillmann, Werner", "ehren": "x"}, {"name": "Tillmann, Martin", "ehren": ""}, {"name": "Tillmann-Janmieling, Theo", "ehren": "x"}, {"name": "Welpelo, Stefan", "ehren": ""}, {"name": "Wilmes, Klaus", "ehren": ""}], "2": [{"name": "Althoff, Leo", "ehren": ""}, {"name": "Berning", "ehren": ""}, {"name": "Bethmann, Wolfgang", "ehren": "x"}, {"name": "Bethmann, Benjamin", "ehren": ""}, {"name": "Brocks, Luca", "ehren": ""}, {"name": "Brüggemann, Tobias", "ehren": ""}, {"name": "de Vries, Henk", "ehren": "x"}, {"name": "Dünne, Sebastian", "ehren": ""}, {"name": "Feldevert, Jonas", "ehren": ""}, {"name": "Grotegerd, Ludger", "ehren": "x"}, {"name": "Grotegerd, Martin", "ehren": ""}, {"name": "Hengstmann, Thomas", "ehren": ""}, {"name": "Holthenrich, Bernhard", "ehren": ""}, {"name": "Holthenrich, Bernd", "ehren": ""}, {"name": "Holtmann, Heinrich", "ehren": "x"}, {"name": "Holtmann, Werner", "ehren": "x"}, {"name": "Holtmann, Andreas", "ehren": ""}, {"name": "Holtmann, Christian", "ehren": ""}, {"name": "Holtmann, Michael", "ehren": ""}, {"name": "Holtmannspötter, Alfons", "ehren": "x"}, {"name": "Holtmannspötter, Josef", "ehren": "x"}, {"name": "Holtmannspötter, Markus", "ehren": ""}, {"name": "Köllmann, Mark", "ehren": ""}, {"name": "Leusder, Marek", "ehren": ""}, {"name": "Lohaus, Tim", "ehren": ""}, {"name": "Lövelt, Günther", "ehren": "x"}, {"name": "Lövelt, Manfred", "ehren": "x"}, {"name": "Lövelt, Daniel", "ehren": ""}, {"name": "Lövelt, Marcel", "ehren": ""}, {"name": "Lövelt, Thorsten", "ehren": ""}, {"name": "Lücker, Heinrich", "ehren": "x"}, {"name": "Lücker, Herbert", "ehren": ""}, {"name": "Lücker, Henning", "ehren": ""}, {"name": "Niehoff, Willi", "ehren": "x"}, {"name": "Niehoff, Thomas", "ehren": ""}, {"name": "Nobbenhuis, Tim", "ehren": ""}, {"name": "Sangen, Joost", "ehren": ""}, {"name": "Schmiemann, Daniel", "ehren": ""}, {"name": "Steven, Bert", "ehren": ""}, {"name": "Teves, Christoph", "ehren": ""}], "4": [{"name": "Amshoff, Simon", "ehren": ""}, {"name": "Bals, Andre", "ehren": ""}, {"name": "Baving, Daniel", "ehren": ""}, {"name": "Bertels, Andreas", "ehren": ""}, {"name": "Brökers, Ralf", "ehren": ""}, {"name": "Collet, Eric", "ehren": ""}, {"name": "Dilling, Karl-Heinz", "ehren": ""}, {"name": "Dilling, Markus", "ehren": ""}, {"name": "Eilert, Hubert", "ehren": "x"}, {"name": "Eilert, Josef", "ehren": "x"}, {"name": "Eilert, Christian", "ehren": ""}, {"name": "Eilert, Heinz", "ehren": ""}, {"name": "Eiling, Bernhard", "ehren": "x"}, {"name": "Eiling, Theo", "ehren": ""}, {"name": "Eiling, Thomas", "ehren": ""}, {"name": "Eiling, Heinrich", "ehren": "x"}, {"name": "Harker, Manuel", "ehren": ""}, {"name": "Hillers, Heinz", "ehren": "x"}, {"name": "Hillers, Andreas", "ehren": ""}, {"name": "Hillers, Daniel", "ehren": ""}, {"name": "Hillers, Matthias", "ehren": ""}, {"name": "Hölscher, Werner", "ehren": "x"}, {"name": "Hölscher, Raphael", "ehren": ""}, {"name": "Hölscher, Tobias", "ehren": ""}, {"name": "Ikemann, Hennes", "ehren": ""}, {"name": "Krabbe, Andreas", "ehren": ""}, {"name": "Lohlammert, Nico", "ehren": ""}, {"name": "Nadicksbernd, Werner", "ehren": "x"}, {"name": "Nadicksbernd, Christian", "ehren": ""}, {"name": "Niehoff, Frank", "ehren": ""}, {"name": "Nienhues, Stephan", "ehren": ""}, {"name": "Nobbenhuis, Norbert", "ehren": ""}, {"name": "Oelrich, Heinrich", "ehren": "x"}, {"name": "Oelrich, Theo", "ehren": "x"}, {"name": "Oelrich, Thorsten", "ehren": ""}, {"name": "Ostendorf, Thomas", "ehren": ""}, {"name": "Ostendorf, Florian", "ehren": ""}, {"name": "Ostendorf, Hannes", "ehren": ""}, {"name": "Ostendorf, Jonas", "ehren": ""}, {"name": "Paskert, Michael", "ehren": ""}, {"name": "Paslick, Hermann", "ehren": "x"}, {"name": "Paslick, Hermann-Josef", "ehren": ""}, {"name": "Paslick, Michael", "ehren": ""}, {"name": "Paslick, Willi", "ehren": ""}, {"name": "Plenter, Matthias", "ehren": ""}, {"name": "Pöhlker, Marcel", "ehren": ""}, {"name": "Post, Norbert", "ehren": ""}, {"name": "Post, Florian", "ehren": ""}, {"name": "Post, Hendrik", "ehren": ""}, {"name": "Schwaak, Alexander", "ehren": ""}, {"name": "Seggert, Matthias", "ehren": ""}, {"name": "Speckblanke, Michael", "ehren": ""}, {"name": "Sunder, Wolfgang", "ehren": ""}, {"name": "ten Winkel, Gerd", "ehren": ""}, {"name": "Terheyden, Hendrik", "ehren": ""}, {"name": "Tillmann, Heinrich", "ehren": "x"}, {"name": "Tillmann, Ludger", "ehren": ""}, {"name": "Tillmann, Theo", "ehren": ""}, {"name": "Tillmann, Alfons", "ehren": ""}, {"name": "Tillmann, Daniel", "ehren": ""}, {"name": "Tillmann, Fabian", "ehren": ""}, {"name": "Tillmann, Hannes", "ehren": ""}, {"name": "Tillmann, Matthias", "ehren": ""}, {"name": "Tillmann, Stefan", "ehren": ""}, {"name": "Wesbuer, Herbert", "ehren": "x"}, {"name": "Wesbuer, Hermann", "ehren": "x"}, {"name": "Wesbuer, Simon", "ehren": ""}, {"name": "Wittmund, Heinrich", "ehren": "x"}, {"name": "Wittmund, Christoph", "ehren": ""}, {"name": "Wittmund, Hauke", "ehren": ""}, {"name": "Wittmund, Lars", "ehren": ""}, {"name": "Wittmund, Markus", "ehren": ""}, {"name": "Wittmund, Thilo", "ehren": ""}], "1": [{"name": "Blanke jun., Rudolf", "ehren": ""}, {"name": "Bußmann, Tobias", "ehren": ""}, {"name": "Gehring, Stefan", "ehren": ""}, {"name": "Gehring, Simon", "ehren": ""}, {"name": "Hannekotte, Bernd-Josef", "ehren": ""}, {"name": "Hannekotte, Chris", "ehren": ""}, {"name": "Heinze, Alfred", "ehren": ""}, {"name": "Herms, Willi", "ehren": ""}, {"name": "Hofstedde, Thorben", "ehren": ""}, {"name": "Hofstedde, Jochen", "ehren": ""}, {"name": "Hörstmann, Ludger", "ehren": ""}, {"name": "Hörstmann, Maik", "ehren": ""}, {"name": "Kortendieck, Martin", "ehren": ""}, {"name": "Krabbe, Ingo", "ehren": ""}, {"name": "Krabbe, Jürgen", "ehren": ""}, {"name": "Krabbe, Uwe", "ehren": ""}, {"name": "Krabbe, Jörg", "ehren": ""}, {"name": "Laumann, Steffen", "ehren": ""}, {"name": "Möllenkotte, Jan-Hendrik", "ehren": ""}, {"name": "Möllenkotte, Karl-Heinz", "ehren": ""}, {"name": "Möllenkotte, Martin", "ehren": ""}, {"name": "Paßlick, Markus", "ehren": ""}, {"name": "Ratering, Frank", "ehren": ""}, {"name": "Rohling, Heinrich", "ehren": "Ja"}, {"name": "Rohling, Markus", "ehren": ""}, {"name": "Rohling, Bernd", "ehren": ""}, {"name": "Schlattmann, Josef", "ehren": "x"}, {"name": "Schlattmann, Bernd", "ehren": ""}, {"name": "Schwering, Josef", "ehren": "x"}, {"name": "Stücker, Bernhard", "ehren": "x"}, {"name": "Stücker, Hermann", "ehren": "x"}, {"name": "Stücker, Ludger", "ehren": "x"}, {"name": "Stücker, Frank", "ehren": ""}, {"name": "Stücker, Marcel", "ehren": ""}, {"name": "Stücker, Philipp", "ehren": ""}, {"name": "Stücker, Thomas", "ehren": ""}, {"name": "Stüvel, Denis", "ehren": ""}, {"name": "Tillmann, Josef", "ehren": "x"}, {"name": "Velenik, Aldo", "ehren": "x"}, {"name": "Wenningmann, Stefan", "ehren": ""}, {"name": "Wenningmann, Jan-Malte", "ehren": ""}, {"name": "Wienefoet, Bernd", "ehren": ""}, {"name": "Wienefoet, Berno", "ehren": ""}, {"name": "Wienefoet, Reinhard", "ehren": ""}]};
+var ADDR_DATA = [{"lfd.-Nr.:": 1, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Albers", "Vorname": "Hubert", "Straße": "Wester 269", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": ""}, {"lfd.-Nr.:": 2, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Albers", "Vorname": "Peter", "Straße": "Wester 269", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 3, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Althoff", "Vorname": "Leo", "Straße": "Gausebrink 98", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 4, "Bezirk": null, "Anrede1": "Frau", "Anrede2": "Frau", "Nachname": "Altholtmann", "Vorname": "Agnes", "Straße": "Wester  312", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 5, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Altholtmann", "Vorname": "Heinz", "Straße": "Wester 333", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": "Helga"}, {"lfd.-Nr.:": 6, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Altholtmann", "Vorname": "Willi", "Straße": "Wester 305", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": ""}, {"lfd.-Nr.:": 7, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Altholtmann", "Vorname": "Marc", "Straße": "Wester 333", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 8, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Amshoff", "Vorname": "Simon", "Straße": "Augustin-Wibbelt-Straße 39", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 9, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Bals", "Vorname": "Andre", "Straße": "Sanddornweg  1", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 10, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Baving", "Vorname": "Daniel", "Straße": "Althorststraße 5", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 11, "Bezirk": 2, "Anrede1": "Familie", "Anrede2": "Familie", "Nachname": "Berning", "Vorname": "", "Straße": "Gildehauser Straße  350", "PLZ": "48599", "Ort": "Gronau", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 12, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Bertels", "Vorname": "Andreas", "Straße": "Wester  308 a", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 13, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Bethmann", "Vorname": "Wolfgang", "Straße": "Wester 274", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": "Helga"}, {"lfd.-Nr.:": 14, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Bethmann", "Vorname": "Benjamin", "Straße": "Wester 274", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 15, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Blanke jun.", "Vorname": "Rudolf", "Straße": "Laurenzstraße 76", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 16, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Brocks", "Vorname": "Luca", "Straße": "Mendelweg 4", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 17, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Brökers", "Vorname": "Ralf", "Straße": "Wester 23", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 18, "Bezirk": null, "Anrede1": "Frau", "Anrede2": "Frau", "Nachname": "Brüggemann", "Vorname": "Christa", "Straße": "Wester 270", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 19, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Brüggemann", "Vorname": "Bernhard", "Straße": "An den Wiesen 8", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": ""}, {"lfd.-Nr.:": 20, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Brüggemann", "Vorname": "Tobias", "Straße": "Töpferstraße 31", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 21, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Bücker", "Vorname": "Hermann", "Straße": "Bültstraße 11", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 22, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Herr", "Nachname": "Bußmann", "Vorname": "Tobias", "Straße": "Zur Waist 6", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 23, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Collet", "Vorname": "Eric", "Straße": "Wester 342", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 24, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "de Vries", "Vorname": "Henk", "Straße": "Wester 276", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": "Helga"}, {"lfd.-Nr.:": 25, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Dilling", "Vorname": "Karl-Heinz", "Straße": "Wester 322", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 26, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Dilling", "Vorname": "Markus", "Straße": "Wester 322", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 27, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Duesmann", "Vorname": "Walter", "Straße": "Wester 273", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": "Helga"}, {"lfd.-Nr.:": 28, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Dünne", "Vorname": "Sebastian", "Straße": "Am Berge  63", "PLZ": "48599", "Ort": "Gronau", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 29, "Bezirk": null, "Anrede1": "Frau", "Anrede2": "Frau", "Nachname": "Eilert", "Vorname": "Agnes", "Straße": "Wester 321", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 30, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Eilert", "Vorname": "Hubert", "Straße": "Werner-v.-Siemens-Str.  5", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": ""}, {"lfd.-Nr.:": 31, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Eilert", "Vorname": "Josef", "Straße": "Daimlerweg 12", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": ""}, {"lfd.-Nr.:": 32, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Eilert", "Vorname": "Christian", "Straße": "Graf-von-Stauffenberg-Str. 37 a", "PLZ": "48432", "Ort": "Rheine", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 33, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Eilert", "Vorname": "Heinz", "Straße": "Wester 321", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 34, "Bezirk": null, "Anrede1": "Frau", "Anrede2": "Frau", "Nachname": "Eiling", "Vorname": "Margret", "Straße": "Wester 340", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 35, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Eiling", "Vorname": "Bernhard", "Straße": "Meisenstraße 25", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": ""}, {"lfd.-Nr.:": 36, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Eiling", "Vorname": "Theo", "Straße": "Meisenstraße 27", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 37, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Eiling", "Vorname": "Thomas", "Straße": "Wester 339", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 38, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Eiling", "Vorname": "Heinrich", "Straße": "Dieselweg 1", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": ""}, {"lfd.-Nr.:": 39, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Feldevert", "Vorname": "Jonas", "Straße": "Oster 36", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 40, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Franke", "Vorname": "Jan", "Straße": "Wester 282", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 41, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Gehring", "Vorname": "Stefan", "Straße": "Wester 245", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 42, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Gehring", "Vorname": "Simon", "Straße": "Wester 245", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 43, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Greitenevert", "Vorname": "Michael", "Straße": "Wester 223", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 44, "Bezirk": null, "Anrede1": "Frau", "Anrede2": "Frau", "Nachname": "Grotegerd", "Vorname": "Alwine", "Straße": "Werner-v.-Siemens-Str. 58", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 45, "Bezirk": null, "Anrede1": "Frau", "Anrede2": "Frau", "Nachname": "Grotegerd", "Vorname": "Christel", "Straße": "Wester 266", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 46, "Bezirk": null, "Anrede1": "Frau", "Anrede2": "Frau", "Nachname": "Grotegerd", "Vorname": "Christel", "Straße": "Wester 266", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 47, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Grotegerd", "Vorname": "Ludger", "Straße": "Telemannweg 12", "PLZ": "48599", "Ort": "Gronau", "Ehrenmitglied": "x", "Helga": ""}, {"lfd.-Nr.:": 48, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Grotegerd", "Vorname": "Andreas", "Straße": "Starenstraße 18", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 49, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Grotegerd", "Vorname": "Josef", "Straße": "Wester 266", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 50, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Hern", "Nachname": "Grotegerd", "Vorname": "Lennart", "Straße": "Wester 266", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 51, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Grotegerd", "Vorname": "Adrian", "Straße": "Wester 266", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 52, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Grotegerd", "Vorname": "Alexander", "Straße": "Wester 266", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 53, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Grotegerd", "Vorname": "Alexandre", "Straße": "Alexanderstraße 40 a", "PLZ": "48599", "Ort": "Gronau", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 54, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Grotegerd", "Vorname": "Martin", "Straße": "Ochtruper Damm  12", "PLZ": "48629", "Ort": "Metelen", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 55, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Haarmann", "Vorname": "Christian", "Straße": "Wester 282", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 56, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Hannekotte", "Vorname": "Karl-Heinz", "Straße": "Wester 265", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": ""}, {"lfd.-Nr.:": 57, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Hannekotte", "Vorname": "Bernd-Josef", "Straße": "Wester 252", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 58, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Hannekotte", "Vorname": "Hermann", "Straße": "Castellestraße 11", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 59, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Hannekotte", "Vorname": "Chris", "Straße": "Wester 252", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 60, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Harker", "Vorname": "Manuel", "Straße": "Wesker 1", "PLZ": "48691", "Ort": "Vreden", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 61, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Heinze", "Vorname": "Alfred", "Straße": "An den Wiesen 51", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 62, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Hengstmann", "Vorname": "Thomas", "Straße": "Weilautstraße 45", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 63, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Herms", "Vorname": "Willi", "Straße": "Wester 249", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 64, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Hillers", "Vorname": "Heinz", "Straße": "Wester 319", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": "Helga"}, {"lfd.-Nr.:": 65, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Hillers", "Vorname": "Andreas", "Straße": "Riedweg 2", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 66, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Hillers", "Vorname": "Daniel", "Straße": "Wester 319", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 67, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Hillers", "Vorname": "Matthias", "Straße": "Zeppelinstraße 23", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 68, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Hipp", "Vorname": "Petros", "Straße": "Gottlieb-Daimler-Str. 12", "PLZ": "72827", "Ort": "Wannweil", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 69, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Hern", "Nachname": "Hofstedde", "Vorname": "Thorben", "Straße": "Höhenweg 8", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 70, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Hofstedde", "Vorname": "Jochen", "Straße": "Höhenweg 8", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 71, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Hölscher", "Vorname": "Werner", "Straße": "Wester 341", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": "Helga"}, {"lfd.-Nr.:": 72, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Hölscher", "Vorname": "Raphael", "Straße": "Oster 237", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 73, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Hölscher", "Vorname": "Tobias", "Straße": "Wester 341", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 74, "Bezirk": null, "Anrede1": "Frau", "Anrede2": "Frau", "Nachname": "Holthenrich", "Vorname": "Elisabeth", "Straße": "Wester 279", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 75, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Holthenrich", "Vorname": "Bernhard", "Straße": "Wester 279", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 76, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Holthenrich", "Vorname": "Bernd", "Straße": "Wester 279", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 77, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Holtmann", "Vorname": "Heinrich", "Straße": "Wester 284", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": "Helga"}, {"lfd.-Nr.:": 78, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Holtmann", "Vorname": "Werner", "Straße": "Mendelweg 5", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": ""}, {"lfd.-Nr.:": 79, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Holtmann", "Vorname": "Bernhard", "Straße": "Wester 267", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 80, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Holtmann", "Vorname": "Andreas", "Straße": "Niedereschstraße  26", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 81, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Holtmann", "Vorname": "Christian", "Straße": "Wester 284", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 82, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Holtmann", "Vorname": "Michael", "Straße": "Mendelweg 5 a", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 83, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Holtmannspötter", "Vorname": "Alfons", "Straße": "Wester 345", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": "Helga"}, {"lfd.-Nr.:": 84, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Holtmannspötter", "Vorname": "Josef", "Straße": "Finkenstraße  15", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": ""}, {"lfd.-Nr.:": 85, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Holtmannspötter", "Vorname": "Marco", "Straße": "Wester 234", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 86, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Holtmannspötter", "Vorname": "Markus", "Straße": "Wester 345", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 87, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Holtmannspötter", "Vorname": "Lennart", "Straße": "Oster 265", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 88, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Hörstmann", "Vorname": "Ludger", "Straße": "Wester  254", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 89, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Hörstmann", "Vorname": "Maik", "Straße": "Wester 254", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 90, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Ikemann", "Vorname": "Hennes", "Straße": "Wester 207", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 91, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Janmieling", "Vorname": "Bernd", "Straße": "Wester 331", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 92, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Janmieling", "Vorname": "Markus", "Straße": "Wester 331", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 93, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Köllmann", "Vorname": "Mark", "Straße": "Oster 238", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 94, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Kortendieck", "Vorname": "Martin", "Straße": "Bentheimerstraße 65", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 95, "Bezirk": null, "Anrede1": "Frau", "Anrede2": "Frau", "Nachname": "Krabbe", "Vorname": "Christel", "Straße": "Wester 253", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 96, "Bezirk": null, "Anrede1": "Frau", "Anrede2": "Frau", "Nachname": "Krabbe", "Vorname": "Margret", "Straße": "Wester 245", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 97, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Krabbe", "Vorname": "Ingo", "Straße": "Wester 253", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 98, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Krabbe", "Vorname": "Jürgen", "Straße": "Seilerstraße  20", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 99, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Krabbe", "Vorname": "Uwe", "Straße": "Carolinenweg 2", "PLZ": "59069", "Ort": "Hamm", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 100, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Krabbe", "Vorname": "Jörg", "Straße": "Turmstraße 13", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 101, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Krabbe", "Vorname": "Andreas", "Straße": "Wester 325", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 102, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Kuhls", "Vorname": "Andre´", "Straße": "Im Hook 10", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 103, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Kuhr", "Vorname": "Gerhard", "Straße": "Bentheimerstraße 48", "PLZ": "48455", "Ort": "Bad Bentheim", "Ehrenmitglied": "x", "Helga": ""}, {"lfd.-Nr.:": 104, "Bezirk": null, "Anrede1": "Frau", "Anrede2": "Frau", "Nachname": "Laumann", "Vorname": "Maria", "Straße": "Starenstraße 24", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 105, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Laumann", "Vorname": "Steffen", "Straße": "Starenstraße 28", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 106, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Leusder", "Vorname": "Marek", "Straße": "Fritz-Reuter-Straße 3", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 107, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Lohaus", "Vorname": "Tim", "Straße": "Andorf 16", "PLZ": "48493", "Ort": "Wettringen", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 108, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Lohenrich", "Vorname": "Heinz", "Straße": "An den Wiesen 14", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 109, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Lohenrich", "Vorname": "Michael", "Straße": "Weiner 107", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 110, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Lohlammert", "Vorname": "Nico", "Straße": "Wester 112", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 111, "Bezirk": null, "Anrede1": "Frau", "Anrede2": "Frau", "Nachname": "Lövelt", "Vorname": "Brigitte", "Straße": "Mohnstraße 1 a", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 112, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Lövelt", "Vorname": "Günther", "Straße": "Wester 344", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": "Helga"}, {"lfd.-Nr.:": 113, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Lövelt", "Vorname": "Manfred", "Straße": "Wester 278", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": "Helga"}, {"lfd.-Nr.:": 114, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Lövelt", "Vorname": "Daniel", "Straße": "Wester 278", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 115, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Lövelt", "Vorname": "Marcel", "Straße": "Wester 344", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 116, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Lövelt", "Vorname": "Thorsten", "Straße": "Wester 344", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 117, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Lücker", "Vorname": "Heinrich", "Straße": "Deipengrund 19", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": ""}, {"lfd.-Nr.:": 118, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Lücker", "Vorname": "Herbert", "Straße": "Wester 272", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 119, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Lücker", "Vorname": "Henning", "Straße": "Wester 272", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 120, "Bezirk": null, "Anrede1": "Frau", "Anrede2": "Frau", "Nachname": "Mieling", "Vorname": "Gertrud", "Straße": "Wester 334", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 121, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Mieling", "Vorname": "Bernhard", "Straße": "Wester 334", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": "Helga"}, {"lfd.-Nr.:": 122, "Bezirk": null, "Anrede1": "Frau", "Anrede2": "Frau", "Nachname": "Möllenkotte", "Vorname": "Marianne", "Straße": "Wester 250", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 123, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Möllenkotte", "Vorname": "Jan-Hendrik", "Straße": "Wester 250", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 124, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Möllenkotte", "Vorname": "Karl-Heinz", "Straße": "Wester 250", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 125, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Möllenkotte", "Vorname": "Martin", "Straße": "Wester 110", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 126, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Nadicksbernd", "Vorname": "Werner", "Straße": "Wester 349", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": "Helga"}, {"lfd.-Nr.:": 127, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Nadicksbernd", "Vorname": "Christian", "Straße": "Wester 349", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 128, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Niehoff", "Vorname": "Willi", "Straße": "Wester 283", "PLZ": "46807", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": "Helga"}, {"lfd.-Nr.:": 129, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Niehoff", "Vorname": "Frank", "Straße": "Mendelweg 11", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 130, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Niehoff", "Vorname": "Thomas", "Straße": "Wester 283", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 131, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Nienhues", "Vorname": "Stephan", "Straße": "Elsterweg 3 a", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 132, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Nobbenhuis", "Vorname": "Hermann", "Straße": "Turmstraße 24", "PLZ": "46807", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": ""}, {"lfd.-Nr.:": 133, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Nobbenhuis", "Vorname": "Norbert", "Straße": "Starenstraße 19 a", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 134, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Nobbenhuis", "Vorname": "Tim", "Straße": "Wester 346", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 135, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Oelrich", "Vorname": "Heinrich", "Straße": "Schwalbenweg 17", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": ""}, {"lfd.-Nr.:": 136, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Oelrich", "Vorname": "Theo", "Straße": "Wester 323", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": "Helga"}, {"lfd.-Nr.:": 137, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Oelrich", "Vorname": "Thorsten", "Straße": "Wester 323", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 138, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Ostendorf", "Vorname": "Thomas", "Straße": "Wester 104", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 139, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Ostendorf", "Vorname": "Florian", "Straße": "Wester 104", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 140, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Ostendorf", "Vorname": "Hannes", "Straße": "Wester 104", "PLZ": "48607 Ochtrup", "Ort": "", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 141, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Ostendorf", "Vorname": "Jonas", "Straße": "Wester 104", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 142, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Paskert", "Vorname": "Michael", "Straße": "Bodelschwinghstraße 7", "PLZ": "48712", "Ort": "Gescher", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 143, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Paslick", "Vorname": "Hermann", "Straße": "Wester 320", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": "Helga"}, {"lfd.-Nr.:": 144, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Paslick", "Vorname": "Hermann-Josef", "Straße": "Wester 320", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 145, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Paslick", "Vorname": "Michael", "Straße": "Kuhrietsweg 18", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 146, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Paslick", "Vorname": "Willi", "Straße": "Wester 320", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 147, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Paßlick", "Vorname": "Markus", "Straße": "Oster 115", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 148, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Plenter", "Vorname": "Matthias", "Straße": "Tannenweg 1", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 149, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Pöhlker", "Vorname": "Marcel", "Straße": "Zum Austeresch  11", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 150, "Bezirk": null, "Anrede1": "Frau", "Anrede2": "Frau", "Nachname": "Post", "Vorname": "Katharina", "Straße": "Wester 338", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 151, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Post", "Vorname": "Norbert", "Straße": "Wester 338", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 152, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Post", "Vorname": "Florian", "Straße": "Wester 338", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 153, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Post", "Vorname": "Hendrik", "Straße": "Wester 338", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 154, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Quindt", "Vorname": "Florian", "Straße": "Am Huskamp 17", "PLZ": "48477", "Ort": "Hörstel-Dreierwalde", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 155, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Ratering", "Vorname": "Frank", "Straße": "Gronauer Str. 85", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 156, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Regelmann", "Vorname": "Bernd", "Straße": "Wester 328", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 157, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Regelmann", "Vorname": "Matthias", "Straße": "Wester 328", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 158, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Rohling", "Vorname": "Heinrich", "Straße": "Wester 246", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "Ja", "Helga": ""}, {"lfd.-Nr.:": 159, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Rohling", "Vorname": "Markus", "Straße": "Wester 246", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 160, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Rohling", "Vorname": "Bernd", "Straße": "Augustin-Wibbelt-Straße 29", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 161, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Rotermann", "Vorname": "Josef", "Straße": "Wester 329", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": "Helga"}, {"lfd.-Nr.:": 162, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Rotermann", "Vorname": "Heinrich", "Straße": "August-Hahn-Straße 47", "PLZ": "48599", "Ort": "Gronau", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 163, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Rotermann", "Vorname": "Ludger", "Straße": "Esch-Straße 12", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 164, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Rotermann", "Vorname": "Michael", "Straße": "Wester 329", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 165, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Sangen", "Vorname": "Joost", "Straße": "Weilautstraße 49", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 166, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Scheipers", "Vorname": "Bennet", "Straße": "Wester 121", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 167, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Scheipers", "Vorname": "Patrick", "Straße": "Wester 121", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 168, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Schlattmann", "Vorname": "Josef", "Straße": "Wester 241", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": ""}, {"lfd.-Nr.:": 169, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Schlattmann", "Vorname": "Bernd", "Straße": "Wester 242", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 170, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Schmiemann", "Vorname": "Daniel", "Straße": "Zur Fuchsfarm 5", "PLZ": "49536", "Ort": "Lienen", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 171, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Schwaak", "Vorname": "Alexander", "Straße": "Buschlandweg 41", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 172, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Schwering", "Vorname": "Josef", "Straße": "Wester 243", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": ""}, {"lfd.-Nr.:": 173, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Seggert", "Vorname": "Matthias", "Straße": "Kleiberweg 9", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 174, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Speckblanke", "Vorname": "Michael", "Straße": "Weiner 229", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 175, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Steven", "Vorname": "Bert", "Straße": "Kampstraße 10", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 176, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Stücker", "Vorname": "Bernhard", "Straße": "Wester 256", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": ""}, {"lfd.-Nr.:": 177, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Stücker", "Vorname": "Hermann", "Straße": "Elsterweg 10", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": ""}, {"lfd.-Nr.:": 178, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Stücker", "Vorname": "Ludger", "Straße": "Dreihuesweg 18 a", "PLZ": "48282", "Ort": "Emsdetten", "Ehrenmitglied": "x", "Helga": ""}, {"lfd.-Nr.:": 179, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Stücker", "Vorname": "Frank", "Straße": "Wester 256", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 180, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Stücker", "Vorname": "Marcel", "Straße": "Elsterweg 10", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 181, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Stücker", "Vorname": "Philipp", "Straße": "Elsterweg 10", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 182, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Stücker", "Vorname": "Thomas", "Straße": "Wester 256", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 183, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Stüvel", "Vorname": "Denis", "Straße": "Wester 258", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 184, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Sunder", "Vorname": "Wolfgang", "Straße": "Brabeckstraße 2", "PLZ": "57462", "Ort": "Olpe", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 185, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "ten Winkel", "Vorname": "Gerd", "Straße": "Wester 21", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 186, "Bezirk": null, "Anrede1": "Frau", "Anrede2": "Frau", "Nachname": "Terheyden", "Vorname": "Maria", "Straße": "Schwalbenweg 21", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 187, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Terheyden", "Vorname": "Hendrik", "Straße": "Schwalbenweg 21", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 188, "Bezirk": 2, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Teves", "Vorname": "Christoph", "Straße": "Wester 125", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 189, "Bezirk": null, "Anrede1": "Frau", "Anrede2": "Frau", "Nachname": "Tillmann", "Vorname": "Rita", "Straße": "Wester 336", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 190, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Tillmann", "Vorname": "Hans", "Straße": "Meisenstraße 24", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": ""}, {"lfd.-Nr.:": 191, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Tillmann", "Vorname": "Heinrich", "Straße": "Wester 350", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": "Helga"}, {"lfd.-Nr.:": 192, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Tillmann", "Vorname": "Josef", "Straße": "Wester 263", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": ""}, {"lfd.-Nr.:": 193, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Tillmann", "Vorname": "Karl", "Straße": "Gutenbergstraße 6", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": ""}, {"lfd.-Nr.:": 194, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Tillmann", "Vorname": "Werner", "Straße": "Weilautstraße 61", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": ""}, {"lfd.-Nr.:": 195, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Tillmann", "Vorname": "Ludger", "Straße": "Am Hang 5", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 196, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Tillmann", "Vorname": "Theo", "Straße": "Mohringhook 17", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 197, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Tillmann", "Vorname": "Alfons", "Straße": "Bollhorststraße 10", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 198, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Tillmann", "Vorname": "Daniel", "Straße": "Wester 350", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 199, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Tillmann", "Vorname": "Fabian", "Straße": "Mohringhook 17", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 200, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Tillmann", "Vorname": "Hannes", "Straße": "Steenkamp 23", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 201, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Tillmann", "Vorname": "Martin", "Straße": "Wester 336", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 202, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Tillmann", "Vorname": "Matthias", "Straße": "Oster 517", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 203, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Tillmann", "Vorname": "Stefan", "Straße": "An den Wiesen 43", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 204, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Tillmann-Janmieling", "Vorname": "Theo", "Straße": "Wester 331", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": "Helga"}, {"lfd.-Nr.:": 205, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Velenik", "Vorname": "Aldo", "Straße": "Wester 244", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": ""}, {"lfd.-Nr.:": 206, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Welpelo", "Vorname": "Stefan", "Straße": "Wester 330", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 207, "Bezirk": null, "Anrede1": "Frau", "Anrede2": "Frau", "Nachname": "Wenningmann", "Vorname": "Brigitte", "Straße": "Wester  240", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 208, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Wenningmann", "Vorname": "Stefan", "Straße": "Wester  240", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 209, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Wenningmann", "Vorname": "Jan-Malte", "Straße": "Wester 240", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 210, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Wesbuer", "Vorname": "Herbert", "Straße": "Buschlandweg 14", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": ""}, {"lfd.-Nr.:": 211, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Wesbuer", "Vorname": "Hermann", "Straße": "Wester 348", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": "Helga"}, {"lfd.-Nr.:": 212, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Wesbuer", "Vorname": "Simon", "Straße": "Wester 348", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 213, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Wienefoet", "Vorname": "Bernd", "Straße": "Rosenstr.  7a", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 214, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Wienefoet", "Vorname": "Berno", "Straße": "Wester 327", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 215, "Bezirk": 1, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Wienefoet", "Vorname": "Reinhard", "Straße": "Wester 327", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 216, "Bezirk": null, "Anrede1": "Frau", "Anrede2": "Frau", "Nachname": "Wiggenhorn", "Vorname": "Inge", "Straße": "Gausebrink 74", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 217, "Bezirk": 3, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Wilmes", "Vorname": "Klaus", "Straße": "Bregenbeck  1", "PLZ": "49838", "Ort": "Gersten", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 218, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Wittmund", "Vorname": "Heinrich", "Straße": "Wester 343", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "x", "Helga": "Helga"}, {"lfd.-Nr.:": 219, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Familie", "Nachname": "Wittmund", "Vorname": "Christoph", "Straße": "Wester 343", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 220, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Wittmund", "Vorname": "Hauke", "Straße": "Wester 343", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 221, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Wittmund", "Vorname": "Lars", "Straße": "Wester 343", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}, {"lfd.-Nr.:": 222, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Wittmund", "Vorname": "Markus", "Straße": "Wester 264", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": ""}, {"lfd.-Nr.:": 223, "Bezirk": 4, "Anrede1": "Schützenbruder", "Anrede2": "Herrn", "Nachname": "Wittmund", "Vorname": "Thilo", "Straße": "Wester 343", "PLZ": "48607", "Ort": "Ochtrup", "Ehrenmitglied": "", "Helga": "Helga"}];
+var members = [];
+var nextNr = 1;
+var editIdx = -1;
 
-function renderTable() {
-  var q = document.getElementById('q').value.toLowerCase();
-  var b = document.getElementById('fb').value;
-  var a = document.getElementById('fa').value;
-  var tb = document.getElementById('tbody');
-  tb.innerHTML = '';
-  
-  var filtered = adr.filter(function(m) {
-    var matchQ = !q || (m.na+m.vo+m.st+m.ort).toLowerCase().indexOf(q) > -1;
-    var matchB = !b || m.bz == b;
-    // FIX: Filtert jetzt korrekt gegen Anrede 1
-    var matchA = !a || m.a1 === a; 
-    return matchQ && matchB && matchA;
+function mkM(r,i){
+  return {
+    nr:   i+1,
+    bz:   parseInt(r['Bezirk']||r['bezirk']||0)||null,
+    a1:   String(r['Anrede1']||''),
+    a2:   String(r['Anrede2']||''),
+    name: String(r['Nachname']||'').trim(),
+    vor:  String(r['Vorname']||'').trim(),
+    str:  String(r['Straße']||r['Strasse']||r['Straße']||'').trim(),
+    plz:  String(r['PLZ']||'').trim(),
+    ort:  String(r['Ort']||'').trim(),
+    ehren:String(r['Ehrenmitglied']||''),
+    helga:String(r['Helga']||''),
+    foto: r['foto']||'',
+    tel:  String(r['Handy/Tel']||r['Handy']||r['Tel']||'').trim(),
+    email:String(r['E-Mail']||r['Email']||r['email']||'').trim()
+  };
+}
+
+function init(){
+  var ok=false;
+  try{
+    var raw=localStorage.getItem('sgO_members');
+    if(raw){var s=JSON.parse(raw);if(s&&s.length){members=s;nextNr=members.length+1;ok=true;}}
+  }catch(e){}
+  if(!ok){members=ADDR_DATA.map(function(r,i){return mkM(r,i);});nextNr=members.length+1;}
+  renderAll();
+  updateSaveInfo();
+}
+
+function renderAll(){renderStats();renderTable();renderBezirke();renderRecent();document.getElementById('hdrbadge').textContent=members.length+' Einträge';}
+
+function renderStats(){
+  var fr=members.filter(function(m){return m.a1==='Frau'||m.a2==='Frau';});
+  var eh=members.filter(function(m){return m.ehren;});
+  var ohneF=members.length-fr.length;
+  document.getElementById('s-total').textContent=members.length;
+  document.getElementById('s-mbr').textContent=ohneF;
+  document.getElementById('s-zahlend').textContent=ohneF-eh.length;
+  document.getElementById('s-frauen').textContent=fr.length;
+  document.getElementById('s-ehren').textContent=eh.length;
+  var orte={};members.forEach(function(m){if(m.ort)orte[m.ort]=1;});
+  document.getElementById('s-orte').textContent=Object.keys(orte).length;
+}
+
+function renderTable(){
+  var q=(document.getElementById('q').value||'').toLowerCase();
+  var bz=document.getElementById('fb').value;
+  var an=document.getElementById('fa').value;
+  var f=members.filter(function(m){
+    var t=[m.name,m.vor,m.str,m.ort,m.plz].join(' ').toLowerCase();
+    return(!q||t.indexOf(q)!==-1)&&(!bz||String(m.bz)===bz)&&(!an||m.a1===an||m.a2===an);
   });
+  document.getElementById('rcnt').textContent=f.length+' von '+members.length;
+  var rows=f.map(function(m){
+    var idx=members.indexOf(m);
+    var fotoCell=m.foto?'<td class="td-foto"><img class="member-foto" src="'+m.foto+'" alt=""></td>':'<td class="td-foto"><div class="foto-placeholder" onclick="uploadFotoFromTable('+idx+')" title="Foto hinzufügen">&#128247;</div></td>';
+    return '<tr>'
+      +fotoCell
+      +'<td>'+m.nr+'</td>'
+      +'<td><span class="badge b'+(m.bz||0)+'">B'+(m.bz||'?')+'</span></td>'
+      +'<td>'+esc(m.a1)+'</td>'
+      +'<td><strong>'+esc(m.name)+'</strong></td>'
+      +'<td>'+esc(m.vor)+'</td>'
+      +'<td>'+esc(m.str)+'</td>'
+      +'<td>'+esc(m.plz)+'</td>'
+      +'<td>'+esc(m.ort)+'</td>'
+      +'<td>'+(m.ehren?'<span class="badge be">E</span>':'')+'</td>'
+      +'<td>'+(m.helga?'&#10003;':'')+'</td>'
+      +'<td><button class="btn-edit" onclick="openEdit('+idx+')">&#9998;</button></td>'
+      +'</tr>';
+  });
+  document.getElementById('tbody').innerHTML=rows.join('');
+}
 
-  /* ... [Rest deiner renderTable Logik inklusive Fotos] ... */
-  filtered.forEach(function(m, i) {
-    // Dein Original Tabellen-Rendering...
+function renderBezirke(){
+  var grid=document.getElementById('bgrid');
+  var html='';
+  for(var b=1;b<=4;b++){
+    var list=members.filter(function(m){return m.bz===b;});
+    var items=list.map(function(m,i){
+      return '<li><span class="lnr">'+(i+1)+'.</span>'+esc(m.name+(m.vor?', '+m.vor:''))+(m.ehren?' <span class="em">E</span>':'')+'</li>';
+    }).join('');
+    html+='<div class="card">'
+      +'<div class="card-hd" style="background:var(--navym)">'
+      +'<h2>Bezirk '+b+'</h2><span class="bcnt">'+list.length+' Einträge</span></div>'
+      +'<ul class="blist">'+items+'</ul></div>';
+  }
+  grid.innerHTML=html;
+}
+
+function renderRecent(){
+  var last=members.slice(-5).reverse();
+  document.getElementById('tbody-recent').innerHTML=last.map(function(m){
+    return '<tr><td>'+m.nr+'</td><td><span class="badge b'+m.bz+'">B'+m.bz+'</span></td>'
+      +'<td><strong>'+esc(m.name)+'</strong>'+(m.vor?', '+esc(m.vor):'')+'</td>'
+      +'<td>'+esc(m.str)+'</td><td>'+esc(m.plz)+'</td><td>'+esc(m.ort)+'</td></tr>';
+  }).join('');
+}
+
+function showTab(id,btn,bnId){
+  document.querySelectorAll('.sec').forEach(function(s){s.classList.remove('on');});
+  document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('on');});
+  document.querySelectorAll('.bnav-btn').forEach(function(b){b.classList.remove('on');});
+  document.getElementById('sec-'+id).classList.add('on');
+  if(btn) btn.classList.add('on');
+  if(bnId && document.getElementById(bnId)) document.getElementById(bnId).classList.add('on');
+  // sync top tabs
+  var topBtns=document.querySelectorAll('.tab');
+  topBtns.forEach(function(b){
+    if(b.getAttribute('onclick') && b.getAttribute('onclick').indexOf("'"+id+"'")!==-1) b.classList.add('on');
+  });
+  if(id==='export') exPreview();
+}
+
+function saveMember(){
+  var bz=document.getElementById('f-bz').value;
+  var name=document.getElementById('f-na').value.trim();
+  if(!bz){toast('Bitte Bezirk auswählen!',true);return;}
+  if(!name){toast('Bitte Nachname eingeben!',true);return;}
+  var m={nr:nextNr++,bz:parseInt(bz),
+    a1:document.getElementById('f-a1').value,a2:document.getElementById('f-a2').value,
+    name:name,vor:document.getElementById('f-vo').value.trim(),
+    str:document.getElementById('f-st').value.trim(),
+    plz:document.getElementById('f-plz').value.trim(),
+    ort:document.getElementById('f-ort').value.trim(),
+    ehren:document.getElementById('f-eh').value,helga:document.getElementById('f-hg').value,
+    tel:document.getElementById('f-tel').value.trim(),
+    email:document.getElementById('f-email').value.trim(),foto:''};
+  members.push(m);renderAll();clearForm();
+  toast('Gespeichert: '+m.name+(m.vor?', '+m.vor:'')+'  (Bezirk '+bz+')');
+}
+
+function clearForm(){
+  ['f-bz','f-a1','f-a2','f-na','f-vo','f-st','f-plz','f-ort','f-eh','f-hg','f-tel','f-email']
+    .forEach(function(id){document.getElementById(id).value='';});
+}
+
+function exportPDF(){
+  renderBezirkePrint();
+  setTimeout(function(){window.print();},120);
+}
+
+function renderBezirkePrint(){
+  var suppeBz=parseInt(document.getElementById('suppe-bezirk').value)||0;
+  var ROWS=30;
+  var grid=document.getElementById('bgrid');
+  var today=new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});
+  var html='';
+  var firstBlock=true;
+  for(var b=1;b<=4;b++){
+    var showSuppe=(suppeBz===b);
+    var suppeTh=showSuppe?'<th>Suppe</th>':'';
+    var thead='<thead><tr><th>Nr.</th><th>Name / Vorname</th><th>Vermerke / E-Mail</th><th>Beitrag</th>'+suppeTh+'</tr></thead>';
+    var list=members.filter(function(m){return m.bz===b;});
+    var pages=Math.max(1,Math.ceil(list.length/ROWS));
+    for(var p=0;p<pages;p++){
+      var chunk=list.slice(p*ROWS,(p+1)*ROWS);
+      var startNr=p*ROWS;
+      var rows=chunk.map(function(m,i){
+        var nm='<span class="nm">'+esc(m.name)+'</span>'+(m.vor?', '+esc(m.vor):'')+' '+(m.ehren?'<b style="color:#2E75B6"> E</b>':'');
+        var suppeTd=showSuppe?'<td class="td-suppe"></td>':'';
+        return '<tr'+(( startNr+i)%2?' class="even"':'')+'>'          +'<td class="td-nr">'+(startNr+i+1)+'</td>'
+          +'<td class="td-name">'+nm+'</td>'
+          +'<td class="td-verm"></td>'
+          +'<td class="td-beit"></td>'
+          +suppeTd+'</tr>';
+      }).join('');
+      var pageClass=firstBlock?'print-page print-bezirk':'print-page';
+      var pageInfo=pages>1?' &nbsp;<span style="font-size:8pt;color:#888">(Seite '+(p+1)+'/'+pages+')</span>':'';
+      html+='<div class="'+pageClass+'">'
+        +'<div class="page-hd">Bezirk '+b
+        +' <span style="font-size:9pt;font-weight:normal;color:#555">'+list.length+' Einträge</span>'
+        +pageInfo+'</div>'
+        +'<div class="page-sub">Stand: '+today+'  &nbsp;&nbsp;  SV Lau-Brechte</div>'
+        +'<table class="print-tbl">'+thead+'<tbody>'+rows+'</tbody></table></div>';
+      firstBlock=false;
+    }
+  }
+  grid.innerHTML=html;
+}
+
+function openEdit(idx){
+  editIdx=idx;
+  var m=members[idx];
+  document.getElementById('e-bz').value=m.bz||1;
+  document.getElementById('e-a1').value=m.a1||'';
+  document.getElementById('e-a2').value=m.a2||'';
+  document.getElementById('e-na').value=m.name||'';
+  document.getElementById('e-vo').value=m.vor||'';
+  document.getElementById('e-st').value=m.str||'';
+  document.getElementById('e-plz').value=m.plz||'';
+  document.getElementById('e-ort').value=m.ort||'';
+  document.getElementById('e-eh').value=m.ehren||'';
+  document.getElementById('e-hg').value=m.helga||'';
+  document.getElementById('e-tel').value=m.tel||'';
+  document.getElementById('e-email').value=m.email||'';
+  var foto=m.foto||'';
+  var prev=document.getElementById('foto-preview-img');
+  var ph=document.getElementById('foto-placeholder');
+  var delBtn=document.getElementById('foto-del-btn');
+  if(foto){prev.src=foto;prev.style.display='block';ph.style.display='none';delBtn.style.display='inline-flex';}
+  else{prev.src='';prev.style.display='none';ph.style.display='flex';delBtn.style.display='none';}
+  document.getElementById('editModal').classList.add('open');
+}
+
+function closeModal(){document.getElementById('editModal').classList.remove('open');editIdx=-1;}
+
+function saveEdit(){
+  if(editIdx<0)return;
+  var name=document.getElementById('e-na').value.trim();
+  if(!name){toast('Bitte Nachname eingeben!',true);return;}
+  var m=members[editIdx];
+  var oldBz=m.bz;
+  m.bz=parseInt(document.getElementById('e-bz').value);
+  m.a1=document.getElementById('e-a1').value;
+  m.a2=document.getElementById('e-a2').value;
+  m.name=name;
+  m.vor=document.getElementById('e-vo').value.trim();
+  m.str=document.getElementById('e-st').value.trim();
+  m.plz=document.getElementById('e-plz').value.trim();
+  m.ort=document.getElementById('e-ort').value.trim();
+  m.ehren=document.getElementById('e-eh').value;
+  m.helga=document.getElementById('e-hg').value;
+  m.tel=document.getElementById('e-tel').value.trim();
+  m.email=document.getElementById('e-email').value.trim();
+  closeModal();renderAll();
+  var msg=m.name+(m.vor?', '+m.vor:'');
+  if(oldBz!==m.bz)msg+=' (Bezirk '+oldBz+' → '+m.bz+')';
+  m.foto=document.getElementById('foto-preview-img').style.display!=='none'
+    ?document.getElementById('foto-preview-img').src:'';
+  toast('\u2714 '+msg+' gespeichert');
+}
+
+function deleteMember(){
+  if(editIdx<0)return;
+  var m=members[editIdx];
+  if(!confirm('Adresse löschen: '+m.name+(m.vor?', '+m.vor:'')+' (Bezirk '+m.bz+')?'))return;
+  members.splice(editIdx,1);
+  members.forEach(function(x,i){x.nr=i+1;});
+  nextNr=members.length+1;
+  closeModal();renderAll();
+  toast('Adresse gelöscht');
+}
+
+function speichern(){
+  try{
+    localStorage.setItem('sgO_members',JSON.stringify(members));
+    localStorage.setItem('sgO_saved',new Date().toISOString());
+    toast('Daten gespeichert!');updateSaveInfo();
+  }catch(e){toast('Fehler: '+e.message,true);}
+}
+
+function zuruecksetzen(){
+  if(!confirm('Gespeicherte Änderungen löschen und Originaldaten wiederherstellen?'))return;
+  localStorage.removeItem('sgO_members');localStorage.removeItem('sgO_saved');
+  members=ADDR_DATA.map(function(r,i){return mkM(r,i);});
+  nextNr=members.length+1;renderAll();updateSaveInfo();
+  toast('Originaldaten wiederhergestellt');
+}
+
+function updateSaveInfo(){
+  var el=document.getElementById('save-info');if(!el)return;
+  var ts=localStorage.getItem('sgO_saved');
+  if(ts){var d=new Date(ts);el.textContent='Zuletzt gespeichert: '+d.toLocaleString('de-DE');el.style.color='var(--green)';}
+  else{el.textContent='Noch nicht gespeichert (Originaldaten)';el.style.color='var(--orange)';}
+}
+
+function doDrop(e){
+  e.preventDefault();document.getElementById('dz').classList.remove('over');
+  if(e.dataTransfer.files[0])importCSV(e.dataTransfer.files[0]);
+}
+function doFile(e){if(e.target.files[0])importCSV(e.target.files[0]);}
+
+function importCSV(file){
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      var lines=ev.target.result.split('\n');
+      var sep=lines[0].indexOf(';')!==-1?';':',';
+      var headers=lines[0].split(sep).map(function(h){return h.replace(/^"|"$/g,'').trim();});
+      var imported=[];
+      for(var i=1;i<lines.length;i++){
+        var row=lines[i].split(sep).map(function(c){return c.replace(/^"|"$/g,'').trim();});
+        if(row.length<2)continue;
+        var obj={};
+        for(var j=0;j<headers.length;j++)obj[headers[j]]=row[j]||'';
+        var m=mkM(obj,i-1);if(m.name)imported.push(m);
+      }
+      if(!imported.length){toast('Keine gültigen Einträge gefunden!',true);return;}
+      members=imported;nextNr=members.length+1;renderAll();
+      document.getElementById('imp-status').innerHTML='<span style="color:var(--green);font-weight:700">&#10004; '+members.length+' Einträge importiert.</span>';
+      toast(members.length+' Einträge importiert');
+    }catch(err){toast('Fehler: '+err.message,true);}
+  };
+  reader.readAsText(file,'UTF-8');
+}
+
+function exportCSV(){
+  var SEP=';';
+  var cols=['lfd.-Nr.:','Bezirk','Anrede1','Anrede2','Nachname','Vorname','Straße','PLZ','Ort','Ehrenmitglied','Helga','Handy/Tel','E-Mail'];
+  function q(v){var s=String(v===null||v===undefined?'':v);return s.indexOf(SEP)!==-1||s.indexOf('"')!==-1?'"'+s.replace(/"/g,'""')+'"':s;}
+  var lines=[cols.map(q).join(SEP)];
+  members.forEach(function(m){lines.push([m.nr,m.bz,m.a1,m.a2,m.name,m.vor,m.str,m.plz,m.ort,m.ehren,m.helga,m.tel||'',m.email||''].map(q).join(SEP));});
+  var blob=new Blob(['\uFEFF'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='Adressliste_'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
+  toast('CSV exportiert - in Excel öffenbar');
+}
+
+function toast(msg,err){
+  var t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast'+(err?' err':'');
+  setTimeout(function(){t.classList.add('show');},10);
+  setTimeout(function(){t.classList.remove('show');},3200);
+}
+
+function esc(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+
+function handleFotoUpload(e){
+  var file=e.target.files[0];
+  if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    var img=new Image();
+    img.onload=function(){
+      var canvas=document.createElement('canvas');
+      var SIZE=80;
+      canvas.width=SIZE;canvas.height=SIZE;
+      var ctx=canvas.getContext('2d');
+      // crop to square from center
+      var s=Math.min(img.width,img.height);
+      var ox=(img.width-s)/2, oy=(img.height-s)/2;
+      ctx.drawImage(img,ox,oy,s,s,0,0,SIZE,SIZE);
+      var dataUrl=canvas.toDataURL('image/jpeg',0.82);
+      var prev=document.getElementById('foto-preview-img');
+      var ph=document.getElementById('foto-placeholder');
+      prev.src=dataUrl;prev.style.display='block';ph.style.display='none';
+      document.getElementById('foto-del-btn').style.display='inline-flex';
+    };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  e.target.value='';
+}
+
+function deleteFoto(){
+  var prev=document.getElementById('foto-preview-img');
+  var ph=document.getElementById('foto-placeholder');
+  prev.src='';prev.style.display='none';ph.style.display='flex';
+  document.getElementById('foto-del-btn').style.display='none';
+}
+
+function uploadFotoFromTable(idx){
+  // open edit modal focused on foto
+  openEdit(idx);
+  setTimeout(function(){document.getElementById('foto-file-input').click();},300);
+}
+
+
+function exGetFiltered(){
+  var bz     = document.getElementById('ex-bz').value;
+  var anrede = document.getElementById('ex-anrede').value;
+  var ehren  = document.getElementById('ex-ehren').value;
+  var helga  = document.getElementById('ex-helga').value;
+  var email  = document.getElementById('ex-email').value;
+  var tel    = document.getElementById('ex-tel').value;
+
+  return members.filter(function(m){
+    if(bz     && String(m.bz)!==bz) return false;
+    if(anrede && m.a1!==anrede && m.a2!==anrede) return false;
+    if(ehren==='ja'   && !m.ehren)  return false;
+    if(ehren==='nein' &&  m.ehren)  return false;
+    if(helga==='ja'   && !m.helga)  return false;
+    if(helga==='nein' &&  m.helga)  return false;
+    if(email==='ja'   && !m.email)  return false;
+    if(tel  ==='ja'   && !m.tel)    return false;
+    return true;
   });
 }
 
-/* ALLE DEINE WEITEREN FUNKTIONEN (saveMember, exportPDF, doImport, OneDrive-Logik) */
-/* BLEIBEN HIER UNVERÄNDERT ERHALTEN */
-
-// Beispielhaft die korrigierte Export-Vorschau für den Druck:
-function exportPDF() {
-  preparePrintArea();
-  window.print();
+function exPreview(){
+  var filtered = exGetFiltered();
+  document.getElementById('ex-count').textContent = filtered.length;
+  var rows = filtered.slice(0,10).map(function(m){
+    return '<tr>'
+      +'<td>'+m.nr+'</td>'
+      +'<td><span class="badge b'+(m.bz||0)+'">B'+(m.bz||'?')+'</span></td>'
+      +'<td><strong>'+esc(m.name)+'</strong></td>'
+      +'<td>'+esc(m.vor)+'</td>'
+      +'<td>'+esc(m.str)+'</td>'
+      +'<td>'+esc(m.plz)+'</td>'
+      +'<td>'+esc(m.ort)+'</td>'
+      +'<td>'+esc(m.tel||'')+'</td>'
+      +'<td>'+esc(m.email||'')+'</td>'
+      +'</tr>';
+  });
+  if(filtered.length>10) rows.push('<tr><td colspan="9" style="text-align:center;color:var(--grey700);font-style:italic">... und '+(filtered.length-10)+' weitere</td></tr>');
+  document.getElementById('ex-preview-tbody').innerHTML = rows.join('');
 }
 
-function preparePrintArea() {
-  var area = document.getElementById('bgrid');
-  area.innerHTML = '';
-  [1,2,3,4].forEach(function(bzNum) {
-    var bzMembers = adr.filter(m => m.bz == bzNum).sort((a,b) => a.na.localeCompare(b.na));
-    if(bzMembers.length === 0) return;
-    
-    var div = document.createElement('div');
-    div.className = 'print-bezirk';
-    var html = '<h2 class="page-hd">Bezirk ' + bzNum + '</h2>';
-    html += '<table class="print-tbl"><thead><tr><th>Nr</th><th>Name, Vorname</th><th>Vermerke</th><th>Beitrag</th><th>Suppe</th></tr></thead><tbody>';
-    
-    bzMembers.forEach((m, idx) => {
-      html += '<tr><td>'+(idx+1)+'</td><td class="nm">'+m.na+', '+m.vo+'</td><td>'+(m.email||'')+'</td><td></td><td></td></tr>';
+function exExportCSV(){
+  var filtered = exGetFiltered();
+  if(!filtered.length){toast('Keine Adressen mit diesen Filterkriterien!',true);return;}
+  var SEP = ';';
+  var cols = ['Anrede1','Anrede2','Nachname','Vorname','Strasse','PLZ','Ort','Bezirk','Ehrenmitglied','Helga','Handy/Tel','E-Mail'];
+  function q(v){var s=String(v===null||v===undefined?'':v);return s.indexOf(SEP)!==-1||s.indexOf('"')!==-1?'"'+s.replace(/"/g,'""')+'"':s;}
+  var lines=[cols.map(q).join(SEP)];
+  filtered.forEach(function(m){
+    lines.push([m.a1,m.a2,m.name,m.vor,m.str,m.plz,m.ort,m.bz||'',m.ehren,m.helga,m.tel||'',m.email||''].map(q).join(SEP));
+  });
+  var blob=new Blob(['\uFEFF'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='Serienbrief_'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
+  toast(filtered.length+' Adressen als CSV exportiert');
+}
+
+function exExportVCF(){
+  var filtered = exGetFiltered();
+  if(!filtered.length){toast('Keine Adressen mit diesen Filterkriterien!',true);return;}
+  var lines=[];
+  filtered.forEach(function(m){
+    lines.push('BEGIN:VCARD');
+    lines.push('VERSION:3.0');
+    lines.push('N:'+vcf(m.name)+';'+vcf(m.vor)+';;;');
+    lines.push('FN:'+vcf(m.a2?m.a2+' ':'')+vcf(m.name)+(m.vor?' '+vcf(m.vor):''));
+    if(m.str||m.plz||m.ort)
+      lines.push('ADR;TYPE=HOME:;;'+vcf(m.str)+';'+vcf(m.ort)+';;'+vcf(m.plz)+';Deutschland');
+    if(m.tel)  lines.push('TEL;TYPE=CELL:'+vcf(m.tel));
+    if(m.email)lines.push('EMAIL;TYPE=HOME:'+vcf(m.email));
+    if(m.bz)   lines.push('ORG:SV Lau-Brechte - Bezirk '+m.bz);
+    lines.push('END:VCARD');
+    lines.push('');
+  });
+  var blob=new Blob([lines.join('\r\n')],{type:'text/vcard;charset=utf-8'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='Kontakte_'+new Date().toISOString().slice(0,10)+'.vcf';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
+  toast(filtered.length+' Kontakte als VCF exportiert');
+}
+
+function vcf(s){
+  var v=String(s||'');
+  return v.replace(/,/g,'\\\\,').replace(/;/g,'\\\\;');
+}
+
+
+// ── PWA Install ──────────────────────────────────────────────────────────
+var deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', function(e){
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBanner').classList.add('show');
+});
+window.addEventListener('appinstalled', function(){
+  document.getElementById('installBanner').classList.remove('show');
+  deferredPrompt = null;
+  toast('App wurde installiert! ✓');
+});
+function installPWA(){
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function(r){
+      deferredPrompt = null;
+      if(r.outcome==='accepted') toast('App wird installiert…');
     });
-    
-    html += '</tbody></table>';
-    div.innerHTML = html;
-    area.appendChild(div);
-  });
+  } else {
+    // iOS instructions
+    toast('iPhone: Safari → Teilen → Zum Home-Bildschirm');
+  }
 }
+
+// ── Service Worker ────────────────────────────────────────────────────────
+
+// ── iOS install hint ──────────────────────────────────────────────────────
+(function(){
+  var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  var dismissed = localStorage.getItem('iosDismissed');
+  if(isIOS && !isStandalone && !dismissed){
+    var banner = document.getElementById('installBanner');
+    if(banner){
+      banner.innerHTML = '<span>&#128247; Tipp: Tippe auf <strong>Teilen</strong> → <strong>Zum Home-Bildschirm</strong> um die App zu installieren</span>'
+        + '<button class="btn-onedrive" onclick="document.getElementById(\'installBanner\').classList.remove(\'show\');localStorage.setItem(\'iosDismissed\',\'1\')">✕</button>';
+      banner.classList.add('show');
+    }
+  }
+})();
+
+
+init();
 </script>
 </body>
 </html>
