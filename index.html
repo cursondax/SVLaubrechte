@@ -103,13 +103,16 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
 @media print{
   body{background:#fff;font-family:Arial,sans-serif;font-size:10pt}
   .hdr,.tabs,.toolbar,.stats,.pdf-bar,#sec-eingabe,#sec-import,
-  #sec-uebersicht,.btn,.btn-edit,.tab,.toast,.modal-bg{display:none!important}
+  #sec-uebersicht,.btn,.btn-edit,.tab,.toast,.modal-bg,.bottom-nav,
+  #installBanner{display:none!important}
   .wrap{padding:0;max-width:100%}
   #sec-bezirke{display:block!important}
   .card{box-shadow:none;border:none}
   .card-hd{background:var(--navy)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .blist{max-height:none!important;overflow:visible!important}
-  .bgrid{display:block!important}
+  .blist li{border-bottom:.5pt solid #c0c0c0!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .bgrid{display:grid!important;grid-template-columns:repeat(2,1fr)!important;gap:1rem!important;margin-bottom:1rem!important}
+  .bgrid .card{border:1pt solid #b0c4de!important;border-radius:4pt!important}
   .print-bezirk{page-break-before:always}
   .print-bezirk:first-child{page-break-before:avoid}
   .print-page{page-break-before:always}
