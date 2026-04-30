@@ -32,7 +32,6 @@ body{font-family:'Segoe UI',Calibri,sans-serif;background:var(--grey50);color:va
 
 /* Cards & Tables */
 .card{background:#fff;border-radius:var(--r);box-shadow:0 1px 3px rgba(0,0,0,.08);border:1px solid var(--grey100);margin-bottom:1rem}
-.card-hd{background:var(--navy);color:#fff;padding:.7rem 1.2rem;border-radius:var(--r) var(--r) 0 0;font-size:.95rem;font-weight:700}
 .card-bd{padding:1.2rem}
 .tbl-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:.85rem}
@@ -46,43 +45,55 @@ tbody tr:nth-child(even){background:var(--navyp)}
 .btn-navy{background:var(--navy);color:#fff}
 .btn-pdf{background:var(--orange);color:#fff}
 
-/* DRUCKVERSION - KORRIGIERTE LINIEN */
+/* Bottom Navigation */
+.bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--navy); z-index: 200; padding: 10px 0; }
+@media (max-width: 700px) { .bottom-nav { display: block; } .tabs { display: none; } }
+
+/* DRUCKVERSION - FIX: LINIEN & MENÜ */
 @media print{
-  body{background:#fff;font-family:Arial,sans-serif;font-size:10pt}
-  .hdr,.tabs,.toolbar,.stats,.pdf-bar,#sec-eingabe,#sec-import,#sec-uebersicht,.btn,.bottom-nav,.no-print{display:none!important}
+  body{background:#fff!important;font-family:Arial,sans-serif;font-size:10pt}
+  /* Menü und andere UI-Elemente ausblenden */
+  .hdr, .tabs, .toolbar, .stats, .pdf-bar, #sec-eingabe, #sec-import, #sec-uebersicht, .btn, .bottom-nav, .no-print {
+    display: none !important;
+  }
   .wrap{padding:0;max-width:100%;margin:0}
-  #sec-bezirke{display:block!important}
+  #sec-bezirke{display:block !important}
   .card{box-shadow:none;border:none}
   .print-bezirk{page-break-before:always; padding-top:10px}
   .print-bezirk:first-child{page-break-before:avoid}
   
-  .print-tbl{width:100%;border-collapse:collapse;table-layout:fixed;border:1.5pt solid #000}
-  .print-tbl th{
-    background:#2E75B6!important;
-    color:#fff!important;
-    border:1pt solid #000;
-    padding:6pt 4pt;
-    -webkit-print-color-adjust:exact;
-    print-color-adjust:exact;
+  /* Tabelle mit sichtbaren vertikalen Linien */
+  .print-tbl {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    border: 1.5pt solid #000 !important;
   }
-  
-  /* DEUTLICHE VERTIKALE LINIEN */
-  .print-tbl td{
-    padding:5pt 4pt;
-    border-bottom: 0.5pt solid #333;
-    border-right: 1.5pt solid #000 !important; /* Dicke schwarze Linie zwischen Spalten */
+  .print-tbl th {
+    background: #2E75B6 !important;
+    color: #fff !important;
+    border: 1pt solid #000 !important;
+    padding: 6pt 4pt;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-tbl td {
+    padding: 5pt 4pt;
+    border-bottom: 0.5pt solid #000 !important;
+    border-right: 1.5pt solid #000 !important; /* Dicke schwarze vertikale Linie */
     word-wrap: break-word;
+    color: #000 !important;
   }
-  .print-tbl td:last-child{border-right:none !important}
+  .print-tbl td:last-child { border-right: none !important; }
   
   /* Spaltenbreiten */
-  .td-nr{width:30pt; text-align:center}
-  .td-name{width:160pt; font-weight:bold}
-  .td-verm{width:auto}
-  .td-beit{width:50pt; text-align:center}
-  .td-suppe{width:50pt; text-align:center}
+  .td-nr { width: 30pt; text-align: center; }
+  .td-name { width: 160pt; font-weight: bold; }
+  .td-verm { width: auto; }
+  .td-beit { width: 50pt; text-align: center; }
+  .td-suppe { width: 50pt; text-align: center; }
 
-  h2 { color: #1F4E79; border-bottom: 2pt solid #1F4E79; margin-bottom: 10pt; padding-bottom: 5pt }
+  h2 { color: #1F4E79; border-bottom: 2pt solid #1F4E79; margin-bottom: 10pt; padding-bottom: 5pt; }
 }
 
 .sec{display:none}.sec.on{display:block}
@@ -107,9 +118,9 @@ tbody tr:nth-child(even){background:var(--navyp)}
   <div class="sec on" id="sec-uebersicht">
     <div class="card card-bd">
         <div class="toolbar">
-            <input type="text" id="q" class="srch" placeholder="🔍 Suche nach Name, Ort oder Straße..." oninput="renderTable()">
-            <select id="fa" class="btn" style="background:#fff; border:1px solid #ccc; font-family:inherit" onchange="renderTable()">
-                <option value="">Alle Anreden (Filter)</option>
+            <input type="text" id="q" class="srch" placeholder="🔍 Suche nach Name..." oninput="renderTable()">
+            <select id="fa" class="btn" style="background:#fff; border:1px solid #ccc;" onchange="renderTable()">
+                <option value="">Alle Anreden</option>
                 <option value="Familie">Familie</option>
                 <option value="Frau">Frau</option>
                 <option value="Schützenbruder">Schützenbruder</option>
@@ -118,7 +129,7 @@ tbody tr:nth-child(even){background:var(--navyp)}
         <div class="tbl-wrap">
             <table>
                 <thead>
-                    <tr><th>Bz.</th><th>Anrede</th><th>Name</th><th>Vorname</th><th>Straße</th><th>Ort</th></tr>
+                    <tr><th>Bz.</th><th>Anrede</th><th>Name</th><th>Vorname</th><th>Straße</th></tr>
                 </thead>
                 <tbody id="tbody"></tbody>
             </table>
@@ -129,10 +140,7 @@ tbody tr:nth-child(even){background:var(--navyp)}
   <div class="sec" id="sec-bezirke">
     <div class="card card-bd no-print">
         <div style="display:flex; justify-content:space-between; align-items:center">
-            <div>
-                <h3>Bezirkslisten Druckansicht</h3>
-                <p>Spalten sind durch dicke Linien getrennt.</p>
-            </div>
+            <h3>Bezirkslisten Druckvorschau</h3>
             <button class="btn btn-pdf" onclick="window.print()">🖨️ Liste Drucken / PDF</button>
         </div>
     </div>
@@ -141,87 +149,62 @@ tbody tr:nth-child(even){background:var(--navyp)}
 
   <div class="sec" id="sec-import">
     <div class="card card-bd">
-        <h3>Datenverwaltung</h3>
-        <p>Hier können CSV-Daten importiert werden.</p>
-        <input type="file" id="csvFile" accept=".csv" style="margin-top:10px">
-        <button class="btn btn-navy" onclick="handleImport()" style="margin-top:10px">📥 Importieren</button>
-        <button class="btn btn-save" onclick="localStorage.removeItem('sv_data'); location.reload()" style="margin-top:10px; background:#c0392b">🗑️ Alle Daten löschen</button>
+        <input type="file" id="csvFile" accept=".csv">
+        <button class="btn btn-navy" onclick="handleImport()">📥 Importieren</button>
     </div>
   </div>
 </div>
 
+<nav class="bottom-nav no-print">
+  <div style="display:flex; justify-content:space-around; color:#fff">
+    <span onclick="location.reload()">🏠 Home</span>
+    <span onclick="window.print()">🖨️ Druck</span>
+  </div>
+</nav>
+
 <script>
-// Daten laden
 let mitglieder = JSON.parse(localStorage.getItem('sv_data') || '[]');
 
 function showTab(id, btn) {
     document.querySelectorAll('.sec').forEach(s => s.classList.remove('on'));
     document.getElementById('sec-' + id).classList.add('on');
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
-    btn.classList.add('on');
+    if(btn) btn.classList.add('on');
     if(id === 'bezirke') preparePrint();
 }
 
-// Filter korrigiert: Prüft nun exakt die Anrede
 function renderTable() {
     const tbody = document.getElementById('tbody');
     const q = document.getElementById('q').value.toLowerCase();
-    const filterAnrede = document.getElementById('fa').value;
-    
+    const fa = document.getElementById('fa').value;
     tbody.innerHTML = '';
-    
-    const gefiltert = mitglieder.filter(m => {
-        const matchSearch = (m.nachname + m.vorname + m.strasse + (m.ort||'')).toLowerCase().includes(q);
-        // Exakter Vergleich für den Anrede-Filter
-        const matchAnrede = filterAnrede === "" || m.anrede === filterAnrede;
-        return matchSearch && matchAnrede;
-    });
-
-    gefiltert.forEach(m => {
+    const filtered = mitglieder.filter(m => 
+        (m.nachname.toLowerCase().includes(q) || m.vorname.toLowerCase().includes(q)) &&
+        (fa === "" || m.anrede === fa)
+    );
+    filtered.forEach(m => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${m.bezirk}</td><td>${m.anrede}</td><td>${m.nachname}</td><td>${m.vorname}</td><td>${m.strasse}</td><td>${m.ort || ''}</td>`;
+        tr.innerHTML = `<td>${m.bezirk}</td><td>${m.anrede}</td><td>${m.nachname}</td><td>${m.vorname}</td><td>${m.strasse}</td>`;
         tbody.appendChild(tr);
     });
-    document.getElementById('hdrbadge').innerText = gefiltert.length + ' Personen';
+    document.getElementById('hdrbadge').innerText = filtered.length + ' Personen';
 }
 
 function preparePrint() {
     const area = document.getElementById('print-area');
     area.innerHTML = '';
-    
     const bezirke = [...new Set(mitglieder.map(m => m.bezirk))].sort();
-    
     bezirke.forEach(bz => {
         if(!bz) return;
         const div = document.createElement('div');
         div.className = 'print-bezirk';
-        
-        let html = `<h2>Bezirk ${bz}</h2>`;
-        html += `<table class="print-tbl">
-            <thead>
-                <tr>
-                    <th class="td-nr">Nr</th>
-                    <th class="td-name">Name, Vorname</th>
-                    <th class="td-verm">Vermerke / E-Mail</th>
-                    <th class="td-beit">Beitrag</th>
-                    <th class="td-suppe">Suppe</th>
-                </tr>
-            </thead>
-            <tbody>`;
-        
-        const bzMitglieder = mitglieder.filter(m => m.bezirk == bz)
-            .sort((a,b) => a.nachname.localeCompare(b.nachname));
-
-        bzMitglieder.forEach((m, idx) => {
-            html += `<tr>
-                <td class="td-nr">${idx+1}</td>
-                <td class="td-name">${m.nachname}, ${m.vorname}</td>
-                <td class="td-verm">${m.email || ''} ${m.handy ? '/ '+m.handy : ''}</td>
-                <td class="td-beit"></td>
-                <td class="td-suppe"></td>
-            </tr>`;
+        let html = `<h2>Bezirk ${bz}</h2><table class="print-tbl"><thead><tr>
+            <th class="td-nr">Nr</th><th class="td-name">Name, Vorname</th><th class="td-verm">Vermerke</th>
+            <th class="td-beit">Beitrag</th><th class="td-suppe">Suppe</th></tr></thead><tbody>`;
+        mitglieder.filter(m => m.bezirk == bz).sort((a,b) => a.nachname.localeCompare(b.nachname)).forEach((m, i) => {
+            html += `<tr><td class="td-nr">${i+1}</td><td class="td-name">${m.nachname}, ${m.vorname}</td>
+            <td class="td-verm">${m.email || ''}</td><td class="td-beit"></td><td class="td-suppe"></td></tr>`;
         });
-        
         html += `</tbody></table>`;
         div.innerHTML = html;
         area.appendChild(div);
@@ -230,38 +213,19 @@ function preparePrint() {
 
 function handleImport() {
     const file = document.getElementById('csvFile').files[0];
-    if(!file) return alert("Bitte Datei wählen");
-    
+    if(!file) return;
     const reader = new FileReader();
-    reader.onload = function(e) {
-        const text = e.target.result;
-        const lines = text.split('\n');
-        const data = [];
-        // Einfacher Parser (Annahme: Semikolon Trennung)
-        for(let i=1; i<lines.length; i++) {
-            const cols = lines[i].split(';');
-            if(cols.length > 3) {
-                data.push({
-                    id: Date.now() + i,
-                    bezirk: cols[0],
-                    anrede: cols[1],
-                    nachname: cols[2],
-                    vorname: cols[3],
-                    strasse: cols[4],
-                    ort: cols[5],
-                    email: cols[6]
-                });
-            }
-        }
-        mitglieder = data;
+    reader.onload = e => {
+        const lines = e.target.result.split('\n');
+        mitglieder = lines.slice(1).map(l => {
+            const c = l.split(';');
+            return { bezirk:c[0], anrede:c[1], nachname:c[2], vorname:c[3], strasse:c[4], email:c[6] };
+        }).filter(m => m.nachname);
         localStorage.setItem('sv_data', JSON.stringify(mitglieder));
-        alert(data.length + " Mitglieder geladen");
         renderTable();
     };
     reader.readAsText(file);
 }
-
-// Start
 renderTable();
 </script>
 </body>
