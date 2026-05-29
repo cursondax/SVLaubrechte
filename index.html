@@ -178,19 +178,21 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
   align-items: center;
   justify-content: center;
   gap: 2px;
-  padding: 8px 4px;
+  padding: 8px 2px;
   background: none;
   border: none;
   color: rgba(255,255,255,.6);
   cursor: pointer;
   font-family: inherit;
-  font-size: .62rem;
+  font-size: .6rem;
   font-weight: 600;
-  letter-spacing: .02em;
+  letter-spacing: 0;
   transition: color .15s;
   -webkit-tap-highlight-color: transparent;
+  min-width: 0;
 }
-.bnav-btn .ico { font-size: 1.4rem; line-height: 1; }
+.bnav-btn span:not(.ico){ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.bnav-btn .ico { font-size: 1.3rem; line-height: 1; }
 .bnav-btn.on { color: #fff; }
 .bnav-btn.on .ico { transform: scale(1.1); }
 
@@ -720,11 +722,14 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
     <button class="bnav-btn on" id="bn-uebersicht" onclick="showTab('uebersicht',this,'bn-uebersicht')">
       <span class="ico">&#128203;</span><span>Übersicht</span>
     </button>
-    <button class="bnav-btn" id="bn-eingabe" onclick="showTab('eingabe',this,'bn-eingabe')">
-      <span class="ico">&#10133;</span><span>Neu</span>
+    <button class="bnav-btn" id="bn-karte" onclick="showTab('karte',this,'bn-karte')">
+      <span class="ico">&#128506;</span><span>Karte</span>
     </button>
     <button class="bnav-btn" id="bn-bezirke" onclick="showTab('bezirke',this,'bn-bezirke')">
       <span class="ico">&#128193;</span><span>Bezirke</span>
+    </button>
+    <button class="bnav-btn" id="bn-eingabe" onclick="showTab('eingabe',this,'bn-eingabe')">
+      <span class="ico">&#10133;</span><span>Neu</span>
     </button>
     <button class="bnav-btn" id="bn-export" onclick="showTab('export',this,'bn-export')">
       <span class="ico">&#128228;</span><span>Export</span>
