@@ -1398,10 +1398,16 @@ function karteLoadGeocache(){
   if (savedStart) { var s = document.getElementById('k-start'); if (s) s.value = savedStart; }
   var savedCoord = localStorage.getItem('sgO_start_coord');
   if (savedCoord) { try { karteState.startCoord = JSON.parse(savedCoord); } catch(e){} }
+  try { karteState.excluded = JSON.parse(localStorage.getItem('sgO_excluded')||'{}'); }
+  catch(e){ karteState.excluded = {}; }
 }
 
 function karteSaveGeocache(){
   try { localStorage.setItem('sgO_geocache', JSON.stringify(karteState.geocache)); } catch(e){}
+}
+
+function karteSaveExcluded(){
+  try { localStorage.setItem('sgO_excluded', JSON.stringify(karteState.excluded)); } catch(e){}
 }
 
 function karteMemberKey(m){
@@ -1500,16 +1506,19 @@ function karteRecalc(){
 
 function karteExcludeFromTour(key){
   karteState.excluded[key] = true;
+  karteSaveExcluded();
   karteRecalc();
 }
 
 function karteIncludeAgain(key){
   delete karteState.excluded[key];
+  karteSaveExcluded();
   karteRecalc();
 }
 
 function karteClearExcluded(){
   karteState.excluded = {};
+  karteSaveExcluded();
   karteRecalc();
 }
 
