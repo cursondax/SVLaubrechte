@@ -4,11 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SV Lau-Brechte">
 <meta name="theme-color" content="#1F4E79">
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" type="image/png" href="./icon-192.png">
+<link rel="stylesheet" href="./vendor/leaflet/leaflet.css">
+<script defer src="./vendor/leaflet/leaflet.js"></script>
 <link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAABzklEQVR42u3TAQ0AIBADsTnBEX5QDy5gIV1yBp6SlG/MtdVVDGigDWiggRbQQAtooIE2oIEGGiCggRbQQAtooIE2oIEGWkADLaCBFtBAA21AAw20gAZaQAMtoIEG2oAGGmgBDbSABlpAAw20AQ000AIaaAENtIAGGmgDGmigBTTQAhpoAQ000AY00EALaKAFNNBAAyPd+GyOIKAloCWgJaAFtAS0BLQEtAS0gJaAloCWgJaAFtAS0BLQEtAS0AJaAloCWgJaAlpAS0BLQEtAS0ALaAloCWgJaAloAS0BLQEtAS2gHUJAS0BLQEtAC2gJaAloCWgJaAEtAS0BLQEtAS2gJaAloCWgJaAFtAS0BLQEtAS0gJaAloCWgJaAFtAS0BLQEtAS0AJaAloCWgJaQEtAS0BLQEtAC2gJaAloCWgJaAEtAS0BLQEtAS2gJaAloCWgJaAFtAS09AZ0+zwSNF8NIKCBFtBAC2iggTaggQZaQAMtoIEW0EADbUADDbSABlpAAy2ggQbagAYaaAENtIAGWkADDbQBDTTQAhpoAQ20gAYaaAMaaKAFNNACGmgBDTTQBjTQQAtooAU00EAb0EAb0EADLaCBFtBAA124A++6olt/NNynAAAAAElFTkSuQmCC">
 
 <title>Mitgliederverwaltung - SV Lau-Brechte</title>
@@ -303,6 +306,26 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
 }
 .install-banner.show { display: flex; }
 
+/* Karte / Route */
+#map{height:60vh;min-height:380px;border-radius:var(--r);border:1px solid var(--grey300);z-index:1}
+.map-toolbar{display:grid;grid-template-columns:1fr auto;gap:.7rem;margin-bottom:.85rem;align-items:end}
+@media(max-width:700px){.map-toolbar{grid-template-columns:1fr}}
+.map-stat{background:var(--navyp);border-radius:var(--r);padding:.55rem .9rem;font-size:.85rem;display:flex;gap:1rem;flex-wrap:wrap;align-items:center;margin-top:.7rem}
+.map-stat strong{color:var(--navy)}
+.map-progress{width:100%;height:6px;background:var(--grey100);border-radius:3px;overflow:hidden;margin-top:.4rem}
+.map-progress > span{display:block;height:100%;background:var(--navym);transition:width .2s}
+.tour-list{margin-top:1rem;background:#fff;border:1px solid var(--grey100);border-radius:var(--r);overflow:hidden}
+.tour-list ol{list-style:none;counter-reset:t}
+.tour-list li{counter-increment:t;display:grid;grid-template-columns:34px 1fr auto;gap:.7rem;padding:.55rem .85rem;border-bottom:1px solid var(--grey100);font-size:.88rem;align-items:center}
+.tour-list li:last-child{border-bottom:none}
+.tour-list li::before{content:counter(t);background:var(--navy);color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.78rem}
+.tour-list .leg{color:var(--grey700);font-size:.78rem;white-space:nowrap}
+.tour-num-icon{background:var(--navy);color:#fff;border:2px solid #fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.78rem;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.tour-num-icon.start{background:var(--green)}
+@media print{
+  #sec-karte .map-toolbar,#sec-karte .btn,#sec-karte #map{display:none!important}
+  .tour-list{border:none}
+}
 </style>
 </head>
 <body>
@@ -318,6 +341,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
     <button class="tab"    onclick="showTab('bezirke',this)">&#128193; Bezirke</button>
     <button class="tab"    onclick="showTab('import',this)">&#128229; Import / Speichern</button>
     <button class="tab" onclick="showTab('export',this)">&#128228; Serienbrief-Export</button>
+    <button class="tab" onclick="showTab('karte',this)">&#128506; Karte / Route</button>
   </div>
 
   <!-- UEBERSICHT -->
@@ -592,6 +616,86 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
     </div>
   </div>
 
+  <!-- KARTE / ROUTE -->
+  <div class="sec" id="sec-karte">
+    <div class="card">
+      <div class="card-hd"><h2>&#128506; Karte &amp; optimale Route</h2>
+        <span id="karte-geo-info" style="font-size:.78rem;opacity:.85">&hellip;</span></div>
+      <div class="card-bd">
+
+        <div class="map-toolbar">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.6rem">
+            <div class="fg"><label>Bezirk</label>
+              <select id="k-bz" onchange="karteApplyFilter()">
+                <option value="">Alle Bezirke</option>
+                <option value="1">Bezirk 1</option><option value="2">Bezirk 2</option>
+                <option value="3">Bezirk 3</option><option value="4">Bezirk 4</option>
+              </select>
+            </div>
+            <div class="fg"><label>Anrede</label>
+              <select id="k-anrede" onchange="karteApplyFilter()">
+                <option value="">Alle Anreden</option>
+                <option value="Familie">Familie</option>
+                <option value="Frau">Frau</option>
+                <option value="Sch&#252;tzenbruder">Sch&#252;tzenbruder</option>
+              </select>
+            </div>
+            <div class="fg"><label>Ehrenmitglied</label>
+              <select id="k-ehren" onchange="karteApplyFilter()">
+                <option value="">Alle</option>
+                <option value="ja">Nur Ehrenmitglieder</option>
+                <option value="nein">Keine Ehrenmitglieder</option>
+              </select>
+            </div>
+            <div class="fg"><label>Helga-Liste</label>
+              <select id="k-helga" onchange="karteApplyFilter()">
+                <option value="">Alle</option>
+                <option value="ja">Nur Helga-Liste</option>
+                <option value="nein">Nicht auf Helga-Liste</option>
+              </select>
+            </div>
+            <div class="fg" style="grid-column:1 / -1">
+              <label>Startadresse (deine eigene Adresse)</label>
+              <input type="text" id="k-start" placeholder="Mustermannstr. 12, 48607 Ochtrup">
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:.45rem">
+            <button class="btn btn-navy" onclick="karteGeocodeAll()" id="btn-geocode">&#128270; Adressen geocoden</button>
+            <button class="btn btn-save" onclick="karteCalcRoute()">&#128640; Route berechnen</button>
+            <button class="btn btn-import" onclick="karteOpenInMaps()">&#128205; In Google Maps</button>
+          </div>
+        </div>
+
+        <div class="map-stat">
+          <span><strong id="k-stat-treffer">0</strong> Adressen im Filter</span>
+          <span>&middot;</span>
+          <span><strong id="k-stat-geo">0</strong> geocodiert</span>
+          <span>&middot;</span>
+          <span><strong id="k-stat-tour">&ndash;</strong> Stopps in Tour</span>
+          <span>&middot;</span>
+          <span>Gesamt: <strong id="k-stat-km">&ndash;</strong> km Luftlinie</span>
+        </div>
+        <div class="map-progress" id="k-progress" style="display:none"><span style="width:0%"></span></div>
+
+        <div id="map" style="margin-top:.9rem"></div>
+
+        <div class="tour-list" id="tour-list" style="display:none">
+          <div class="card-hd" style="border-radius:0">
+            <h2>Tour-Liste</h2>
+            <button class="btn btn-clear" style="padding:.3rem .85rem;font-size:.8rem" onclick="window.print()">&#128438; Drucken</button>
+          </div>
+          <ol id="tour-list-items"></ol>
+        </div>
+
+        <p style="margin-top:.9rem;font-size:.78rem;color:var(--grey700);line-height:1.55">
+          <strong>So funktioniert's:</strong> Beim ersten Aufruf ruft die App f&uuml;r jede Adresse die OpenStreetMap-Geocoding-API auf (rund 1 Sekunde pro Adresse, einmaliger Vorgang &ndash; danach wird alles lokal gespeichert).
+          Mit „Route berechnen" wird eine optimierte Reise-Reihenfolge ab deiner Startadresse berechnet (Nearest-Neighbor + 2-opt, Distanz per Luftlinie).
+          Mit „In Google Maps" wird die Tour in Google Maps zur Fahrrad-Navigation ge&ouml;ffnet (max. 9 Zwischenziele pro Link &ndash; bei l&auml;ngeren Touren werden mehrere Links angeboten).
+        </p>
+      </div>
+    </div>
+  </div>
+
 <!-- BOTTOM NAVIGATION (mobile) -->
 <nav class="bottom-nav">
   <div class="bottom-nav-inner">
@@ -801,6 +905,10 @@ function showTab(id,btn,bnId){
     if(b.getAttribute('onclick') && b.getAttribute('onclick').indexOf("'"+id+"'")!==-1) b.classList.add('on');
   });
   if(id==='export') exPreview();
+  if(id==='karte'){
+    if(!karteState.map) karteInit();
+    else { setTimeout(function(){ karteState.map.invalidateSize(); }, 50); karteApplyFilter(); }
+  }
 }
 
 function saveMember(){
@@ -1250,6 +1358,320 @@ if ('serviceWorker' in navigator) {
     }
   }
 })();
+
+
+// ── Karte / Route ─────────────────────────────────────────────────────────
+var karteState = {
+  map: null, markers: [], routeLayer: null, tour: null,
+  filtered: [], geocache: {}, startCoord: null, geocoding: false
+};
+
+function karteCacheKey(m){
+  return ((m.str||'')+'|'+(m.plz||'')+'|'+(m.ort||'')).toLowerCase().trim();
+}
+
+function karteLoadGeocache(){
+  try { karteState.geocache = JSON.parse(localStorage.getItem('sgO_geocache')||'{}'); }
+  catch(e){ karteState.geocache = {}; }
+  members.forEach(function(m){
+    var k = karteCacheKey(m);
+    if (karteState.geocache[k]) { m.lat = karteState.geocache[k].lat; m.lng = karteState.geocache[k].lng; }
+  });
+  var savedStart = localStorage.getItem('sgO_start');
+  if (savedStart) { var s = document.getElementById('k-start'); if (s) s.value = savedStart; }
+  var savedCoord = localStorage.getItem('sgO_start_coord');
+  if (savedCoord) { try { karteState.startCoord = JSON.parse(savedCoord); } catch(e){} }
+}
+
+function karteSaveGeocache(){
+  try { localStorage.setItem('sgO_geocache', JSON.stringify(karteState.geocache)); } catch(e){}
+}
+
+function karteFiltered(){
+  var bz = document.getElementById('k-bz').value;
+  var an = document.getElementById('k-anrede').value;
+  var eh = document.getElementById('k-ehren').value;
+  var hg = document.getElementById('k-helga').value;
+  return members.filter(function(m){
+    if (bz && String(m.bz)!==bz) return false;
+    if (an && m.a1!==an && m.a2!==an) return false;
+    if (eh==='ja' && !m.ehren) return false;
+    if (eh==='nein' && m.ehren) return false;
+    if (hg==='ja' && !m.helga) return false;
+    if (hg==='nein' && m.helga) return false;
+    return true;
+  });
+}
+
+function karteInit(){
+  if (karteState.map) return;
+  if (typeof L === 'undefined') { setTimeout(karteInit, 200); return; }
+  karteState.map = L.map('map').setView([52.2057, 7.1898], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  }).addTo(karteState.map);
+  karteLoadGeocache();
+  karteUpdateGeoInfo();
+  document.getElementById('k-start').addEventListener('change', function(){
+    var v = this.value.trim();
+    localStorage.setItem('sgO_start', v);
+    karteState.startCoord = null;
+    localStorage.removeItem('sgO_start_coord');
+  });
+  karteApplyFilter();
+}
+
+function karteUpdateGeoInfo(){
+  var withGeo = members.filter(function(m){ return m.lat && m.lng; }).length;
+  var el = document.getElementById('karte-geo-info');
+  if (el) el.textContent = withGeo + ' von ' + members.length + ' Adressen geocodiert';
+}
+
+function karteApplyFilter(){
+  if (!karteState.map) return;
+  karteState.filtered = karteFiltered();
+  var withGeo = karteState.filtered.filter(function(m){ return m.lat && m.lng; });
+  document.getElementById('k-stat-treffer').textContent = karteState.filtered.length;
+  document.getElementById('k-stat-geo').textContent = withGeo.length;
+  karteState.markers.forEach(function(mk){ karteState.map.removeLayer(mk); });
+  karteState.markers = [];
+  if (karteState.routeLayer) { karteState.map.removeLayer(karteState.routeLayer); karteState.routeLayer = null; }
+  document.getElementById('tour-list').style.display = 'none';
+  document.getElementById('k-stat-tour').textContent = '–';
+  document.getElementById('k-stat-km').textContent = '–';
+  if (!withGeo.length) return;
+  withGeo.forEach(function(m){
+    var mk = L.marker([m.lat, m.lng]).addTo(karteState.map);
+    var popup = '<strong>'+esc(m.name)+(m.vor?', '+esc(m.vor):'')+'</strong>'
+      +'<br>'+esc(m.str||'')+'<br>'+esc(m.plz||'')+' '+esc(m.ort||'')
+      +(m.tel?'<br>📞 <a href="tel:'+esc(m.tel)+'">'+esc(m.tel)+'</a>':'')
+      +'<br><a href="https://www.google.com/maps/search/?api=1&query='+m.lat+','+m.lng+'" target="_blank">In Google Maps</a>';
+    mk.bindPopup(popup);
+    karteState.markers.push(mk);
+  });
+  if (karteState.markers.length){
+    var grp = L.featureGroup(karteState.markers);
+    karteState.map.fitBounds(grp.getBounds().pad(0.15));
+  }
+}
+
+function karteSleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+
+function karteGeocodeOne(parts){
+  var q = new URLSearchParams({
+    street: parts.str || '', city: parts.ort || '', postalcode: parts.plz || '',
+    country: 'Deutschland', format: 'json', limit: '1'
+  });
+  var url = 'https://nominatim.openstreetmap.org/search?' + q.toString();
+  return fetch(url, { headers: { 'Accept': 'application/json' } })
+    .then(function(r){ if (!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+    .then(function(d){ return d.length ? { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) } : null; });
+}
+
+function karteParseStart(s){
+  var parts = s.split(',').map(function(p){ return p.trim(); });
+  if (parts.length >= 2) {
+    var rest = parts[1].split(/\s+/);
+    var plz='', ort='';
+    if (rest[0] && /^\d{4,5}$/.test(rest[0])) { plz = rest[0]; ort = rest.slice(1).join(' '); }
+    else { ort = rest.join(' '); }
+    return { str: parts[0], plz: plz, ort: ort };
+  }
+  return { str: s, plz: '', ort: '' };
+}
+
+async function karteGeocodeAll(){
+  if (karteState.geocoding) { toast('Geocoding läuft bereits', true); return; }
+  karteState.geocoding = true;
+  var btn = document.getElementById('btn-geocode');
+  btn.disabled = true;
+  try {
+    var startInput = document.getElementById('k-start').value.trim();
+    if (startInput && !karteState.startCoord) {
+      var sp = karteParseStart(startInput);
+      try {
+        var sr = await karteGeocodeOne(sp);
+        if (sr) {
+          karteState.startCoord = sr;
+          localStorage.setItem('sgO_start_coord', JSON.stringify(sr));
+          toast('Startadresse gefunden');
+        } else {
+          toast('Startadresse nicht gefunden – bitte präziser angeben', true);
+        }
+      } catch(e){ console.warn(e); }
+      await karteSleep(1100);
+    }
+    var todo = karteState.filtered.filter(function(m){
+      return (m.str || m.plz) && !(m.lat && m.lng);
+    });
+    if (!todo.length) {
+      toast('Alle gefilterten Adressen sind bereits geocodiert' + (karteState.startCoord?'':' – Startadresse fehlt noch'));
+      return;
+    }
+    var prog = document.getElementById('k-progress');
+    var bar = prog.querySelector('span');
+    prog.style.display = 'block';
+    var ok = 0, fail = 0;
+    for (var i = 0; i < todo.length; i++) {
+      var m = todo[i];
+      try {
+        var r = await karteGeocodeOne({ str: m.str, plz: m.plz, ort: m.ort });
+        if (r) { m.lat = r.lat; m.lng = r.lng; karteState.geocache[karteCacheKey(m)] = r; ok++; }
+        else { fail++; }
+      } catch(e){ console.warn('Geocode-Fehler:', m.str, e); fail++; }
+      bar.style.width = Math.round((i+1)/todo.length*100)+'%';
+      document.getElementById('k-stat-geo').textContent =
+        members.filter(function(x){ return x.lat && x.lng; }).length;
+      await karteSleep(1100);
+    }
+    karteSaveGeocache();
+    prog.style.display = 'none';
+    bar.style.width = '0%';
+    toast(ok + ' geocodiert' + (fail ? ', ' + fail + ' nicht gefunden' : ''));
+    karteUpdateGeoInfo();
+    karteApplyFilter();
+  } finally {
+    karteState.geocoding = false;
+    btn.disabled = false;
+  }
+}
+
+function haversine(a, b){
+  var R = 6371;
+  var dLat = (b.lat - a.lat) * Math.PI / 180;
+  var dLng = (b.lng - a.lng) * Math.PI / 180;
+  var la1 = a.lat * Math.PI / 180, la2 = b.lat * Math.PI / 180;
+  var h = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(la1)*Math.cos(la2)*Math.sin(dLng/2)*Math.sin(dLng/2);
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function tourTotalKm(coords){
+  var sum = 0;
+  for (var i = 1; i < coords.length; i++) sum += haversine(coords[i-1], coords[i]);
+  return sum;
+}
+
+function nearestNeighborOrder(start, points){
+  var remaining = points.map(function(_,i){ return i; });
+  var current = start, order = [];
+  while (remaining.length) {
+    var bestIdx = 0, bestDist = Infinity;
+    for (var k = 0; k < remaining.length; k++) {
+      var d = haversine(current, points[remaining[k]]);
+      if (d < bestDist) { bestDist = d; bestIdx = k; }
+    }
+    var picked = remaining[bestIdx];
+    order.push(picked);
+    current = points[picked];
+    remaining.splice(bestIdx, 1);
+  }
+  return order;
+}
+
+function twoOpt(start, points, order){
+  var improved = true, iter = 0, maxIter = 50;
+  while (improved && iter < maxIter) {
+    improved = false; iter++;
+    for (var i = 0; i < order.length - 1; i++) {
+      for (var j = i + 1; j < order.length; j++) {
+        var prevI = (i === 0 ? start : points[order[i-1]]);
+        var pi = points[order[i]], pj = points[order[j]];
+        var nextJ = (j === order.length - 1 ? null : points[order[j+1]]);
+        var dOld = haversine(prevI, pi) + (nextJ ? haversine(pj, nextJ) : 0);
+        var dNew = haversine(prevI, pj) + (nextJ ? haversine(pi, nextJ) : 0);
+        if (dNew + 1e-9 < dOld) {
+          var sub = order.slice(i, j+1).reverse();
+          order.splice.apply(order, [i, sub.length].concat(sub));
+          improved = true;
+        }
+      }
+    }
+  }
+  return order;
+}
+
+function karteCalcRoute(){
+  if (!karteState.map) { toast('Karte noch nicht geladen', true); return; }
+  if (!karteState.startCoord) {
+    toast('Bitte Startadresse eintragen und "Adressen geocoden" klicken', true);
+    return;
+  }
+  var withGeo = karteState.filtered.filter(function(m){ return m.lat && m.lng; });
+  if (withGeo.length < 1) { toast('Keine geocodierten Adressen im Filter', true); return; }
+  var points = withGeo.map(function(m){ return { lat: m.lat, lng: m.lng, m: m }; });
+  var start = karteState.startCoord;
+  var order = nearestNeighborOrder(start, points);
+  order = twoOpt(start, points, order);
+  var tour = [start].concat(order.map(function(i){ return points[i]; }));
+  var totalKm = tourTotalKm(tour);
+  if (karteState.routeLayer) karteState.map.removeLayer(karteState.routeLayer);
+  var latlngs = tour.map(function(p){ return [p.lat, p.lng]; });
+  karteState.routeLayer = L.polyline(latlngs, { color: '#1F4E79', weight: 4, opacity: 0.7 }).addTo(karteState.map);
+  karteState.markers.forEach(function(mk){ karteState.map.removeLayer(mk); });
+  karteState.markers = [];
+  var startMk = L.marker([start.lat, start.lng], {
+    icon: L.divIcon({ className: '', html: '<div class="tour-num-icon start">S</div>', iconSize: [28,28], iconAnchor: [14,14] })
+  }).addTo(karteState.map).bindPopup('<strong>Start</strong>');
+  karteState.markers.push(startMk);
+  order.forEach(function(pIdx, n){
+    var p = points[pIdx], m = p.m;
+    var mk = L.marker([p.lat, p.lng], {
+      icon: L.divIcon({ className: '', html: '<div class="tour-num-icon">'+(n+1)+'</div>', iconSize: [28,28], iconAnchor: [14,14] })
+    }).addTo(karteState.map).bindPopup(
+      '<strong>'+(n+1)+'. '+esc(m.name)+(m.vor?', '+esc(m.vor):'')+'</strong>'
+      +'<br>'+esc(m.str||'')+'<br>'+esc(m.plz||'')+' '+esc(m.ort||'')
+    );
+    karteState.markers.push(mk);
+  });
+  karteState.map.fitBounds(L.polyline(latlngs).getBounds().pad(0.1));
+  var html = '';
+  for (var i = 1; i < tour.length; i++) {
+    var leg = haversine(tour[i-1], tour[i]).toFixed(2);
+    var m = tour[i].m;
+    html += '<li><span>'+esc(m.name)+(m.vor?', '+esc(m.vor):'')
+      +'<br><span style="font-size:.78rem;color:var(--grey700)">'+esc(m.str||'')+', '+esc(m.plz||'')+' '+esc(m.ort||'')+'</span></span>'
+      +'<span class="leg">'+leg+' km</span></li>';
+  }
+  document.getElementById('tour-list-items').innerHTML = html;
+  document.getElementById('tour-list').style.display = 'block';
+  document.getElementById('k-stat-tour').textContent = order.length;
+  document.getElementById('k-stat-km').textContent = totalKm.toFixed(1);
+  karteState.tour = tour;
+  toast('Route berechnet: '+order.length+' Stopps · '+totalKm.toFixed(1)+' km Luftlinie');
+}
+
+function karteOpenInMaps(){
+  if (!karteState.tour || karteState.tour.length < 2) { toast('Erst Route berechnen', true); return; }
+  var t = karteState.tour;
+  var STOPS_PER_LINK = 11;
+  var links = [];
+  for (var i = 0; i < t.length - 1; i += STOPS_PER_LINK - 1) {
+    var chunk = t.slice(i, i + STOPS_PER_LINK);
+    if (chunk.length < 2) continue;
+    var origin = chunk[0].lat + ',' + chunk[0].lng;
+    var destination = chunk[chunk.length-1].lat + ',' + chunk[chunk.length-1].lng;
+    var waypoints = chunk.slice(1, -1).map(function(p){ return p.lat + ',' + p.lng; }).join('|');
+    var url = 'https://www.google.com/maps/dir/?api=1&travelmode=bicycling'
+      + '&origin=' + origin + '&destination=' + destination
+      + (waypoints ? '&waypoints=' + encodeURIComponent(waypoints) : '');
+    links.push(url);
+  }
+  if (!links.length) { toast('Keine gültige Route', true); return; }
+  window.open(links[0], '_blank');
+  var tlist = document.getElementById('tour-list');
+  var old = tlist.querySelector('.tour-extra-links');
+  if (old) old.remove();
+  if (links.length > 1) {
+    var div = document.createElement('div');
+    div.className = 'tour-extra-links';
+    div.style.cssText = 'padding:.7rem .9rem;border-top:1px solid var(--grey100);font-size:.85rem';
+    div.innerHTML = '<strong>Tour zu lang für eine URL – '+links.length+' Teilstrecken:</strong><br>'
+      + links.map(function(u, i){ return '<a href="'+u+'" target="_blank" style="display:inline-block;margin-top:.3rem;margin-right:.7rem;color:var(--navym)">Teil '+(i+1)+' →</a>'; }).join('');
+    tlist.appendChild(div);
+    toast(links.length+' Teilstrecken – erste in neuem Tab geöffnet, weitere unten in der Liste');
+  }
+}
 
 
 init();

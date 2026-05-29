@@ -1,13 +1,18 @@
 // SV Lau-Brechte Service Worker
 // Versions-String bei jedem Release erhöhen, damit Clients neu laden
-const CACHE_VERSION = 'svlb-v1';
+const CACHE_VERSION = 'svlb-v2';
 const PRECACHE = [
   './',
   './index.html',
   './manifest.json',
   './icon.png',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './vendor/leaflet/leaflet.js',
+  './vendor/leaflet/leaflet.css',
+  './vendor/leaflet/images/marker-icon.png',
+  './vendor/leaflet/images/marker-icon-2x.png',
+  './vendor/leaflet/images/marker-shadow.png'
 ];
 
 self.addEventListener('install', (event) => {
