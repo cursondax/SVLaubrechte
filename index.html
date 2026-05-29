@@ -1746,12 +1746,15 @@ function karteCalcRoute(){
   karteState.markers.push(startMk);
   order.forEach(function(pIdx, n){
     var p = points[pIdx], m = p.m;
+    var memKey = karteMemberKey(m).replace(/'/g,"\\'");
+    var popup = '<strong>'+(n+1)+'. '+esc(m.name)+(m.vor?', '+esc(m.vor):'')+'</strong>'
+      +'<br>'+esc(m.str||'')+'<br>'+esc(m.plz||'')+' '+esc(m.ort||'')
+      +(m.tel?'<br>📞 <a href="tel:'+esc(m.tel)+'">'+esc(m.tel)+'</a>':'')
+      +'<br><a href="https://www.google.com/maps/search/?api=1&query='+p.lat+','+p.lng+'" target="_blank">In Google Maps</a>'
+      +'<br><a style="color:#c0392b;cursor:pointer" onclick="karteExcludeFromTour(\''+memKey+'\');karteState.map.closePopup()">✕ Aus Tour entfernen</a>';
     var mk = L.marker([p.lat, p.lng], {
       icon: L.divIcon({ className: '', html: '<div class="tour-num-icon">'+(n+1)+'</div>', iconSize: [28,28], iconAnchor: [14,14] })
-    }).addTo(karteState.map).bindPopup(
-      '<strong>'+(n+1)+'. '+esc(m.name)+(m.vor?', '+esc(m.vor):'')+'</strong>'
-      +'<br>'+esc(m.str||'')+'<br>'+esc(m.plz||'')+' '+esc(m.ort||'')
-    );
+    }).addTo(karteState.map).bindPopup(popup);
     karteState.markers.push(mk);
   });
   karteState.map.fitBounds(L.polyline(latlngs).getBounds().pad(0.1));
