@@ -318,12 +318,21 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
 .map-progress > span{display:block;height:100%;background:var(--navym);transition:width .2s}
 .tour-list{margin-top:1rem;background:#fff;border:1px solid var(--grey100);border-radius:var(--r);overflow:hidden}
 .tour-list ol{list-style:none;counter-reset:t}
-.tour-list li{counter-increment:t;display:grid;grid-template-columns:34px 1fr auto auto;gap:.5rem;padding:.55rem .85rem;border-bottom:1px solid var(--grey100);font-size:.88rem;align-items:center}
+.tour-list li{counter-increment:t;display:grid;grid-template-columns:34px 1fr auto auto auto;gap:.45rem;padding:.55rem .85rem;border-bottom:1px solid var(--grey100);font-size:.88rem;align-items:center;cursor:pointer;transition:background var(--ease)}
 .tour-list li:last-child{border-bottom:none}
+.tour-list li:hover{background:var(--navyp)}
+.tour-list li:active{background:var(--navylt)}
 .tour-list li::before{content:counter(t);background:var(--navy);color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.78rem}
 .tour-list .leg{color:var(--grey700);font-size:.78rem;white-space:nowrap}
-.tour-list .btn-excl{background:none;border:1px solid var(--grey300);color:var(--grey700);border-radius:5px;padding:1px 7px;font-size:.85rem;cursor:pointer;transition:var(--ease);line-height:1.3}
+.tour-list .nav-hint{color:var(--navym);font-size:.95rem;line-height:1}
+.tour-list .btn-excl,.tour-list .btn-tel{background:none;border:1px solid var(--grey300);color:var(--grey700);border-radius:5px;padding:2px 7px;font-size:.95rem;cursor:pointer;transition:var(--ease);line-height:1.1}
 .tour-list .btn-excl:hover{background:#c0392b;color:#fff;border-color:#c0392b}
+.tour-list .btn-tel{color:var(--green);border-color:var(--green)}
+.tour-list .btn-tel:hover{background:var(--green);color:#fff}
+@media print {
+  .tour-list li{cursor:auto}
+  .tour-list .btn-excl,.tour-list .btn-tel,.tour-list .nav-hint{display:none}
+}
 .k-orte-box{display:flex;flex-wrap:wrap;gap:.45rem;padding:.5rem;border:1.5px solid var(--grey300);border-radius:6px;background:#fff;max-height:140px;overflow-y:auto}
 .k-orte-box label{display:inline-flex;align-items:center;gap:.3rem;padding:.18rem .55rem;background:var(--grey50);border-radius:14px;font-size:.82rem;cursor:pointer;user-select:none;border:1px solid var(--grey100)}
 .k-orte-box label:has(input:checked){background:var(--navy);color:#fff;border-color:var(--navy)}
@@ -700,7 +709,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
 
         <div class="tour-list" id="tour-list" style="display:none">
           <div class="card-hd" style="border-radius:0">
-            <h2>Tour-Liste</h2>
+            <h2>Tour-Liste <span style="font-weight:400;font-size:.72rem;opacity:.85">&middot; Eintrag antippen &rarr; Navigation</span></h2>
             <button class="btn btn-clear" style="padding:.3rem .85rem;font-size:.8rem" onclick="window.print()">&#128438; Drucken</button>
           </div>
           <ol id="tour-list-items"></ol>
@@ -708,9 +717,10 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
 
         <p style="margin-top:.9rem;font-size:.78rem;color:var(--grey700);line-height:1.55">
           <strong>So funktioniert's:</strong> Beim ersten Aufruf ruft die App f&uuml;r jede Adresse die OpenStreetMap-Geocoding-API auf (rund 1 Sekunde pro Adresse, einmaliger Vorgang &ndash; danach wird alles lokal gespeichert).
-          Mit „Route berechnen" wird eine optimierte Reise-Reihenfolge ab deiner Startadresse berechnet (Nearest-Neighbor + 2-opt, Distanz per Luftlinie).
-          Mit „In Google Maps" wird die Tour in Google Maps zur Fahrrad-Navigation ge&ouml;ffnet (max. 9 Zwischenziele pro Link &ndash; bei l&auml;ngeren Touren werden mehrere Links angeboten).
-          F&uuml;r l&auml;ngere Touren ohne Limit: „GPX exportieren" l&auml;dt eine Datei runter, die du in <strong>Komoot</strong>, <strong>OsmAnd</strong> oder <strong>Garmin Connect</strong> importieren kannst &ndash; alle Stopps in einer Route, mit echter Fahrrad-Navigation.
+          Mit „Route berechnen" wird eine optimierte Reise-Reihenfolge ab deiner Startadresse berechnet (Nearest-Neighbor + 2-opt, Distanz per Luftlinie).<br><br>
+          <strong>Unterwegs am Handy:</strong> Tippe in der <strong>Tour-Liste</strong> einen Eintrag an &ndash; Google Maps &ouml;ffnet sich mit Fahrrad-Navigation zu genau diesem Stopp. Wenn du da bist, zur&uuml;ck zur App, n&auml;chsten Eintrag tippen. Das ist der zuverl&auml;ssigste Weg, weil Name und Adresse direkt aus der App kommen.<br><br>
+          <strong>Alternative – Komoot/OsmAnd</strong>: „GPX exportieren" l&auml;dt eine Datei runter, die du in eine Fahrrad-App importieren kannst &ndash; alle Stopps in einer Route. <strong>Komoot</strong> zeigt allerdings die Stopp-Namen nur unzuverl&auml;ssig; wenn du jeden Pin mit Namen auf der Karte sehen willst, ist <strong>OsmAnd</strong> (kostenlos, Open Source) die bessere Wahl.<br><br>
+          <strong>In Google Maps</strong> &ouml;ffnet die komplette Tour als Multi-Waypoint-Link (max. 9 Zwischenziele pro Link &ndash; bei l&auml;ngeren Touren werden mehrere Links angeboten).
         </p>
       </div>
     </div>
@@ -1770,10 +1780,19 @@ function karteCalcRoute(){
     var leg = haversine(tour[i-1], tour[i]).toFixed(2);
     var m = tour[i].m;
     var mk = karteMemberKey(m).replace(/'/g,"\\'");
-    html += '<li><span>'+esc(m.name)+(m.vor?', '+esc(m.vor):'')
+    var lat = tour[i].lat, lng = tour[i].lng;
+    var navUrl = 'https://www.google.com/maps/dir/?api=1&travelmode=bicycling&destination='+lat+','+lng;
+    var telBtn = m.tel
+      ? '<button class="btn-tel" title="Anrufen: '+esc(m.tel)+'" onclick="event.stopPropagation();location.href=\'tel:'+esc(m.tel)+'\'">📞</button>'
+      : '';
+    html += '<li title="Antippen für Navigation zu diesem Stopp" onclick="window.open(\''+navUrl+'\',\'_blank\')">'
+      +'<span>'+esc(m.name)+(m.vor?', '+esc(m.vor):'')
       +'<br><span style="font-size:.78rem;color:var(--grey700)">'+esc(m.str||'')+', '+esc(m.plz||'')+' '+esc(m.ort||'')+'</span></span>'
       +'<span class="leg">'+leg+' km</span>'
-      +'<button class="btn-excl" title="Aus Tour entfernen" onclick="karteExcludeFromTour(\''+mk+'\')">✕</button></li>';
+      +telBtn
+      +'<button class="btn-excl" title="Aus Tour entfernen" onclick="event.stopPropagation();karteExcludeFromTour(\''+mk+'\')">✕</button>'
+      +'<span class="nav-hint" title="Antippen für Navigation">▶</span>'
+      +'</li>';
   }
   document.getElementById('tour-list-items').innerHTML = html;
   document.getElementById('tour-list').style.display = 'block';
