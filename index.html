@@ -7,6 +7,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SV Lau-Brechte">
 <meta name="theme-color" content="#1F4E79">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" type="image/png" href="./icon-192.png">
 <link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAABzklEQVR42u3TAQ0AIBADsTnBEX5QDy5gIV1yBp6SlG/MtdVVDGigDWiggRbQQAtooIE2oIEGGiCggRbQQAtooIE2oIEGWkADLaCBFtBAA21AAw20gAZaQAMtoIEG2oAGGmgBDbSABlpAAw20AQ000AIaaAENtIAGGmgDGmigBTTQAhpoAQ000AY00EALaKAFNNBAAyPd+GyOIKAloCWgJaAFtAS0BLQEtAS0gJaAloCWgJaAFtAS0BLQEtAS0AJaAloCWgJaAlpAS0BLQEtAS0ALaAloCWgJaAloAS0BLQEtAS2gHUJAS0BLQEtAC2gJaAloCWgJaAEtAS0BLQEtAS2gJaAloCWgJaAFtAS0BLQEtAS0gJaAloCWgJaAFtAS0BLQEtAS0AJaAloCWgJaQEtAS0BLQEtAC2gJaAloCWgJaAEtAS0BLQEtAS2gJaAloCWgJaAFtAS09AZ0+zwSNF8NIKCBFtBAC2iggTaggQZaQAMtoIEW0EADbUADDbSABlpAAy2ggQbagAYaaAENtIAGWkADDbQBDTTQAhpoAQ20gAYaaAMaaKAFNNACGmgBDTTQBjTQQAtooAU00EAb0EAb0EADLaCBFtBAA124A++6olt/NNynAAAAAElFTkSuQmCC">
 
 <title>Mitgliederverwaltung - SV Lau-Brechte</title>
@@ -688,7 +690,7 @@ function mkM(r,i){
     a2:   String(r['Anrede2']||''),
     name: String(r['Nachname']||'').trim(),
     vor:  String(r['Vorname']||'').trim(),
-    str:  String(r['Straße']||r['Strasse']||r['Straße']||'').trim(),
+    str:  String(r['Straße']||r['Strasse']||r['straße']||r['strasse']||'').trim(),
     plz:  String(r['PLZ']||'').trim(),
     ort:  String(r['Ort']||'').trim(),
     ehren:String(r['Ehrenmitglied']||''),
@@ -716,9 +718,13 @@ function renderStats(){
   var fr=members.filter(function(m){return m.a1==='Frau'||m.a2==='Frau';});
   var eh=members.filter(function(m){return m.ehren;});
   var ohneF=members.length-fr.length;
+  var zahlend=members.filter(function(m){
+    var isFrau=m.a1==='Frau'||m.a2==='Frau';
+    return !isFrau && !m.ehren;
+  }).length;
   document.getElementById('s-total').textContent=members.length;
   document.getElementById('s-mbr').textContent=ohneF;
-  document.getElementById('s-zahlend').textContent=ohneF-eh.length;
+  document.getElementById('s-zahlend').textContent=zahlend;
   document.getElementById('s-frauen').textContent=fr.length;
   document.getElementById('s-ehren').textContent=eh.length;
   var orte={};members.forEach(function(m){if(m.ort)orte[m.ort]=1;});
@@ -736,7 +742,7 @@ function renderTable(){
   document.getElementById('rcnt').textContent=f.length+' von '+members.length;
   var rows=f.map(function(m){
     var idx=members.indexOf(m);
-    var fotoCell=m.foto?'<td class="td-foto"><img class="member-foto" src="'+m.foto+'" alt=""></td>':'<td class="td-foto"><div class="foto-placeholder" onclick="uploadFotoFromTable('+idx+')" title="Foto hinzufügen">&#128247;</div></td>';
+    var fotoCell=m.foto?'<td class="td-foto"><img class="member-foto" src="'+esc(m.foto)+'" alt=""></td>':'<td class="td-foto"><div class="foto-placeholder" onclick="uploadFotoFromTable('+idx+')" title="Foto hinzufügen">&#128247;</div></td>';
     return '<tr>'
       +fotoCell
       +'<td>'+m.nr+'</td>'
@@ -747,6 +753,8 @@ function renderTable(){
       +'<td>'+esc(m.str)+'</td>'
       +'<td>'+esc(m.plz)+'</td>'
       +'<td>'+esc(m.ort)+'</td>'
+      +'<td>'+(m.tel?'<a href="tel:'+esc(m.tel)+'">'+esc(m.tel)+'</a>':'')+'</td>'
+      +'<td>'+(m.email?'<a href="mailto:'+esc(m.email)+'">'+esc(m.email)+'</a>':'')+'</td>'
       +'<td>'+(m.ehren?'<span class="badge be">E</span>':'')+'</td>'
       +'<td>'+(m.helga?'&#10003;':'')+'</td>'
       +'<td><button class="btn-edit" onclick="openEdit('+idx+')">&#9998;</button></td>'
@@ -906,11 +914,11 @@ function saveEdit(){
   m.helga=document.getElementById('e-hg').value;
   m.tel=document.getElementById('e-tel').value.trim();
   m.email=document.getElementById('e-email').value.trim();
+  m.foto=document.getElementById('foto-preview-img').style.display!=='none'
+    ?document.getElementById('foto-preview-img').src:'';
   closeModal();renderAll();
   var msg=m.name+(m.vor?', '+m.vor:'');
   if(oldBz!==m.bz)msg+=' (Bezirk '+oldBz+' → '+m.bz+')';
-  m.foto=document.getElementById('foto-preview-img').style.display!=='none'
-    ?document.getElementById('foto-preview-img').src:'';
   toast('\u2714 '+msg+' gespeichert');
 }
 
@@ -954,25 +962,84 @@ function doDrop(e){
 }
 function doFile(e){if(e.target.files[0])importCSV(e.target.files[0]);}
 
+function parseCSV(text,sep){
+  // RFC-4180-konformer Parser: Quotes, Escapes (""), mehrzeilige Felder
+  var rows=[], cur=[], field='', i=0, inQuotes=false;
+  // BOM entfernen
+  if(text.charCodeAt(0)===0xFEFF) text=text.slice(1);
+  while(i<text.length){
+    var ch=text[i];
+    if(inQuotes){
+      if(ch==='"'){
+        if(text[i+1]==='"'){field+='"';i+=2;continue;}
+        inQuotes=false;i++;continue;
+      }
+      field+=ch;i++;continue;
+    }
+    if(ch==='"'){inQuotes=true;i++;continue;}
+    if(ch===sep){cur.push(field);field='';i++;continue;}
+    if(ch==='\r'){i++;continue;}
+    if(ch==='\n'){cur.push(field);rows.push(cur);cur=[];field='';i++;continue;}
+    field+=ch;i++;
+  }
+  if(field.length||cur.length){cur.push(field);rows.push(cur);}
+  return rows;
+}
+
 function importCSV(file){
   var reader=new FileReader();
   reader.onload=function(ev){
     try{
-      var lines=ev.target.result.split('\n');
-      var sep=lines[0].indexOf(';')!==-1?';':',';
-      var headers=lines[0].split(sep).map(function(h){return h.replace(/^"|"$/g,'').trim();});
+      var text=ev.target.result;
+      var firstLine=text.split(/\r?\n/)[0]||'';
+      var sep=firstLine.indexOf(';')!==-1?';':',';
+      var rows=parseCSV(text,sep);
+      if(rows.length<2){toast('CSV enthält keine Datenzeilen!',true);return;}
+      var headers=rows[0].map(function(h){return String(h||'').trim();});
       var imported=[];
-      for(var i=1;i<lines.length;i++){
-        var row=lines[i].split(sep).map(function(c){return c.replace(/^"|"$/g,'').trim();});
-        if(row.length<2)continue;
+      for(var i=1;i<rows.length;i++){
+        var row=rows[i];
+        if(!row||row.length<2)continue;
         var obj={};
-        for(var j=0;j<headers.length;j++)obj[headers[j]]=row[j]||'';
-        var m=mkM(obj,i-1);if(m.name)imported.push(m);
+        for(var j=0;j<headers.length;j++)obj[headers[j]]=(row[j]||'').trim();
+        var m=mkM(obj,imported.length);if(m.name)imported.push(m);
       }
       if(!imported.length){toast('Keine gültigen Einträge gefunden!',true);return;}
-      members=imported;nextNr=members.length+1;renderAll();
-      document.getElementById('imp-status').innerHTML='<span style="color:var(--green);font-weight:700">&#10004; '+members.length+' Einträge importiert.</span>';
-      toast(members.length+' Einträge importiert');
+
+      // Wenn schon Daten vorhanden: Nachfragen, ob ersetzen oder zusammenführen
+      var mode='replace';
+      if(members.length>0){
+        var choice=prompt(
+          members.length+' Einträge sind bereits geladen, '+imported.length+' werden importiert.\n\n'+
+          'Bitte Modus wählen:\n'+
+          '  1 = Ersetzen (aktuelle Daten verwerfen)\n'+
+          '  2 = Zusammenführen (neue Einträge anhängen)\n\n'+
+          'Abbrechen (Esc) verwirft den Import.',
+          '2'
+        );
+        if(choice===null){toast('Import abgebrochen');return;}
+        if(choice==='1')mode='replace';
+        else if(choice==='2')mode='merge';
+        else{toast('Ungültige Auswahl - Import abgebrochen',true);return;}
+      }
+
+      if(mode==='merge'){
+        // einfache Dedup: Nachname + Vorname + PLZ
+        var key=function(m){return (m.name+'|'+m.vor+'|'+m.plz).toLowerCase();};
+        var existing={};members.forEach(function(m){existing[key(m)]=1;});
+        var added=0;
+        imported.forEach(function(m){if(!existing[key(m)]){members.push(m);added++;}});
+        members.forEach(function(m,i){m.nr=i+1;});
+        nextNr=members.length+1;renderAll();
+        document.getElementById('imp-status').innerHTML='<span style="color:var(--green);font-weight:700">&#10004; '+added+' neue Einträge angehängt ('+(imported.length-added)+' bereits vorhanden).</span>';
+        toast(added+' neue Einträge importiert');
+      }else{
+        members=imported;
+        members.forEach(function(m,i){m.nr=i+1;});
+        nextNr=members.length+1;renderAll();
+        document.getElementById('imp-status').innerHTML='<span style="color:var(--green);font-weight:700">&#10004; '+members.length+' Einträge importiert (ersetzt).</span>';
+        toast(members.length+' Einträge importiert');
+      }
     }catch(err){toast('Fehler: '+err.message,true);}
   };
   reader.readAsText(file,'UTF-8');
@@ -1131,7 +1198,7 @@ function exExportVCF(){
 
 function vcf(s){
   var v=String(s||'');
-  return v.replace(/,/g,'\\\\,').replace(/;/g,'\\\\;');
+  return v.replace(/\\/g,'\\\\').replace(/\n/g,'\\n').replace(/,/g,'\\,').replace(/;/g,'\\;');
 }
 
 
@@ -1161,6 +1228,13 @@ function installPWA(){
 }
 
 // ── Service Worker ────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('./sw.js').catch(function(err){
+      console.warn('SW-Registrierung fehlgeschlagen:', err);
+    });
+  });
+}
 
 // ── iOS install hint ──────────────────────────────────────────────────────
 (function(){
