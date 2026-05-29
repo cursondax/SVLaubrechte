@@ -679,6 +679,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
             <button class="btn btn-navy" onclick="karteGeocodeAll()" id="btn-geocode">&#128270; Adressen geocoden</button>
             <button class="btn btn-save" onclick="karteCalcRoute()">&#128640; Route berechnen</button>
             <button class="btn btn-import" onclick="karteOpenInMaps()">&#128205; In Google Maps</button>
+            <button class="btn btn-clear" onclick="karteExportGPX()" title="Für Komoot, OsmAnd, Garmin">&#128190; GPX exportieren</button>
           </div>
         </div>
 
@@ -707,6 +708,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
           <strong>So funktioniert's:</strong> Beim ersten Aufruf ruft die App f&uuml;r jede Adresse die OpenStreetMap-Geocoding-API auf (rund 1 Sekunde pro Adresse, einmaliger Vorgang &ndash; danach wird alles lokal gespeichert).
           Mit „Route berechnen" wird eine optimierte Reise-Reihenfolge ab deiner Startadresse berechnet (Nearest-Neighbor + 2-opt, Distanz per Luftlinie).
           Mit „In Google Maps" wird die Tour in Google Maps zur Fahrrad-Navigation ge&ouml;ffnet (max. 9 Zwischenziele pro Link &ndash; bei l&auml;ngeren Touren werden mehrere Links angeboten).
+          F&uuml;r l&auml;ngere Touren ohne Limit: „GPX exportieren" l&auml;dt eine Datei runter, die du in <strong>Komoot</strong>, <strong>OsmAnd</strong> oder <strong>Garmin Connect</strong> importieren kannst &ndash; alle Stopps in einer Route, mit echter Fahrrad-Navigation.
         </p>
       </div>
     </div>
@@ -1775,6 +1777,46 @@ function karteCalcRoute(){
   karteState.tour = tour;
   karteRenderExcludedBox();
   toast('Route berechnet: '+order.length+' Stopps · '+totalKm.toFixed(1)+' km Luftlinie');
+}
+
+function karteExportGPX(){
+  if (!karteState.tour || karteState.tour.length < 2) { toast('Erst Route berechnen', true); return; }
+  var t = karteState.tour;
+  function xe(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  var today = new Date().toISOString().slice(0,10);
+  var name = 'SV Lau-Brechte Tour ' + today;
+  var lines = [];
+  lines.push('<?xml version="1.0" encoding="UTF-8"?>');
+  lines.push('<gpx version="1.1" creator="SV Lau-Brechte Mitgliederverwaltung" xmlns="http://www.topografix.com/GPX/1/1">');
+  lines.push('  <metadata><name>'+xe(name)+'</name></metadata>');
+  // Waypoints — eine Markierung pro Stopp mit lesbarem Namen
+  lines.push('  <wpt lat="'+t[0].lat+'" lon="'+t[0].lng+'"><name>Start</name><sym>Flag, Green</sym></wpt>');
+  for (var i = 1; i < t.length; i++) {
+    var m = t[i].m;
+    var lbl = (i)+'. ' + (m.name||'') + (m.vor ? ', '+m.vor : '');
+    var desc = [m.str, (m.plz||'')+' '+(m.ort||''), m.tel||''].filter(Boolean).join(' · ');
+    lines.push('  <wpt lat="'+t[i].lat+'" lon="'+t[i].lng+'">'
+      + '<name>'+xe(lbl)+'</name>'
+      + '<desc>'+xe(desc)+'</desc>'
+      + '<sym>Flag, Blue</sym></wpt>');
+  }
+  // Route — Reihenfolge der Stopps
+  lines.push('  <rte><name>'+xe(name)+'</name>');
+  lines.push('    <rtept lat="'+t[0].lat+'" lon="'+t[0].lng+'"><name>Start</name></rtept>');
+  for (var j = 1; j < t.length; j++) {
+    var mj = t[j].m;
+    var lblj = (j)+'. ' + (mj.name||'') + (mj.vor ? ', '+mj.vor : '');
+    lines.push('    <rtept lat="'+t[j].lat+'" lon="'+t[j].lng+'"><name>'+xe(lblj)+'</name></rtept>');
+  }
+  lines.push('  </rte>');
+  lines.push('</gpx>');
+  var blob = new Blob([lines.join('\n')], { type: 'application/gpx+xml' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'SVLaubrechte_Tour_'+today+'.gpx';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+  toast((t.length-1)+' Stopps als GPX exportiert');
 }
 
 function karteOpenInMaps(){
