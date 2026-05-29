@@ -316,10 +316,22 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
 .map-progress > span{display:block;height:100%;background:var(--navym);transition:width .2s}
 .tour-list{margin-top:1rem;background:#fff;border:1px solid var(--grey100);border-radius:var(--r);overflow:hidden}
 .tour-list ol{list-style:none;counter-reset:t}
-.tour-list li{counter-increment:t;display:grid;grid-template-columns:34px 1fr auto;gap:.7rem;padding:.55rem .85rem;border-bottom:1px solid var(--grey100);font-size:.88rem;align-items:center}
+.tour-list li{counter-increment:t;display:grid;grid-template-columns:34px 1fr auto auto;gap:.5rem;padding:.55rem .85rem;border-bottom:1px solid var(--grey100);font-size:.88rem;align-items:center}
 .tour-list li:last-child{border-bottom:none}
 .tour-list li::before{content:counter(t);background:var(--navy);color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.78rem}
 .tour-list .leg{color:var(--grey700);font-size:.78rem;white-space:nowrap}
+.tour-list .btn-excl{background:none;border:1px solid var(--grey300);color:var(--grey700);border-radius:5px;padding:1px 7px;font-size:.85rem;cursor:pointer;transition:var(--ease);line-height:1.3}
+.tour-list .btn-excl:hover{background:#c0392b;color:#fff;border-color:#c0392b}
+.k-orte-box{display:flex;flex-wrap:wrap;gap:.45rem;padding:.5rem;border:1.5px solid var(--grey300);border-radius:6px;background:#fff;max-height:140px;overflow-y:auto}
+.k-orte-box label{display:inline-flex;align-items:center;gap:.3rem;padding:.18rem .55rem;background:var(--grey50);border-radius:14px;font-size:.82rem;cursor:pointer;user-select:none;border:1px solid var(--grey100)}
+.k-orte-box label:has(input:checked){background:var(--navy);color:#fff;border-color:var(--navy)}
+.k-orte-box input{accent-color:var(--navy)}
+.k-orte-actions{display:flex;gap:.4rem;margin-top:.3rem;font-size:.78rem}
+.k-orte-actions a{color:var(--navym);cursor:pointer;text-decoration:underline}
+.excluded-box{background:var(--orangebg);border-top:1px solid var(--grey100);padding:.6rem .85rem;font-size:.82rem}
+.excluded-box .ex-list{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.4rem}
+.excluded-box .ex-item{background:#fff;border:1px solid var(--grey300);border-radius:14px;padding:.15rem .5rem;display:inline-flex;align-items:center;gap:.3rem;font-size:.78rem}
+.excluded-box .ex-item button{background:none;border:none;color:var(--green);cursor:pointer;font-size:.95rem;padding:0;line-height:1}
 .tour-num-icon{background:var(--navy);color:#fff;border:2px solid #fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.78rem;box-shadow:0 1px 3px rgba(0,0,0,.3)}
 .tour-num-icon.start{background:var(--green)}
 @media print{
@@ -653,6 +665,10 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
                 <option value="ja">Nur Helga-Liste</option>
                 <option value="nein">Nicht auf Helga-Liste</option>
               </select>
+            </div>
+            <div class="fg" style="grid-column:1 / -1">
+              <label>Ortsteile</label>
+              <div id="k-orte" class="k-orte-box"></div>
             </div>
             <div class="fg" style="grid-column:1 / -1">
               <label>Startadresse (deine eigene Adresse)</label>
@@ -1363,7 +1379,8 @@ if ('serviceWorker' in navigator) {
 // ── Karte / Route ─────────────────────────────────────────────────────────
 var karteState = {
   map: null, markers: [], routeLayer: null, tour: null,
-  filtered: [], geocache: {}, startCoord: null, geocoding: false
+  filtered: [], geocache: {}, startCoord: null, geocoding: false,
+  excluded: {}, orteChecked: null
 };
 
 function karteCacheKey(m){
@@ -1387,11 +1404,57 @@ function karteSaveGeocache(){
   try { localStorage.setItem('sgO_geocache', JSON.stringify(karteState.geocache)); } catch(e){}
 }
 
+function karteMemberKey(m){
+  // stabile Session-ID — bei reinem Reorder unverändert
+  return (m.name||'')+'|'+(m.vor||'')+'|'+(m.str||'')+'|'+(m.plz||'');
+}
+
+function karteOrtKey(m){
+  return (m.ort||'').trim() || '(ohne Ort)';
+}
+
+function karteRenderOrte(){
+  var box = document.getElementById('k-orte');
+  if (!box) return;
+  var counts = {};
+  members.forEach(function(m){
+    var k = karteOrtKey(m);
+    counts[k] = (counts[k]||0) + 1;
+  });
+  var orte = Object.keys(counts).sort();
+  if (karteState.orteChecked === null) {
+    karteState.orteChecked = {};
+    orte.forEach(function(o){ karteState.orteChecked[o] = true; });
+  } else {
+    // neu hinzugekommene Orte default an
+    orte.forEach(function(o){ if (!(o in karteState.orteChecked)) karteState.orteChecked[o] = true; });
+  }
+  var html = orte.map(function(o){
+    var checked = karteState.orteChecked[o] ? 'checked' : '';
+    return '<label><input type="checkbox" value="'+esc(o)+'" '+checked+' onchange="karteToggleOrt(this)"> '
+      + esc(o) + ' <span style="opacity:.7;font-size:.72rem">('+counts[o]+')</span></label>';
+  }).join('');
+  html += '<div class="k-orte-actions" style="flex-basis:100%"><a onclick="karteAllOrte(true)">Alle</a> <a onclick="karteAllOrte(false)">Keine</a></div>';
+  box.innerHTML = html;
+}
+
+function karteToggleOrt(input){
+  karteState.orteChecked[input.value] = input.checked;
+  karteApplyFilter();
+}
+
+function karteAllOrte(on){
+  Object.keys(karteState.orteChecked).forEach(function(o){ karteState.orteChecked[o] = on; });
+  karteRenderOrte();
+  karteApplyFilter();
+}
+
 function karteFiltered(){
   var bz = document.getElementById('k-bz').value;
   var an = document.getElementById('k-anrede').value;
   var eh = document.getElementById('k-ehren').value;
   var hg = document.getElementById('k-helga').value;
+  var ortsChecked = karteState.orteChecked || {};
   return members.filter(function(m){
     if (bz && String(m.bz)!==bz) return false;
     if (an && m.a1!==an && m.a2!==an) return false;
@@ -1399,6 +1462,8 @@ function karteFiltered(){
     if (eh==='nein' && m.ehren) return false;
     if (hg==='ja' && !m.helga) return false;
     if (hg==='nein' && m.helga) return false;
+    if (ortsChecked[karteOrtKey(m)] === false) return false;
+    if (karteState.excluded[karteMemberKey(m)]) return false;
     return true;
   });
 }
@@ -1413,6 +1478,7 @@ function karteInit(){
   }).addTo(karteState.map);
   karteLoadGeocache();
   karteUpdateGeoInfo();
+  karteRenderOrte();
   document.getElementById('k-start').addEventListener('change', function(){
     var v = this.value.trim();
     localStorage.setItem('sgO_start', v);
@@ -1420,6 +1486,54 @@ function karteInit(){
     localStorage.removeItem('sgO_start_coord');
   });
   karteApplyFilter();
+}
+
+function karteRecalc(){
+  // re-filter, dann ggf. Tour neu rechnen
+  if (karteState.tour) {
+    karteApplyFilter();
+    karteCalcRoute();
+  } else {
+    karteApplyFilter();
+  }
+}
+
+function karteExcludeFromTour(key){
+  karteState.excluded[key] = true;
+  karteRecalc();
+}
+
+function karteIncludeAgain(key){
+  delete karteState.excluded[key];
+  karteRecalc();
+}
+
+function karteClearExcluded(){
+  karteState.excluded = {};
+  karteRecalc();
+}
+
+function karteRenderExcludedBox(){
+  var keys = Object.keys(karteState.excluded);
+  var tlist = document.getElementById('tour-list');
+  var old = tlist.querySelector('.excluded-box');
+  if (old) old.remove();
+  if (!keys.length) return;
+  // map keys → labels via current members
+  var labelOf = {};
+  members.forEach(function(m){ labelOf[karteMemberKey(m)] = m.name + (m.vor?', '+m.vor:'') + (m.ort?' ('+m.ort+')':''); });
+  var box = document.createElement('div');
+  box.className = 'excluded-box';
+  box.innerHTML = '<strong>'+keys.length+' ausgeschlossen:</strong> '
+    + '<a onclick="karteClearExcluded()" style="float:right;color:var(--green);cursor:pointer;font-size:.78rem">↻ Alle wieder einschließen</a>'
+    + '<div class="ex-list">'
+    + keys.map(function(k){
+        var lbl = labelOf[k] || k;
+        return '<span class="ex-item">'+esc(lbl)+'<button title="Wieder einschließen" onclick="karteIncludeAgain(\''+k.replace(/'/g,"\\'")+'\')">↻</button></span>';
+      }).join('')
+    + '</div>';
+  tlist.appendChild(box);
+  tlist.style.display = 'block';
 }
 
 function karteUpdateGeoInfo(){
@@ -1437,16 +1551,23 @@ function karteApplyFilter(){
   karteState.markers.forEach(function(mk){ karteState.map.removeLayer(mk); });
   karteState.markers = [];
   if (karteState.routeLayer) { karteState.map.removeLayer(karteState.routeLayer); karteState.routeLayer = null; }
-  document.getElementById('tour-list').style.display = 'none';
+  // Tour-Liste nur verstecken wenn nicht aktiv UND keine Excluded
+  if (!karteState.tour && !Object.keys(karteState.excluded).length) {
+    document.getElementById('tour-list').style.display = 'none';
+    document.getElementById('tour-list-items').innerHTML = '';
+  }
   document.getElementById('k-stat-tour').textContent = '–';
   document.getElementById('k-stat-km').textContent = '–';
+  karteRenderExcludedBox();
   if (!withGeo.length) return;
   withGeo.forEach(function(m){
+    var memKey = karteMemberKey(m).replace(/'/g,"\\'");
     var mk = L.marker([m.lat, m.lng]).addTo(karteState.map);
     var popup = '<strong>'+esc(m.name)+(m.vor?', '+esc(m.vor):'')+'</strong>'
       +'<br>'+esc(m.str||'')+'<br>'+esc(m.plz||'')+' '+esc(m.ort||'')
       +(m.tel?'<br>📞 <a href="tel:'+esc(m.tel)+'">'+esc(m.tel)+'</a>':'')
-      +'<br><a href="https://www.google.com/maps/search/?api=1&query='+m.lat+','+m.lng+'" target="_blank">In Google Maps</a>';
+      +'<br><a href="https://www.google.com/maps/search/?api=1&query='+m.lat+','+m.lng+'" target="_blank">In Google Maps</a>'
+      +'<br><a style="color:#c0392b;cursor:pointer" onclick="karteExcludeFromTour(\''+memKey+'\');karteState.map.closePopup()">✕ Aus Tour entfernen</a>';
     mk.bindPopup(popup);
     karteState.markers.push(mk);
   });
@@ -1629,15 +1750,18 @@ function karteCalcRoute(){
   for (var i = 1; i < tour.length; i++) {
     var leg = haversine(tour[i-1], tour[i]).toFixed(2);
     var m = tour[i].m;
+    var mk = karteMemberKey(m).replace(/'/g,"\\'");
     html += '<li><span>'+esc(m.name)+(m.vor?', '+esc(m.vor):'')
       +'<br><span style="font-size:.78rem;color:var(--grey700)">'+esc(m.str||'')+', '+esc(m.plz||'')+' '+esc(m.ort||'')+'</span></span>'
-      +'<span class="leg">'+leg+' km</span></li>';
+      +'<span class="leg">'+leg+' km</span>'
+      +'<button class="btn-excl" title="Aus Tour entfernen" onclick="karteExcludeFromTour(\''+mk+'\')">✕</button></li>';
   }
   document.getElementById('tour-list-items').innerHTML = html;
   document.getElementById('tour-list').style.display = 'block';
   document.getElementById('k-stat-tour').textContent = order.length;
   document.getElementById('k-stat-km').textContent = totalKm.toFixed(1);
   karteState.tour = tour;
+  karteRenderExcludedBox();
   toast('Route berechnet: '+order.length+' Stopps · '+totalKm.toFixed(1)+' km Luftlinie');
 }
 
