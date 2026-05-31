@@ -699,6 +699,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
             <button class="btn btn-save" onclick="karteCalcRoute()">&#128640; Route berechnen</button>
             <button class="btn btn-import" onclick="karteOpenInMaps()">&#128205; In Google Maps</button>
             <button class="btn btn-clear" onclick="karteExportGPX()" title="Für Komoot, OsmAnd, Garmin">&#128190; GPX exportieren</button>
+            <button class="btn btn-clear" onclick="karteExportKML()" title="Für Google MyMaps – eigene Karte mit allen Pins anlegen">&#128507; KML f&uuml;r MyMaps</button>
           </div>
         </div>
 
@@ -728,6 +729,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
           Mit „Route berechnen" wird eine optimierte Reise-Reihenfolge ab deiner Startadresse berechnet (Nearest-Neighbor + 2-opt, Distanz per Luftlinie).<br><br>
           <strong>Unterwegs am Handy:</strong> Tippe in der <strong>Tour-Liste</strong> einen Eintrag an &ndash; Google Maps &ouml;ffnet sich mit Fahrrad-Navigation zu genau diesem Stopp. Wenn du da bist, zur&uuml;ck zur App, n&auml;chsten Eintrag tippen. Das ist der zuverl&auml;ssigste Weg, weil Name und Adresse direkt aus der App kommen.<br><br>
           <strong>Alternative – Komoot/OsmAnd</strong>: „GPX exportieren" l&auml;dt eine Datei runter, die du in eine Fahrrad-App importieren kannst &ndash; alle Stopps in einer Route. <strong>Komoot</strong> zeigt allerdings die Stopp-Namen nur unzuverl&auml;ssig; wenn du jeden Pin mit Namen auf der Karte sehen willst, ist <strong>OsmAnd</strong> (kostenlos, Open Source) die bessere Wahl.<br><br>
+          <strong>Eigene Karte in Google MyMaps</strong>: „KML f&uuml;r MyMaps" l&auml;dt eine .kml-Datei runter. &Ouml;ffne <a href="https://www.google.com/maps/d/" target="_blank">google.com/maps/d</a> &rarr; <em>Neue Karte erstellen</em> &rarr; im Layer <em>Importieren</em> &rarr; KML-Datei w&auml;hlen. MyMaps zeigt alle Adressen als Pins mit Namen und Telefonnummer, beliebig viele (kein Limit). Karte speichern &rarr; in der Google-Maps-App unter <em>Gespeichert &rarr; Karten</em> abrufbar. Wenn du vorher „Route berechnen" gedr&uuml;ckt hast, ist auch die Tour-Linie in der KML enthalten.<br><br>
           <strong>In Google Maps</strong> &ouml;ffnet die komplette Tour als Multi-Waypoint-Link (max. 9 Zwischenziele pro Link &ndash; bei l&auml;ngeren Touren werden mehrere Links angeboten).
         </p>
       </div>
@@ -1877,6 +1879,87 @@ function karteCalcRoute(){
   karteState.tour = tour;
   karteRenderExcludedBox();
   toast('Route berechnet: '+order.length+' Stopps · '+totalPersons+' Personen · '+totalKm.toFixed(1)+' km Luftlinie');
+}
+
+function karteExportKML(){
+  // Google MyMaps importiert KML. Wir exportieren die aktuell gefilterten
+  // Adressen (gruppiert nach Adresse), nicht nur die Tour — eine MyMaps-Karte
+  // soll dauerhaft alle Pins enthalten, nicht nur den heutigen Verteil-Ausschnitt.
+  // Wenn eine Tour berechnet wurde, fügen wir zusätzlich eine LineString hinzu.
+  var filtered = karteFiltered();
+  var withGeo = filtered.filter(function(m){ return m.lat && m.lng; });
+  if (!withGeo.length) { toast('Keine geocodierten Adressen im Filter – erst geocoden', true); return; }
+  var groups = karteGroupByAddress(withGeo);
+
+  function xe(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  var today = new Date().toISOString().slice(0,10);
+  var title = 'SV Lau-Brechte – Adressen ' + today;
+
+  var L = [];
+  L.push('<?xml version="1.0" encoding="UTF-8"?>');
+  L.push('<kml xmlns="http://www.opengis.net/kml/2.2">');
+  L.push('<Document>');
+  L.push('  <name>'+xe(title)+'</name>');
+  L.push('  <description>Mitgliederadressen für die Briefverteilung. Stand: '+today+' · '+withGeo.length+' Personen · '+groups.length+' Adressen.</description>');
+  L.push('  <Style id="pin-single"><IconStyle><color>ffd64e1f</color><scale>1.0</scale><Icon><href>http://maps.google.com/mapfiles/kml/paddle/blu-circle.png</href></Icon></IconStyle></Style>');
+  L.push('  <Style id="pin-multi"><IconStyle><color>ff115ac5</color><scale>1.1</scale><Icon><href>http://maps.google.com/mapfiles/kml/paddle/orange-circle.png</href></Icon></IconStyle></Style>');
+  L.push('  <Style id="pin-start"><IconStyle><color>ff32b432</color><scale>1.2</scale><Icon><href>http://maps.google.com/mapfiles/kml/paddle/grn-stars.png</href></Icon></IconStyle></Style>');
+  L.push('  <Style id="route-line"><LineStyle><color>cc794e1f</color><width>4</width></LineStyle></Style>');
+
+  // Optional: Start-Pin
+  if (karteState.startCoord) {
+    L.push('  <Placemark>');
+    L.push('    <name>Start</name>');
+    L.push('    <styleUrl>#pin-start</styleUrl>');
+    L.push('    <Point><coordinates>'+karteState.startCoord.lng+','+karteState.startCoord.lat+',0</coordinates></Point>');
+    L.push('  </Placemark>');
+  }
+
+  // Pro Adresse ein Placemark, alle Bewohner in der Description
+  groups.forEach(function(g, idx){
+    var names = g.members.map(function(m){
+      var nm = m.name + (m.vor?', '+m.vor:'');
+      var bits = [];
+      if (m.bz) bits.push('Bezirk '+m.bz);
+      if (m.ehren) bits.push('Ehrenmitglied');
+      if (m.helga) bits.push('Helga-Liste');
+      if (m.tel) bits.push('Tel: '+m.tel);
+      if (m.email) bits.push(m.email);
+      return nm + (bits.length ? ' — ' + bits.join(' · ') : '');
+    });
+    var displayName = g.members.length === 1
+      ? g.members[0].name + (g.members[0].vor?', '+g.members[0].vor:'')
+      : g.members.length + ' Personen: ' + g.members.map(function(m){ return m.name; }).join(', ');
+    var desc = (g.str?g.str+'\n':'') + (g.plz||'')+' '+(g.ort||'') + '\n\n' + names.join('\n');
+    var style = g.members.length > 1 ? 'pin-multi' : 'pin-single';
+    L.push('  <Placemark>');
+    L.push('    <name>'+xe(displayName)+'</name>');
+    L.push('    <description>'+xe(desc)+'</description>');
+    L.push('    <styleUrl>#'+style+'</styleUrl>');
+    L.push('    <Point><coordinates>'+g.lng+','+g.lat+',0</coordinates></Point>');
+    L.push('  </Placemark>');
+  });
+
+  // Wenn eine Tour berechnet ist, zusätzlich die Verbindungslinie
+  if (karteState.tour && karteState.tour.length > 1) {
+    var coords = karteState.tour.map(function(p){ return p.lng+','+p.lat+',0'; }).join(' ');
+    L.push('  <Placemark>');
+    L.push('    <name>Tour-Route ('+(karteState.tour.length-1)+' Stopps)</name>');
+    L.push('    <styleUrl>#route-line</styleUrl>');
+    L.push('    <LineString><tessellate>1</tessellate><coordinates>'+coords+'</coordinates></LineString>');
+    L.push('  </Placemark>');
+  }
+
+  L.push('</Document>');
+  L.push('</kml>');
+
+  var blob = new Blob([L.join('\n')], { type: 'application/vnd.google-earth.kml+xml' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'SVLaubrechte_Adressen_'+today+'.kml';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+  toast(groups.length+' Adressen ('+withGeo.length+' Personen) als KML exportiert');
 }
 
 function karteExportGPX(){
