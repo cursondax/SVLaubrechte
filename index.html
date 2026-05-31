@@ -345,6 +345,10 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
 .excluded-box .ex-item button{background:none;border:none;color:var(--green);cursor:pointer;font-size:.95rem;padding:0;line-height:1}
 .tour-num-icon{background:var(--navy);color:#fff;border:2px solid #fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.78rem;box-shadow:0 1px 3px rgba(0,0,0,.3)}
 .tour-num-icon.start{background:var(--green)}
+.tour-num-icon.multi{background:var(--orange);outline:2px solid #fff}
+.multi-num-icon{background:var(--orange);color:#fff;border:2px solid #fff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.82rem;box-shadow:0 1px 3px rgba(0,0,0,.35)}
+#k-search{padding:.48rem .72rem;border:1.5px solid var(--grey300);border-radius:6px;font-size:.9rem;font-family:inherit;background:#fff}
+#k-search:focus{outline:none;border-color:var(--navym);box-shadow:0 0 0 3px rgba(46,117,182,.15)}
 @media print{
   #sec-karte .map-toolbar,#sec-karte .btn,#sec-karte #map{display:none!important}
   .tour-list{border:none}
@@ -648,6 +652,10 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
 
         <div class="map-toolbar">
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.6rem">
+            <div class="fg" style="grid-column:1 / -1">
+              <label>Suche (Name, Stra&szlig;e, Ort, PLZ)</label>
+              <input type="search" id="k-search" placeholder="&#128269; z.B. Albers oder Wester" oninput="karteApplyFilter()">
+            </div>
             <div class="fg"><label>Bezirk</label>
               <select id="k-bz" onchange="karteApplyFilter()">
                 <option value="">Alle Bezirke</option>
@@ -1477,6 +1485,8 @@ function karteFiltered(){
   var an = document.getElementById('k-anrede').value;
   var eh = document.getElementById('k-ehren').value;
   var hg = document.getElementById('k-helga').value;
+  var sEl = document.getElementById('k-search');
+  var q = sEl ? (sEl.value||'').trim().toLowerCase() : '';
   var ortsChecked = karteState.orteChecked || {};
   return members.filter(function(m){
     if (bz && String(m.bz)!==bz) return false;
@@ -1487,8 +1497,46 @@ function karteFiltered(){
     if (hg==='nein' && m.helga) return false;
     if (ortsChecked[karteOrtKey(m)] === false) return false;
     if (karteState.excluded[karteMemberKey(m)]) return false;
+    if (q) {
+      var hay = [m.name,m.vor,m.str,m.ort,m.plz].join(' ').toLowerCase();
+      if (hay.indexOf(q) === -1) return false;
+    }
     return true;
   });
+}
+
+function karteGroupByAddress(memberList){
+  // Gruppiert nach Adress-Key (str|plz|ort) — robuster als nach Koordinaten,
+  // weil Nominatim für identische Adressen leicht abweichende lat/lng liefern kann.
+  var groups = {};
+  var order = [];
+  memberList.forEach(function(m){
+    if (!m.lat || !m.lng) return;
+    var key = ((m.str||'')+'|'+(m.plz||'')+'|'+(m.ort||'')).toLowerCase().trim();
+    if (!groups[key]) {
+      groups[key] = { lat: m.lat, lng: m.lng, str: m.str, plz: m.plz, ort: m.ort, members: [], key: key };
+      order.push(key);
+    }
+    groups[key].members.push(m);
+  });
+  return order.map(function(k){ return groups[k]; });
+}
+
+function karteGroupPopup(g){
+  // Mehrere Personen an einer Adresse: alle auflisten, jede mit eigenen Aktionen.
+  var head = '<strong>'+esc(g.str||'')+'</strong><br>'+esc(g.plz||'')+' '+esc(g.ort||'');
+  var rows = g.members.map(function(m){
+    var memKey = karteMemberKey(m).replace(/'/g,"\\'");
+    return '<div style="border-top:1px solid #eee;padding-top:.3rem;margin-top:.3rem">'
+      +'<strong>'+esc(m.name)+(m.vor?', '+esc(m.vor):'')+'</strong>'
+      +(m.ehren?' <span style="color:#C55A11;font-size:.7rem;font-weight:700">EHREN</span>':'')
+      +(m.helga?' <span style="color:#375623;font-size:.7rem;font-weight:700">HELGA</span>':'')
+      +(m.tel?'<br>📞 <a href="tel:'+esc(m.tel)+'">'+esc(m.tel)+'</a>':'')
+      +'<br><a style="color:#c0392b;cursor:pointer;font-size:.85rem" onclick="karteExcludeFromTour(\''+memKey+'\');karteState.map.closePopup()">✕ Aus Tour entfernen</a>'
+      +'</div>';
+  }).join('');
+  var maps = '<br><a href="https://www.google.com/maps/search/?api=1&query='+g.lat+','+g.lng+'" target="_blank">📍 Adresse in Google Maps</a>';
+  return head + maps + rows;
 }
 
 function karteInit(){
@@ -1586,15 +1634,19 @@ function karteApplyFilter(){
   document.getElementById('k-stat-km').textContent = '–';
   karteRenderExcludedBox();
   if (!withGeo.length) return;
-  withGeo.forEach(function(m){
-    var memKey = karteMemberKey(m).replace(/'/g,"\\'");
-    var mk = L.marker([m.lat, m.lng]).addTo(karteState.map);
-    var popup = '<strong>'+esc(m.name)+(m.vor?', '+esc(m.vor):'')+'</strong>'
-      +'<br>'+esc(m.str||'')+'<br>'+esc(m.plz||'')+' '+esc(m.ort||'')
-      +(m.tel?'<br>📞 <a href="tel:'+esc(m.tel)+'">'+esc(m.tel)+'</a>':'')
-      +'<br><a href="https://www.google.com/maps/search/?api=1&query='+m.lat+','+m.lng+'" target="_blank">In Google Maps</a>'
-      +'<br><a style="color:#c0392b;cursor:pointer" onclick="karteExcludeFromTour(\''+memKey+'\');karteState.map.closePopup()">✕ Aus Tour entfernen</a>';
-    mk.bindPopup(popup);
+  var groups = karteGroupByAddress(withGeo);
+  groups.forEach(function(g){
+    var mk;
+    if (g.members.length > 1) {
+      // Mehrere Personen an einer Adresse → orangefarbener Marker mit Zahl
+      mk = L.marker([g.lat, g.lng], {
+        icon: L.divIcon({ className: '', html: '<div class="multi-num-icon">'+g.members.length+'</div>', iconSize: [30,30], iconAnchor: [15,15] })
+      }).addTo(karteState.map);
+    } else {
+      // Einzelperson → Standard-Leaflet-Marker
+      mk = L.marker([g.lat, g.lng]).addTo(karteState.map);
+    }
+    mk.bindPopup(karteGroupPopup(g));
     karteState.markers.push(mk);
   });
   if (karteState.markers.length){
@@ -1746,7 +1798,10 @@ function karteCalcRoute(){
   }
   var withGeo = karteState.filtered.filter(function(m){ return m.lat && m.lng; });
   if (withGeo.length < 1) { toast('Keine geocodierten Adressen im Filter', true); return; }
-  var points = withGeo.map(function(m){ return { lat: m.lat, lng: m.lng, m: m }; });
+  // Pro Adresse einen Stopp — mehrere Personen an einer Adresse werden zu einer Gruppe.
+  var groups = karteGroupByAddress(withGeo);
+  var points = groups.map(function(g){ return { lat: g.lat, lng: g.lng, g: g }; });
+  var totalPersons = withGeo.length;
   var start = karteState.startCoord;
   var order = nearestNeighborOrder(start, points);
   order = twoOpt(start, points, order);
@@ -1762,45 +1817,66 @@ function karteCalcRoute(){
   }).addTo(karteState.map).bindPopup('<strong>Start</strong>');
   karteState.markers.push(startMk);
   order.forEach(function(pIdx, n){
-    var p = points[pIdx], m = p.m;
-    var memKey = karteMemberKey(m).replace(/'/g,"\\'");
-    var popup = '<strong>'+(n+1)+'. '+esc(m.name)+(m.vor?', '+esc(m.vor):'')+'</strong>'
-      +'<br>'+esc(m.str||'')+'<br>'+esc(m.plz||'')+' '+esc(m.ort||'')
-      +(m.tel?'<br>📞 <a href="tel:'+esc(m.tel)+'">'+esc(m.tel)+'</a>':'')
-      +'<br><a href="https://www.google.com/maps/search/?api=1&query='+p.lat+','+p.lng+'" target="_blank">In Google Maps</a>'
-      +'<br><a style="color:#c0392b;cursor:pointer" onclick="karteExcludeFromTour(\''+memKey+'\');karteState.map.closePopup()">✕ Aus Tour entfernen</a>';
+    var p = points[pIdx], g = p.g;
+    var multi = g.members.length > 1;
+    var iconHtml = multi
+      ? '<div class="tour-num-icon multi" title="'+g.members.length+' Personen an dieser Adresse">'+(n+1)+'</div>'
+      : '<div class="tour-num-icon">'+(n+1)+'</div>';
+    var stopHead = '<strong>'+(n+1)+'. '+esc(g.str||'')+'</strong>'
+      +'<br>'+esc(g.plz||'')+' '+esc(g.ort||'')
+      +(multi?'<br><em style="color:var(--orange)">'+g.members.length+' Personen an dieser Adresse:</em>':'');
+    var personRows = g.members.map(function(m){
+      var memKey = karteMemberKey(m).replace(/'/g,"\\'");
+      return '<div style="border-top:1px solid #eee;padding-top:.3rem;margin-top:.3rem">'
+        +'<strong>'+esc(m.name)+(m.vor?', '+esc(m.vor):'')+'</strong>'
+        +(m.ehren?' <span style="color:#C55A11;font-size:.7rem;font-weight:700">EHREN</span>':'')
+        +(m.helga?' <span style="color:#375623;font-size:.7rem;font-weight:700">HELGA</span>':'')
+        +(m.tel?'<br>📞 <a href="tel:'+esc(m.tel)+'">'+esc(m.tel)+'</a>':'')
+        +'<br><a style="color:#c0392b;cursor:pointer;font-size:.85rem" onclick="karteExcludeFromTour(\''+memKey+'\');karteState.map.closePopup()">✕ Aus Tour entfernen</a>'
+        +'</div>';
+    }).join('');
+    var maps = '<br><a href="https://www.google.com/maps/dir/?api=1&travelmode=bicycling&destination='+p.lat+','+p.lng+'" target="_blank">🚴 Navigation zu diesem Stopp</a>';
     var mk = L.marker([p.lat, p.lng], {
-      icon: L.divIcon({ className: '', html: '<div class="tour-num-icon">'+(n+1)+'</div>', iconSize: [28,28], iconAnchor: [14,14] })
-    }).addTo(karteState.map).bindPopup(popup);
+      icon: L.divIcon({ className: '', html: iconHtml, iconSize: [28,28], iconAnchor: [14,14] })
+    }).addTo(karteState.map).bindPopup(stopHead + maps + personRows);
     karteState.markers.push(mk);
   });
   karteState.map.fitBounds(L.polyline(latlngs).getBounds().pad(0.1));
   var html = '';
   for (var i = 1; i < tour.length; i++) {
     var leg = haversine(tour[i-1], tour[i]).toFixed(2);
-    var m = tour[i].m;
-    var mk = karteMemberKey(m).replace(/'/g,"\\'");
+    var g = tour[i].g;
     var lat = tour[i].lat, lng = tour[i].lng;
     var navUrl = 'https://www.google.com/maps/dir/?api=1&travelmode=bicycling&destination='+lat+','+lng;
-    var telBtn = m.tel
-      ? '<button class="btn-tel" title="Anrufen: '+esc(m.tel)+'" onclick="event.stopPropagation();location.href=\'tel:'+esc(m.tel)+'\'">📞</button>'
+    var firstM = g.members[0];
+    var nameLine = g.members.map(function(m){
+      return esc(m.name)+(m.vor?', '+esc(m.vor):'');
+    }).join(' &middot; ');
+    var multiBadge = g.members.length > 1
+      ? '<span style="background:var(--orange);color:#fff;border-radius:10px;padding:1px 7px;font-size:.7rem;margin-left:.3rem">'+g.members.length+'</span>'
       : '';
+    var firstTel = g.members.find(function(m){ return m.tel; });
+    var telBtn = firstTel
+      ? '<button class="btn-tel" title="Anrufen: '+esc(firstTel.tel)+' ('+esc(firstTel.name)+')" onclick="event.stopPropagation();location.href=\'tel:'+esc(firstTel.tel)+'\'">📞</button>'
+      : '';
+    var firstMk = karteMemberKey(firstM).replace(/'/g,"\\'");
     html += '<li title="Antippen für Navigation zu diesem Stopp" onclick="window.open(\''+navUrl+'\',\'_blank\')">'
-      +'<span>'+esc(m.name)+(m.vor?', '+esc(m.vor):'')
-      +'<br><span style="font-size:.78rem;color:var(--grey700)">'+esc(m.str||'')+', '+esc(m.plz||'')+' '+esc(m.ort||'')+'</span></span>'
+      +'<span>'+nameLine+multiBadge
+      +'<br><span style="font-size:.78rem;color:var(--grey700)">'+esc(g.str||'')+', '+esc(g.plz||'')+' '+esc(g.ort||'')+'</span></span>'
       +'<span class="leg">'+leg+' km</span>'
       +telBtn
-      +'<button class="btn-excl" title="Aus Tour entfernen" onclick="event.stopPropagation();karteExcludeFromTour(\''+mk+'\')">✕</button>'
+      +'<button class="btn-excl" title="Erste Person aus Tour entfernen" onclick="event.stopPropagation();karteExcludeFromTour(\''+firstMk+'\')">✕</button>'
       +'<span class="nav-hint" title="Antippen für Navigation">▶</span>'
       +'</li>';
   }
   document.getElementById('tour-list-items').innerHTML = html;
   document.getElementById('tour-list').style.display = 'block';
-  document.getElementById('k-stat-tour').textContent = order.length;
+  var stopsTxt = order.length + (totalPersons !== order.length ? ' Stopps (' + totalPersons + ' Personen)' : ' Stopps');
+  document.getElementById('k-stat-tour').textContent = stopsTxt;
   document.getElementById('k-stat-km').textContent = totalKm.toFixed(1);
   karteState.tour = tour;
   karteRenderExcludedBox();
-  toast('Route berechnet: '+order.length+' Stopps · '+totalKm.toFixed(1)+' km Luftlinie');
+  toast('Route berechnet: '+order.length+' Stopps · '+totalPersons+' Personen · '+totalKm.toFixed(1)+' km Luftlinie');
 }
 
 function karteExportGPX(){
