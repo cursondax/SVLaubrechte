@@ -509,13 +509,13 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
           </div>
         </div>
 
-        <div style="background:var(--navyp);border-radius:var(--r);padding:.85rem 1rem;margin-bottom:1rem;font-size:.85rem">
+        <div style="background:var(--greenbg);border-radius:var(--r);padding:.85rem 1rem;margin-bottom:1rem;font-size:.85rem;border-left:4px solid var(--green)">
           <strong>&#128190; Lokaler Speicher (Browser)</strong><br>
-          <span id="save-info" style="font-size:.82rem">Wird geladen...</span>
+          <span id="save-info" style="font-size:.82rem">Wird geladen...</span><br>
+          <span style="font-size:.78rem;color:var(--grey700)">Jede &Auml;nderung (Neu/Bearbeiten/L&ouml;schen/Import) wird sofort gespeichert. Snapshots erm&ouml;glichen das Wiederherstellen.</span>
         </div>
         <p style="margin-bottom:1rem;font-size:.88rem;line-height:1.65">
-          CSV-Datei aus Excel importieren (Datei &rarr; Speichern unter &rarr; CSV).<br>
-          <span style="color:var(--orange);font-size:.82rem">&#9888; &#196;nderungen mit &bdquo;Daten speichern&ldquo; sichern &ndash; werden beim n&#228;chsten &#214;ffnen automatisch geladen.</span>
+          CSV-Datei aus Excel importieren (Datei &rarr; Speichern unter &rarr; CSV).
         </p>
         <div class="dropzone" id="dz"
              ondragover="event.preventDefault();this.classList.add('over')"
@@ -529,15 +529,27 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
         <input type="file" id="fi" accept=".csv,.txt" style="display:none" onchange="doFile(event)">
         <div id="imp-status" style="margin-top:.9rem;font-size:.87rem"></div>
         <div style="margin-top:1.2rem;display:flex;gap:.75rem;flex-wrap:wrap">
-          <button class="btn btn-save"   onclick="speichern()">&#128190; Daten speichern (Browser)</button>
+          <button class="btn btn-save"   onclick="speichern()">&#128247; Snapshot anlegen</button>
           <button class="btn btn-import" onclick="exportCSV()">&#128228; Als CSV exportieren</button>
           <button class="btn btn-clear"  onclick="zuruecksetzen()">&#8635; Zur&#252;cksetzen</button>
         </div>
         <p style="margin-top:.75rem;font-size:.8rem;color:var(--grey700)">
-          &#128190; <strong>Daten speichern</strong>: Speichert im Browser &ndash; beim n&#228;chsten &#214;ffnen dieser Datei automatisch wiederhergestellt.<br>
+          &#128247; <strong>Snapshot anlegen</strong>: Erzwingt jetzt sofort einen Sicherungs-Snapshot (unabh&auml;ngig vom Auto-Save).<br>
           &#128228; <strong>CSV exportieren</strong>: Exportiert als .csv &ndash; direkt in Excel &#246;ffenbar.<br>
           &#8635; <strong>Zur&#252;cksetzen</strong>: L&#246;scht gespeicherte &#196;nderungen, stellt Originaldaten wieder her.
         </p>
+
+        <!-- Snapshot-Historie -->
+        <div style="margin-top:1.5rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+            <h3 style="font-size:.95rem;color:var(--navy)">&#128338; Versionshistorie (Snapshots)</h3>
+            <button class="btn btn-clear" style="padding:.35rem .8rem;font-size:.78rem" onclick="clearSnapshots()">Alle Snapshots l&ouml;schen</button>
+          </div>
+          <p style="margin-bottom:.5rem;font-size:.8rem;color:var(--grey700)">
+            Bei jeder &Auml;nderung wird automatisch ein Snapshot angelegt (max. 20). Bei L&ouml;schungen und Imports wird IMMER zuerst gesichert &ndash; so kann nichts verloren gehen.
+          </p>
+          <div id="snap-list"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -857,6 +869,7 @@ function init(){
   if(!ok){members=ADDR_DATA.map(function(r,i){return mkM(r,i);});nextNr=members.length+1;}
   renderAll();
   updateSaveInfo();
+  renderSnapshots();
 }
 
 function renderAll(){renderStats();renderTable();renderBezirke();renderRecent();document.getElementById('hdrbadge').textContent=members.length+' Einträge';}
@@ -968,7 +981,7 @@ function saveMember(){
     ehren:document.getElementById('f-eh').value,helga:document.getElementById('f-hg').value,
     tel:document.getElementById('f-tel').value.trim(),
     email:document.getElementById('f-email').value.trim(),foto:''};
-  members.push(m);renderAll();clearForm();
+  members.push(m);renderAll();clearForm();persist();
   toast('Gespeichert: '+m.name+(m.vor?', '+m.vor:'')+'  (Bezirk '+bz+')');
 }
 
@@ -1067,7 +1080,7 @@ function saveEdit(){
   m.email=document.getElementById('e-email').value.trim();
   m.foto=document.getElementById('foto-preview-img').style.display!=='none'
     ?document.getElementById('foto-preview-img').src:'';
-  closeModal();renderAll();
+  closeModal();renderAll();persist();
   var msg=m.name+(m.vor?', '+m.vor:'');
   if(oldBz!==m.bz)msg+=' (Bezirk '+oldBz+' → '+m.bz+')';
   toast('\u2714 '+msg+' gespeichert');
@@ -1076,24 +1089,52 @@ function saveEdit(){
 function deleteMember(){
   if(editIdx<0)return;
   var m=members[editIdx];
-  if(!confirm('Adresse löschen: '+m.name+(m.vor?', '+m.vor:'')+' (Bezirk '+m.bz+')?'))return;
+  if(!confirm('Adresse löschen: '+m.name+(m.vor?', '+m.vor:'')+' (Bezirk '+m.bz+')?\n\nVorher wird ein Sicherungs-Snapshot angelegt – die Adresse kann jederzeit aus dem Snapshot wiederhergestellt werden.'))return;
+  persist({snapshot:'force'}); // Löschung ist heikel → immer Snapshot davor
   members.splice(editIdx,1);
   members.forEach(function(x,i){x.nr=i+1;});
   nextNr=members.length+1;
-  closeModal();renderAll();
+  closeModal();renderAll();persist({snapshot:'skip'});
   toast('Adresse gelöscht');
 }
 
-function speichern(){
+// === Persistierung & Snapshot-Historie ===
+// persist() ist die ZENTRALE Speicherfunktion. Jede Mutation an `members`
+// MUSS sie aufrufen. Schreibt sofort in localStorage und legt – throttled –
+// einen Snapshot in sgO_snapshots an, damit nichts verloren geht.
+var SNAP_KEY='sgO_snapshots', SNAP_MAX=20, SNAP_THROTTLE_MS=30000;
+var lastSnapTs=0;
+
+function persist(opts){
+  // opts.snapshot: 'auto' (default, throttle), 'force' (immer Snapshot), 'skip' (nur speichern)
+  opts=opts||{};
   try{
     localStorage.setItem('sgO_members',JSON.stringify(members));
     localStorage.setItem('sgO_saved',new Date().toISOString());
-    toast('Daten gespeichert!');updateSaveInfo();
-  }catch(e){toast('Fehler: '+e.message,true);}
+  }catch(e){toast('Speicher voll: '+e.message,true);updateSaveInfo();return;}
+  var mode=opts.snapshot||'auto';
+  var now=Date.now();
+  if(mode!=='skip' && (mode==='force' || (now-lastSnapTs)>=SNAP_THROTTLE_MS)){
+    try{
+      var snaps=JSON.parse(localStorage.getItem(SNAP_KEY)||'[]');
+      snaps.push({ts:new Date().toISOString(),count:members.length,members:JSON.parse(JSON.stringify(members))});
+      if(snaps.length>SNAP_MAX)snaps=snaps.slice(-SNAP_MAX);
+      localStorage.setItem(SNAP_KEY,JSON.stringify(snaps));
+      lastSnapTs=now;
+    }catch(e){/* Snapshot optional – nicht kritisch */}
+  }
+  updateSaveInfo();renderSnapshots();
+}
+
+function speichern(){
+  // Manueller „Snapshot anlegen"-Button – erzwingt immer einen neuen Snapshot
+  persist({snapshot:'force'});
+  toast('Snapshot angelegt');
 }
 
 function zuruecksetzen(){
-  if(!confirm('Gespeicherte Änderungen löschen und Originaldaten wiederherstellen?'))return;
+  if(!confirm('Gespeicherte Änderungen löschen und Originaldaten wiederherstellen?\n\nVorher wird ein Sicherungs-Snapshot angelegt.'))return;
+  persist({snapshot:'force'}); // letzten Stand vor Reset sichern
   localStorage.removeItem('sgO_members');localStorage.removeItem('sgO_saved');
   members=ADDR_DATA.map(function(r,i){return mkM(r,i);});
   nextNr=members.length+1;renderAll();updateSaveInfo();
@@ -1103,8 +1144,42 @@ function zuruecksetzen(){
 function updateSaveInfo(){
   var el=document.getElementById('save-info');if(!el)return;
   var ts=localStorage.getItem('sgO_saved');
-  if(ts){var d=new Date(ts);el.textContent='Zuletzt gespeichert: '+d.toLocaleString('de-DE');el.style.color='var(--green)';}
+  if(ts){var d=new Date(ts);el.innerHTML='&#10004; Auto-gespeichert &ndash; zuletzt: <strong>'+d.toLocaleString('de-DE')+'</strong>';el.style.color='var(--green)';}
   else{el.textContent='Noch nicht gespeichert (Originaldaten)';el.style.color='var(--orange)';}
+}
+
+function renderSnapshots(){
+  var el=document.getElementById('snap-list');if(!el)return;
+  var snaps;try{snaps=JSON.parse(localStorage.getItem(SNAP_KEY)||'[]');}catch(e){snaps=[];}
+  if(!snaps.length){el.innerHTML='<p style="font-size:.85rem;color:var(--grey700);font-style:italic;padding:.5rem">Noch keine Snapshots vorhanden &ndash; werden bei jeder &Auml;nderung automatisch angelegt.</p>';return;}
+  var html=snaps.slice().reverse().map(function(s,i){
+    var d=new Date(s.ts);
+    var idx=snaps.length-1-i;
+    return '<li style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;padding:.5rem .7rem;border-bottom:1px solid var(--grey100);font-size:.85rem">'
+      +'<span><strong>'+d.toLocaleString('de-DE')+'</strong> &middot; '+s.count+' Eintr&auml;ge</span>'
+      +'<button class="btn btn-clear" style="padding:.3rem .7rem;font-size:.75rem" onclick="restoreSnapshot('+idx+')">Wiederherstellen</button>'
+      +'</li>';
+  }).join('');
+  el.innerHTML='<ul style="list-style:none;max-height:300px;overflow-y:auto;border:1px solid var(--grey100);border-radius:6px;background:#fff">'+html+'</ul>'
+    +'<p style="margin-top:.5rem;font-size:.78rem;color:var(--grey700)">Insgesamt '+snaps.length+' von max. '+SNAP_MAX+' Snapshots. &Auml;ltere werden automatisch entfernt.</p>';
+}
+
+function restoreSnapshot(idx){
+  var snaps;try{snaps=JSON.parse(localStorage.getItem(SNAP_KEY)||'[]');}catch(e){return;}
+  var s=snaps[idx];if(!s)return;
+  if(!confirm('Snapshot vom '+new Date(s.ts).toLocaleString('de-DE')+' ('+s.count+' Einträge) wiederherstellen?\n\nDer aktuelle Stand wird vorher als neuer Snapshot gesichert.'))return;
+  persist({snapshot:'force'});
+  members=JSON.parse(JSON.stringify(s.members));
+  members.forEach(function(m,i){m.nr=i+1;});
+  nextNr=members.length+1;renderAll();
+  persist({snapshot:'skip'});
+  toast('Snapshot wiederhergestellt: '+s.count+' Einträge');
+}
+
+function clearSnapshots(){
+  if(!confirm('Alle Snapshots löschen? Diese Aktion ist nicht rückgängig zu machen.'))return;
+  localStorage.removeItem(SNAP_KEY);
+  renderSnapshots();toast('Snapshots gelöscht');
 }
 
 function doDrop(e){
@@ -1172,6 +1247,8 @@ function importCSV(file){
         if(choice==='1')mode='replace';
         else if(choice==='2')mode='merge';
         else{toast('Ungültige Auswahl - Import abgebrochen',true);return;}
+        // Vor jedem Import einen Snapshot sichern, damit der vorherige Stand wiederherstellbar bleibt
+        persist({snapshot:'force'});
       }
 
       // Felder, die beim Update aus der CSV übernommen werden (nr bleibt erhalten,
@@ -1201,14 +1278,14 @@ function importCSV(file){
         });
         members.forEach(function(m,i){m.nr=i+1;});
         nextNr=members.length+1;renderAll();
-        try{localStorage.setItem('sgO_members',JSON.stringify(members));localStorage.setItem('sgO_saved',new Date().toISOString());updateSaveInfo();}catch(e){}
+        persist({snapshot:'skip'}); // Snapshot wurde bereits vor dem Import gemacht
         document.getElementById('imp-status').innerHTML='<span style="color:var(--green);font-weight:700">&#10004; '+added+' neu, '+updated+' aktualisiert ('+(imported.length-added-updated)+' unverändert) - automatisch gespeichert.</span>';
         toast(added+' neu, '+updated+' aktualisiert');
       }else{
         members=imported;
         members.forEach(function(m,i){m.nr=i+1;});
         nextNr=members.length+1;renderAll();
-        try{localStorage.setItem('sgO_members',JSON.stringify(members));localStorage.setItem('sgO_saved',new Date().toISOString());updateSaveInfo();}catch(e){}
+        persist({snapshot:'skip'}); // Snapshot wurde bereits vor dem Import gemacht
         document.getElementById('imp-status').innerHTML='<span style="color:var(--green);font-weight:700">&#10004; '+members.length+' Einträge importiert (ersetzt) - automatisch gespeichert.</span>';
         toast(members.length+' Einträge importiert');
       }
