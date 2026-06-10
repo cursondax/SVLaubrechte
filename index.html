@@ -1289,28 +1289,65 @@ function importCSV(file){
         // Dedup-Key: Nachname + Vorname + PLZ
         var key=function(m){return (m.name+'|'+m.vor+'|'+m.plz).toLowerCase();};
         var byKey={};members.forEach(function(m){byKey[key(m)]=m;});
-        var added=0, updated=0;
+        var added=0, updated=0, changes=[]; // Liste der konkreten Änderungen für die Anzeige
+        var labels={bz:'Bezirk',a1:'Anrede 1',a2:'Anrede 2',name:'Nachname',vor:'Vorname',str:'Straße',plz:'PLZ',ort:'Ort',ehren:'Ehrenmitglied',helga:'Helga',foto:'Foto',tel:'Telefon',email:'E-Mail'};
         imported.forEach(function(m){
           var k=key(m), existing=byKey[k];
           if(existing){
-            // Vorhandenen Eintrag aktualisieren (nur nicht-leere Felder überschreiben)
-            var changed=false;
+            var diffs=[];
             UPDATE_FIELDS.forEach(function(f){
               var nv=m[f];
-              if(nv!==undefined && nv!=='' && nv!==null && existing[f]!==nv){
-                existing[f]=nv;changed=true;
+              if(nv!==undefined && nv!=='' && nv!==null && String(existing[f]||'')!==String(nv)){
+                diffs.push({field:labels[f]||f, old:String(existing[f]||''), neu:String(nv)});
+                existing[f]=nv;
               }
             });
-            if(changed)updated++;
+            if(diffs.length){
+              updated++;
+              changes.push({who:m.name+(m.vor?', '+m.vor:''), diffs:diffs});
+            }
           }else{
             members.push(m);byKey[k]=m;added++;
+            changes.push({who:m.name+(m.vor?', '+m.vor:'')+' (NEU)', diffs:[]});
           }
         });
         members.forEach(function(m,i){m.nr=i+1;});
         nextNr=members.length+1;renderAll();
         persist({snapshot:'skip'}); // Snapshot wurde bereits vor dem Import gemacht
-        document.getElementById('imp-status').innerHTML='<span style="color:var(--green);font-weight:700">&#10004; '+added+' neu, '+updated+' aktualisiert ('+(imported.length-added-updated)+' unverändert) - automatisch gespeichert.</span><br><span style="font-size:.78rem;color:var(--grey700)">Datei-Encoding: '+encoding+'</span>';
-        toast(added+' neu, '+updated+' aktualisiert');
+        // === Klarer Statustext ===
+        var unchanged=imported.length-added-updated;
+        var headline, color;
+        if(added===0 && updated===0){
+          headline='&#8505; '+imported.length+' Einträge geprüft &ndash; alle Werte stimmten bereits mit der App überein. <strong>Keine Änderung nötig.</strong>';
+          color='var(--navym)';
+        }else{
+          var parts=[];
+          if(added) parts.push('<strong>'+added+' neu hinzugefügt</strong>');
+          if(updated) parts.push('<strong>'+updated+' Einträge aktualisiert</strong>');
+          headline='&#10004; '+parts.join(' &middot; ')+(unchanged?' &middot; '+unchanged+' unverändert':'')+' &ndash; automatisch gespeichert.';
+          color='var(--green)';
+        }
+        // Detail-Liste der Änderungen (max 20 Einträge)
+        var detail='';
+        if(changes.length){
+          detail='<details style="margin-top:.5rem"><summary style="cursor:pointer;font-size:.85rem;color:var(--navy);font-weight:600">Details anzeigen ('+changes.length+' '+(changes.length===1?'Eintrag':'Einträge')+')</summary>'
+            +'<ul style="list-style:none;margin-top:.5rem;max-height:280px;overflow-y:auto;border:1px solid var(--grey100);border-radius:6px;background:#fff;font-size:.82rem">';
+          changes.slice(0,50).forEach(function(c){
+            detail+='<li style="padding:.4rem .7rem;border-bottom:1px solid var(--grey100)"><strong>'+esc(c.who)+'</strong>';
+            if(c.diffs.length){
+              detail+='<ul style="margin-left:1rem;margin-top:.2rem;list-style:disc">';
+              c.diffs.forEach(function(d){
+                detail+='<li>'+esc(d.field)+': <span style="color:#c0392b;text-decoration:line-through">'+esc(d.old||'(leer)')+'</span> &rarr; <span style="color:var(--green);font-weight:600">'+esc(d.neu)+'</span></li>';
+              });
+              detail+='</ul>';
+            }
+            detail+='</li>';
+          });
+          if(changes.length>50) detail+='<li style="padding:.4rem .7rem;color:var(--grey700);font-style:italic">… und '+(changes.length-50)+' weitere</li>';
+          detail+='</ul></details>';
+        }
+        document.getElementById('imp-status').innerHTML='<span style="color:'+color+';font-weight:700">'+headline+'</span><br><span style="font-size:.78rem;color:var(--grey700)">Datei-Encoding: '+encoding+'</span>'+detail;
+        toast((added||updated)?(added+' neu, '+updated+' aktualisiert'):'Alle Werte bereits aktuell');
       }else{
         members=imported;
         members.forEach(function(m,i){m.nr=i+1;});
