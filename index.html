@@ -1174,21 +1174,42 @@ function importCSV(file){
         else{toast('Ungültige Auswahl - Import abgebrochen',true);return;}
       }
 
+      // Felder, die beim Update aus der CSV übernommen werden (nr bleibt erhalten,
+      // damit die laufende Nummerierung der bestehenden Liste nicht durcheinandergerät)
+      var UPDATE_FIELDS=['bz','a1','a2','name','vor','str','plz','ort','ehren','helga','foto','tel','email'];
+
       if(mode==='merge'){
-        // einfache Dedup: Nachname + Vorname + PLZ
+        // Dedup-Key: Nachname + Vorname + PLZ
         var key=function(m){return (m.name+'|'+m.vor+'|'+m.plz).toLowerCase();};
-        var existing={};members.forEach(function(m){existing[key(m)]=1;});
-        var added=0;
-        imported.forEach(function(m){if(!existing[key(m)]){members.push(m);added++;}});
+        var byKey={};members.forEach(function(m){byKey[key(m)]=m;});
+        var added=0, updated=0;
+        imported.forEach(function(m){
+          var k=key(m), existing=byKey[k];
+          if(existing){
+            // Vorhandenen Eintrag aktualisieren (nur nicht-leere Felder überschreiben)
+            var changed=false;
+            UPDATE_FIELDS.forEach(function(f){
+              var nv=m[f];
+              if(nv!==undefined && nv!=='' && nv!==null && existing[f]!==nv){
+                existing[f]=nv;changed=true;
+              }
+            });
+            if(changed)updated++;
+          }else{
+            members.push(m);byKey[k]=m;added++;
+          }
+        });
         members.forEach(function(m,i){m.nr=i+1;});
         nextNr=members.length+1;renderAll();
-        document.getElementById('imp-status').innerHTML='<span style="color:var(--green);font-weight:700">&#10004; '+added+' neue Einträge angehängt ('+(imported.length-added)+' bereits vorhanden).</span>';
-        toast(added+' neue Einträge importiert');
+        try{localStorage.setItem('sgO_members',JSON.stringify(members));localStorage.setItem('sgO_saved',new Date().toISOString());updateSaveInfo();}catch(e){}
+        document.getElementById('imp-status').innerHTML='<span style="color:var(--green);font-weight:700">&#10004; '+added+' neu, '+updated+' aktualisiert ('+(imported.length-added-updated)+' unverändert) - automatisch gespeichert.</span>';
+        toast(added+' neu, '+updated+' aktualisiert');
       }else{
         members=imported;
         members.forEach(function(m,i){m.nr=i+1;});
         nextNr=members.length+1;renderAll();
-        document.getElementById('imp-status').innerHTML='<span style="color:var(--green);font-weight:700">&#10004; '+members.length+' Einträge importiert (ersetzt).</span>';
+        try{localStorage.setItem('sgO_members',JSON.stringify(members));localStorage.setItem('sgO_saved',new Date().toISOString());updateSaveInfo();}catch(e){}
+        document.getElementById('imp-status').innerHTML='<span style="color:var(--green);font-weight:700">&#10004; '+members.length+' Einträge importiert (ersetzt) - automatisch gespeichert.</span>';
         toast(members.length+' Einträge importiert');
       }
     }catch(err){toast('Fehler: '+err.message,true);}
