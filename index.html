@@ -841,22 +841,42 @@ var members = [];
 var nextNr = 1;
 var editIdx = -1;
 
+// Header-Normalisierung: Umlaute, Sonderzeichen, Case und Encoding-Korruption ignorieren.
+// So findet mkM "Straße" auch als "Strasse", "straße", "Stra�e" (Replacement-Char nach Excel-CSV),
+// und "lfd.-Nr.:" als "lfdnr".
+function normH(s){
+  return String(s||'').toLowerCase()
+    .replace(/ä/g,'a').replace(/ö/g,'o').replace(/ü/g,'u').replace(/ß/g,'ss')
+    .replace(/�/g,'') // Encoding-Replacement-Zeichen weg
+    .replace(/[^a-z0-9]/g,''); // Punkte, Slashes, Bindestriche, Whitespace weg
+}
+
 function mkM(r,i){
+  // Baue Lookup-Tabelle: normalisierter Header → Wert
+  var lookup={};
+  Object.keys(r).forEach(function(k){lookup[normH(k)]=r[k];});
+  function get(){
+    for(var j=0;j<arguments.length;j++){
+      var v=lookup[normH(arguments[j])];
+      if(v!==undefined && v!==null) return v;
+    }
+    return '';
+  }
   return {
     nr:   i+1,
-    bz:   parseInt(r['Bezirk']||r['bezirk']||0)||null,
-    a1:   String(r['Anrede1']||''),
-    a2:   String(r['Anrede2']||''),
-    name: String(r['Nachname']||'').trim(),
-    vor:  String(r['Vorname']||'').trim(),
-    str:  String(r['Straße']||r['Strasse']||r['straße']||r['strasse']||'').trim(),
-    plz:  String(r['PLZ']||'').trim(),
-    ort:  String(r['Ort']||'').trim(),
-    ehren:String(r['Ehrenmitglied']||''),
-    helga:String(r['Helga']||''),
-    foto: r['foto']||'',
-    tel:  String(r['Handy/Tel']||r['Handy']||r['Tel']||'').trim(),
-    email:String(r['E-Mail']||r['Email']||r['email']||'').trim()
+    bz:   parseInt(get('Bezirk')||0)||null,
+    a1:   String(get('Anrede1')||''),
+    a2:   String(get('Anrede2')||''),
+    name: String(get('Nachname')||'').trim(),
+    vor:  String(get('Vorname')||'').trim(),
+    str:  String(get('Straße','Strasse','Str','Adresse')||'').trim(),
+    plz:  String(get('PLZ','Postleitzahl')||'').trim(),
+    ort:  String(get('Ort','Stadt','Wohnort')||'').trim(),
+    ehren:String(get('Ehrenmitglied','Ehren')||''),
+    helga:String(get('Helga')||''),
+    foto: get('foto','Foto')||'',
+    tel:  String(get('Handy/Tel','Handy','Tel','Telefon','Mobil')||'').trim(),
+    email:String(get('E-Mail','Email','Mail')||'').trim()
   };
 }
 
@@ -1216,7 +1236,17 @@ function importCSV(file){
   var reader=new FileReader();
   reader.onload=function(ev){
     try{
-      var text=ev.target.result;
+      // Encoding-Erkennung: zuerst UTF-8 versuchen. Wenn das Replacement-Zeichen vorkommt
+      // (passiert wenn Excel die CSV als Windows-1252 / ANSI gespeichert hat), auf 1252 ausweichen.
+      var buf=ev.target.result;
+      var text=new TextDecoder('utf-8',{fatal:false}).decode(buf);
+      var encoding='UTF-8';
+      if(text.indexOf('�')!==-1){
+        try{
+          var alt=new TextDecoder('windows-1252').decode(buf);
+          if(alt.indexOf('�')===-1){text=alt;encoding='Windows-1252';}
+        }catch(e){}
+      }
       var firstLine=text.split(/\r?\n/)[0]||'';
       var sep=firstLine.indexOf(';')!==-1?';':',';
       var rows=parseCSV(text,sep);
@@ -1279,19 +1309,19 @@ function importCSV(file){
         members.forEach(function(m,i){m.nr=i+1;});
         nextNr=members.length+1;renderAll();
         persist({snapshot:'skip'}); // Snapshot wurde bereits vor dem Import gemacht
-        document.getElementById('imp-status').innerHTML='<span style="color:var(--green);font-weight:700">&#10004; '+added+' neu, '+updated+' aktualisiert ('+(imported.length-added-updated)+' unverändert) - automatisch gespeichert.</span>';
+        document.getElementById('imp-status').innerHTML='<span style="color:var(--green);font-weight:700">&#10004; '+added+' neu, '+updated+' aktualisiert ('+(imported.length-added-updated)+' unverändert) - automatisch gespeichert.</span><br><span style="font-size:.78rem;color:var(--grey700)">Datei-Encoding: '+encoding+'</span>';
         toast(added+' neu, '+updated+' aktualisiert');
       }else{
         members=imported;
         members.forEach(function(m,i){m.nr=i+1;});
         nextNr=members.length+1;renderAll();
         persist({snapshot:'skip'}); // Snapshot wurde bereits vor dem Import gemacht
-        document.getElementById('imp-status').innerHTML='<span style="color:var(--green);font-weight:700">&#10004; '+members.length+' Einträge importiert (ersetzt) - automatisch gespeichert.</span>';
+        document.getElementById('imp-status').innerHTML='<span style="color:var(--green);font-weight:700">&#10004; '+members.length+' Einträge importiert (ersetzt) - automatisch gespeichert.</span><br><span style="font-size:.78rem;color:var(--grey700)">Datei-Encoding: '+encoding+'</span>';
         toast(members.length+' Einträge importiert');
       }
     }catch(err){toast('Fehler: '+err.message,true);}
   };
-  reader.readAsText(file,'UTF-8');
+  reader.readAsArrayBuffer(file);
 }
 
 function exportCSV(){
