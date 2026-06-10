@@ -390,7 +390,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
       </select>
       <select class="fsel" id="fa" onchange="renderTable()">
         <option value="">Alle Anreden</option>
-        <option>Familie</option><option>Frau</option><option>Sch&#252;tzenbruder</option>
+        <option>Familie</option><option>Frau</option><option>Sch&#252;tzenbruder</option><option>Herr</option>
       </select>
       <span id="rcnt" style="font-size:.8rem;margin-left:auto"></span>
     </div>
@@ -422,7 +422,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
             </select></div>
           <div class="fg"><label>Anrede 2</label>
             <select id="f-a2"><option value="">-</option>
-              <option>Familie</option><option>Frau</option><option>Herrn</option><option>Hern</option>
+              <option>Familie</option><option>Frau</option><option>Herr</option>
             </select></div>
           <div class="fg"><label>Nachname *</label><input type="text" id="f-na" placeholder="Mustermann"></div>
           <div class="fg"><label>Vorname</label><input type="text" id="f-vo" placeholder="Max"></div>
@@ -583,6 +583,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
                 <option value="Familie">Familie</option>
                 <option value="Frau">Frau</option>
                 <option value="Sch&#252;tzenbruder">Sch&#252;tzenbruder</option>
+                <option value="Herr">Herr</option>
               </select>
             </div>
 
@@ -681,6 +682,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
                 <option value="Familie">Familie</option>
                 <option value="Frau">Frau</option>
                 <option value="Sch&#252;tzenbruder">Sch&#252;tzenbruder</option>
+                <option value="Herr">Herr</option>
               </select>
             </div>
             <div class="fg"><label>Ehrenmitglied</label>
@@ -796,7 +798,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
           </select></div>
         <div class="fg"><label>Anrede 2</label>
           <select id="e-a2"><option value="">-</option>
-            <option>Familie</option><option>Frau</option><option>Herrn</option><option>Hern</option>
+            <option>Familie</option><option>Frau</option><option>Herr</option>
           </select></div>
         <div class="fg"><label>Nachname *</label><input type="text" id="e-na"></div>
         <div class="fg"><label>Vorname</label><input type="text" id="e-vo"></div>
@@ -862,11 +864,12 @@ function mkM(r,i){
     }
     return '';
   }
+  function nA(v){var s=String(v||'').trim();return (s==='Herrn'||s==='Hern')?'Herr':s;}
   return {
     nr:   i+1,
     bz:   parseInt(get('Bezirk')||0)||null,
-    a1:   String(get('Anrede1')||''),
-    a2:   String(get('Anrede2')||''),
+    a1:   nA(get('Anrede1')),
+    a2:   nA(get('Anrede2')),
     name: String(get('Nachname')||'').trim(),
     vor:  String(get('Vorname')||'').trim(),
     str:  String(get('Straße','Strasse','Str','Adresse')||'').trim(),
@@ -887,9 +890,24 @@ function init(){
     if(raw){var s=JSON.parse(raw);if(s&&s.length){members=s;nextNr=members.length+1;ok=true;}}
   }catch(e){}
   if(!ok){members=ADDR_DATA.map(function(r,i){return mkM(r,i);});nextNr=members.length+1;}
+  // Einmalige Migration: alte Anrede-Varianten "Herrn"/"Hern" → "Herr"
+  var migrated=migrateAnrede();
+  if(migrated>0){
+    persist({snapshot:'force'}); // Sicherungs-Snapshot des vor-Migration-Stands
+    toast(migrated+' Anreden migriert: "Herrn"/"Hern" → "Herr"');
+  }
   renderAll();
   updateSaveInfo();
   renderSnapshots();
+}
+
+function migrateAnrede(){
+  var count=0;
+  members.forEach(function(m){
+    if(m.a1==='Herrn'||m.a1==='Hern'){m.a1='Herr';count++;}
+    if(m.a2==='Herrn'||m.a2==='Hern'){m.a2='Herr';count++;}
+  });
+  return count;
 }
 
 function renderAll(){renderStats();renderTable();renderBezirke();renderRecent();document.getElementById('hdrbadge').textContent=members.length+' Einträge';}
