@@ -158,8 +158,10 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:var(--grey100)}
 ::-webkit-scrollbar-thumb{background:var(--navylt);border-radius:3px}
-/* Druckrand auf jeder Seite sicherstellen (alle Drucker brauchen min. ~5mm) */
-@page{size:A4 portrait;margin:12mm}
+/* Druckrand auf jeder Seite sicherstellen.
+   Rechts mehr als links (16mm vs 12mm), weil viele Drucker
+   rechts einen groesseren unbedruckbaren Bereich haben. */
+@page{size:A4 portrait;margin:12mm 16mm 12mm 12mm}
 @media print{
   body{background:#fff;font-family:Arial,sans-serif;font-size:10pt}
   .hdr,.tabs,.toolbar,.stats,.pdf-bar,#sec-eingabe,#sec-import,
