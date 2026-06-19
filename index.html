@@ -158,6 +158,8 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:var(--grey100)}
 ::-webkit-scrollbar-thumb{background:var(--navylt);border-radius:3px}
+/* Druckrand auf jeder Seite sicherstellen (alle Drucker brauchen min. ~5mm) */
+@page{size:A4 portrait;margin:12mm}
 @media print{
   body{background:#fff;font-family:Arial,sans-serif;font-size:10pt}
   .hdr,.tabs,.toolbar,.stats,.pdf-bar,#sec-eingabe,#sec-import,
@@ -182,7 +184,8 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
   .print-bezirk:first-child{break-before:auto;page-break-before:avoid}
   .page-hd{font-size:13pt;font-weight:bold;color:#1F4E79;margin:0 0 4pt 0;border-bottom:2pt solid #1F4E79;padding-bottom:3pt}
   .page-sub{font-size:8pt;color:#666;margin-bottom:6pt}
-  .print-tbl{width:100%;border-collapse:collapse;font-size:10pt;table-layout:auto}
+  /* Tabelle mit Rahmen links/rechts/oben/unten; border-collapse merged mit inneren Borders */
+  .print-tbl{width:100%;border-collapse:collapse;font-size:10pt;table-layout:auto;border:.6pt solid #666}
   .print-tbl thead{display:table-header-group}
   .print-tbl th{background:#2E75B6!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:4pt 5pt;text-align:left;font-size:9pt;font-family:Arial,sans-serif;border-right:.5pt solid rgba(255,255,255,.4);white-space:nowrap}
   .print-tbl th:last-child{border-right:none}
