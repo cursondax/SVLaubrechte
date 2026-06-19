@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Hintergrund: helles Vereinsgruen, gerundetes Quadrat -->
+  <rect width="512" height="512" rx="96" ry="96" fill="#DFF2DA"/>
+
+  <!-- Adler-Fluegel (stilisiert, drei Federsegmente je Seite) -->
+  <g fill="#1B4332">
+    <!-- Linker Fluegel -->
+    <path d="M 256 200
+             C 200 180, 140 170, 80 200
+             C 110 215, 140 220, 170 225
+             C 130 240, 100 255, 70 280
+             C 110 285, 145 280, 180 270
+             C 150 295, 130 325, 115 360
+             C 165 340, 210 310, 240 270
+             Z"/>
+    <!-- Rechter Fluegel (gespiegelt) -->
+    <path d="M 256 200
+             C 312 180, 372 170, 432 200
+             C 402 215, 372 220, 342 225
+             C 382 240, 412 255, 442 280
+             C 402 285, 367 280, 332 270
+             C 362 295, 382 325, 397 360
+             C 347 340, 302 310, 272 270
+             Z"/>
+  </g>
+
+  <!-- Krone (drei Zacken mit gold-gelben Edelsteinen) -->
+  <g>
+    <path d="M 188 168
+             L 200 132 L 218 152
+             L 240 110 L 256 145
+             L 272 110 L 294 152
+             L 312 132 L 324 168
+             Z"
+          fill="#1B4332"/>
+    <circle cx="220" cy="148" r="5" fill="#F5C518"/>
+    <circle cx="256" cy="140" r="6" fill="#F5C518"/>
+    <circle cx="292" cy="148" r="5" fill="#F5C518"/>
+    <!-- Kronen-Basis -->
+    <rect x="184" y="168" width="144" height="10" fill="#1B4332"/>
+  </g>
+
+  <!-- Wappenschild -->
+  <path d="M 168 188
+           L 344 188
+           L 344 330
+           C 344 380, 308 415, 256 440
+           C 204 415, 168 380, 168 330
+           Z"
+        fill="#1B4332"/>
+
+  <!-- Schild-Innenrand (heller, subtle) -->
+  <path d="M 184 200
+           L 328 200
+           L 328 326
+           C 328 370, 296 400, 256 422
+           C 216 400, 184 370, 184 326
+           Z"
+        fill="none" stroke="#2D6A4F" stroke-width="3"/>
+
+  <!-- LB-Initialen -->
+  <text x="256" y="345"
+        font-family="Georgia, 'Times New Roman', serif"
+        font-size="148"
+        font-weight="700"
+        text-anchor="middle"
+        fill="#FFFFFF"
+        letter-spacing="-4">LB</text>
+
+  <!-- Schwanz (kleines Element unter dem Schild) -->
+  <g fill="#1B4332">
+    <path d="M 232 438
+             L 256 460
+             L 280 438
+             L 270 452
+             L 256 470
+             L 242 452
+             Z"/>
+  </g>
+</svg>
