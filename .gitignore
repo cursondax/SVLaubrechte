@@ -6,3 +6,6 @@ Thumbs.db
 
 # Server-Config mit Token NIEMALS ins Git
 server/config.php
+
+# Lokale Backups der Mitgliederdaten (DSGVO - nicht oeffentlich)
+backup/
