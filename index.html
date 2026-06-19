@@ -169,12 +169,17 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
   .card-hd{background:var(--navy)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .blist{max-height:none!important;overflow:visible!important}
   .blist li{border-bottom:.5pt solid #c0c0c0!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .bgrid{display:grid!important;grid-template-columns:repeat(2,1fr)!important;gap:1rem!important;margin-bottom:1rem!important}
+  /* WICHTIG: bgrid im Print NICHT als Grid – sonst landen zwei Bezirke nebeneinander
+     und page-break-before wird im Grid-Layout von Chrome/Edge ignoriert. */
+  .bgrid{display:block!important;grid-template-columns:none!important;gap:0!important;margin:0!important}
   .bgrid .card{border:1pt solid #b0c4de!important;border-radius:4pt!important}
-  .print-bezirk{page-break-before:always}
-  .print-bezirk:first-child{page-break-before:avoid}
-  .print-page{page-break-before:always}
-  .print-page:first-child{page-break-before:avoid}
+  /* Jede Druckseite (auch innerhalb desselben Bezirks) erzwingt einen Seitenumbruch.
+     Sowohl modernes break-before als auch das aeltere page-break-before, fuer maximale
+     Browser-Kompatibilitaet (Chrome, Edge, Safari, Firefox). */
+  .print-page{break-before:page;page-break-before:always;break-inside:avoid-page}
+  .print-page:first-child{break-before:auto;page-break-before:avoid}
+  .print-bezirk{break-before:page;page-break-before:always}
+  .print-bezirk:first-child{break-before:auto;page-break-before:avoid}
   .page-hd{font-size:13pt;font-weight:bold;color:#1F4E79;margin:0 0 4pt 0;border-bottom:2pt solid #1F4E79;padding-bottom:3pt}
   .page-sub{font-size:8pt;color:#666;margin-bottom:6pt}
   .print-tbl{width:100%;border-collapse:collapse;font-size:10pt;table-layout:auto}
