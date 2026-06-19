@@ -98,8 +98,57 @@ if (!is_dir($data_dir) || !is_writable($data_dir)) {
 
 // --- Routes ----------------------------------------------------------------
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+$action = $_GET['action'] ?? '';
 
 if ($method === 'GET') {
+    // --- Snapshot-Liste -----------------------------------------------------
+    if ($action === 'list_snapshots') {
+        $snaps = glob($snap_dir . '/snap-*.json') ?: [];
+        sort($snaps); // chronologisch (Dateiname enthaelt Datum)
+        $snaps = array_reverse($snaps); // juengste zuerst
+        $list = [];
+        foreach ($snaps as $f) {
+            $size = @filesize($f) ?: 0;
+            // Snapshot-Datum aus Dateiname: snap-YYYYMMDD-HHMMSS.json
+            $name = basename($f);
+            $iso = null;
+            if (preg_match('/^snap-(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})\.json$/', $name, $m)) {
+                $iso = sprintf('%s-%s-%sT%s:%s:%sZ', $m[1], $m[2], $m[3], $m[4], $m[5], $m[6]);
+            }
+            // Anzahl Mitglieder lesen (billig: peek auf "count":)
+            $count = null;
+            $fh = @fopen($f, 'r');
+            if ($fh) {
+                $head = fread($fh, 8192);
+                fclose($fh);
+                if (preg_match('/"count"\s*:\s*(\d+)/', $head, $m)) {
+                    $count = (int) $m[1];
+                }
+            }
+            $list[] = ['name' => $name, 'ts' => $iso, 'size' => $size, 'count' => $count];
+        }
+        echo json_encode(['snapshots' => $list], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    // --- Einzelnen Snapshot laden -------------------------------------------
+    if ($action === 'snapshot') {
+        $name = $_GET['name'] ?? '';
+        // Strikte Validierung: nur unser Namens-Schema akzeptieren (kein Path-Traversal)
+        if (!preg_match('/^snap-\d{8}-\d{6}\.json$/', $name)) {
+            fail(400, 'Ungueltiger Snapshot-Name.');
+        }
+        $f = $snap_dir . '/' . $name;
+        if (!is_file($f)) {
+            fail(404, 'Snapshot nicht gefunden.');
+        }
+        $raw = @file_get_contents($f);
+        if ($raw === false) {
+            fail(500, 'Lesen fehlgeschlagen.');
+        }
+        echo $raw;
+        exit;
+    }
+    // --- Standard: current.json ---------------------------------------------
     if (!is_file($current)) {
         echo json_encode(['empty' => true, 'ts' => null], JSON_UNESCAPED_UNICODE);
         exit;

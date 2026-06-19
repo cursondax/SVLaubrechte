@@ -128,6 +128,30 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
 .sync-state-line{font-size:.82rem;color:var(--grey700);margin-top:.4rem}
 .sync-state-line strong{color:var(--navy)}
 @media(max-width:500px){.sync-badge{font-size:.66rem;padding:2px 7px}.sync-badge .lbl{display:none}}
+/* Akkordeon "Mehr Optionen" */
+.more-opts{margin-top:1.25rem;border:1px solid var(--grey300);border-radius:var(--r);background:#fff}
+.more-opts>summary{padding:.7rem 1rem;cursor:pointer;font-weight:700;font-size:.92rem;color:var(--navy);list-style:none;display:flex;align-items:center;gap:.5rem;user-select:none}
+.more-opts>summary::-webkit-details-marker{display:none}
+.more-opts>summary::before{content:'▸';color:var(--navym);font-size:.85rem;transition:transform .15s}
+.more-opts[open]>summary::before{transform:rotate(90deg)}
+.more-opts>summary:hover{background:var(--grey50)}
+.more-opts-body{padding:.4rem 1rem 1.2rem;border-top:1px solid var(--grey100)}
+.opt-section{padding:1rem 0;border-bottom:1px dashed var(--grey100)}
+.opt-section:last-child{border-bottom:none}
+.opt-section h4{font-size:.92rem;color:var(--navy);margin-bottom:.35rem}
+.opt-section .opt-desc{font-size:.82rem;color:var(--grey700);line-height:1.5;margin-bottom:.7rem}
+.opt-section.opt-danger h4{color:var(--orange)}
+/* Server-Snapshot-Liste */
+.snap-list{list-style:none;max-height:340px;overflow-y:auto;border:1px solid var(--grey100);border-radius:6px;background:#fff;margin-top:.5rem}
+.snap-list li{display:flex;justify-content:space-between;align-items:center;gap:.7rem;padding:.55rem .85rem;border-bottom:1px solid var(--grey100);font-size:.85rem;flex-wrap:wrap}
+.snap-list li:last-child{border-bottom:none}
+.snap-list li:nth-child(even){background:var(--navyp)}
+.snap-meta{display:flex;flex-direction:column;gap:.15rem;min-width:0;flex:1}
+.snap-meta strong{font-weight:700;color:var(--navy)}
+.snap-age{font-size:.74rem;color:var(--grey700)}
+.snap-count{font-size:.74rem;color:var(--navym);font-weight:600}
+.snap-restore{padding:.3rem .8rem!important;font-size:.78rem!important}
+.snap-empty{font-style:italic;color:var(--grey700);font-size:.85rem;padding:.6rem 0;text-align:center}
 .btn-edit{background:none;border:1px solid var(--navylt);border-radius:5px;padding:2px 8px;font-size:.75rem;color:var(--navy);cursor:pointer;transition:var(--ease)}
 .btn-edit:hover{background:var(--navy);color:#fff}
 ::-webkit-scrollbar{width:5px;height:5px}
@@ -514,12 +538,6 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
     <div class="card">
       <div class="card-hd"><h2>&#128229; Import &amp; Speichern</h2></div>
       <div class="card-bd">
-        
-        <!-- Install PWA Banner -->
-        <div class="install-banner" id="installBanner">
-          <span>&#128247; App auf Homescreen installieren</span>
-          <button class="btn-onedrive" onclick="installPWA()">Installieren</button>
-        </div>
 
         <!-- Cloud-Sync (raw-bert.de) -->
         <div class="sync-card" id="sync-card">
@@ -536,36 +554,9 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
           </div>
         </div>
 
-        <!-- OneDrive Section -->
-        <div class="onedrive-banner">
-          <div style="font-size:1.8rem">&#9729;</div>
-          <div style="flex:1">
-            <h3>OneDrive-Synchronisation</h3>
-            <p>Daten per CSV mit OneDrive synchronisieren &ndash; kein Login n&ouml;tig.</p>
-          </div>
-        </div>
-        <div class="card" style="margin-bottom:1rem">
-          <div class="card-hd" style="background:#0078d4"><h2>&#9729; OneDrive Workflow</h2></div>
-          <div class="card-bd" style="font-size:.875rem;line-height:1.7">
-            <p style="margin-bottom:.75rem"><strong>Daten sichern &rarr; OneDrive:</strong></p>
-            <ol style="margin-left:1.2rem;margin-bottom:1rem">
-              <li>Unten auf <strong>„Als CSV exportieren"</strong> klicken</li>
-              <li>CSV-Datei in deinen OneDrive-Ordner speichern/verschieben</li>
-              <li>Auf einem anderen Ger&auml;t die HTML-Datei &ouml;ffnen</li>
-              <li>Die CSV-Datei aus OneDrive &uuml;ber <strong>„CSV importieren"</strong> laden</li>
-            </ol>
-            <p style="margin-bottom:.75rem"><strong>Empfehlung: Fester Ordner in OneDrive</strong></p>
-            <p style="color:var(--grey700);font-size:.82rem">Lege einen Ordner an, z.B. <em>OneDrive/SV-Lau-Brechte/</em>, und speichere dort immer die aktuelle CSV. So haben alle Ger&auml;te Zugriff auf die neueste Version.</p>
-          </div>
-        </div>
-
-        <div style="background:var(--greenbg);border-radius:var(--r);padding:.85rem 1rem;margin-bottom:1rem;font-size:.85rem;border-left:4px solid var(--green)">
-          <strong>&#128190; Lokaler Speicher (Browser)</strong><br>
-          <span id="save-info" style="font-size:.82rem">Wird geladen...</span><br>
-          <span style="font-size:.78rem;color:var(--grey700)">Jede &Auml;nderung (Neu/Bearbeiten/L&ouml;schen/Import) wird sofort gespeichert. Snapshots erm&ouml;glichen das Wiederherstellen.</span>
-        </div>
-        <p style="margin-bottom:1rem;font-size:.88rem;line-height:1.65">
-          CSV-Datei aus Excel importieren (Datei &rarr; Speichern unter &rarr; CSV).
+        <!-- CSV-Import (Bulk-Update aus Excel) -->
+        <p style="margin-bottom:.6rem;font-size:.88rem;line-height:1.65">
+          <strong>CSV importieren</strong> &ndash; f&uuml;r Bulk-Updates aus Excel (Datei &rarr; Speichern unter &rarr; CSV).
         </p>
         <div class="dropzone" id="dz"
              ondragover="event.preventDefault();this.classList.add('over')"
@@ -578,28 +569,51 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
         </div>
         <input type="file" id="fi" accept=".csv,.txt" style="display:none" onchange="doFile(event)">
         <div id="imp-status" style="margin-top:.9rem;font-size:.87rem"></div>
-        <div style="margin-top:1.2rem;display:flex;gap:.75rem;flex-wrap:wrap">
-          <button class="btn btn-save"   onclick="speichern()">&#128247; Snapshot anlegen</button>
-          <button class="btn btn-import" onclick="exportCSV()">&#128228; Als CSV exportieren</button>
-          <button class="btn btn-clear"  onclick="zuruecksetzen()">&#8635; Zur&#252;cksetzen</button>
-        </div>
-        <p style="margin-top:.75rem;font-size:.8rem;color:var(--grey700)">
-          &#128247; <strong>Snapshot anlegen</strong>: Erzwingt jetzt sofort einen Sicherungs-Snapshot (unabh&auml;ngig vom Auto-Save).<br>
-          &#128228; <strong>CSV exportieren</strong>: Exportiert als .csv &ndash; direkt in Excel &#246;ffenbar.<br>
-          &#8635; <strong>Zur&#252;cksetzen</strong>: L&#246;scht gespeicherte &#196;nderungen, stellt Originaldaten wieder her.
-        </p>
 
-        <!-- Snapshot-Historie -->
-        <div style="margin-top:1.5rem">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
-            <h3 style="font-size:.95rem;color:var(--navy)">&#128338; Versionshistorie (Snapshots)</h3>
-            <button class="btn btn-clear" style="padding:.35rem .8rem;font-size:.78rem" onclick="clearSnapshots()">Alle Snapshots l&ouml;schen</button>
+        <!-- Mehr Optionen (Akkordeon, anfangs eingeklappt) -->
+        <details class="more-opts" id="more-opts" ontoggle="if(this.open)syncRenderSnapshotList()">
+          <summary>&#9881; Mehr Optionen</summary>
+          <div class="more-opts-body">
+
+            <!-- Server-Snapshots -->
+            <div class="opt-section">
+              <h4>&#128338; Server-Snapshots wiederherstellen</h4>
+              <p class="opt-desc">Die letzten 10 Versionen, die automatisch auf raw-bert.de gesichert wurden. Funktioniert &uuml;ber alle Ger&auml;te &ndash; auf dem Handy einen Stand wiederherstellen, der vom PC angelegt wurde.</p>
+              <div id="server-snap-list"></div>
+              <div style="margin-top:.6rem">
+                <button class="btn btn-clear" style="padding:.35rem .8rem;font-size:.78rem" onclick="syncRenderSnapshotList()">&#8635; Liste aktualisieren</button>
+              </div>
+            </div>
+
+            <!-- CSV-Export -->
+            <div class="opt-section">
+              <h4>&#128228; Als CSV exportieren</h4>
+              <p class="opt-desc">Vollexport aller Mitglieder als CSV-Datei &ndash; direkt in Excel &ouml;ffenbar. F&uuml;r Notfall-Backups, Migration oder externe Bearbeitung.</p>
+              <button class="btn btn-import" onclick="exportCSV()">CSV herunterladen</button>
+            </div>
+
+            <!-- PWA installieren -->
+            <div class="opt-section" id="installBanner" style="display:none">
+              <h4 id="installBannerHdr">&#128241; App auf Homescreen installieren</h4>
+              <p class="opt-desc" id="installBannerText">Macht aus der Web-App eine richtige App auf deinem Ger&auml;t &ndash; mit Icon, ohne Browser-Leiste.</p>
+              <button class="btn btn-navy" id="installBannerBtn" onclick="installPWA()">Installieren</button>
+            </div>
+
+            <!-- Lokaler Speicher (Info) -->
+            <div class="opt-section">
+              <h4>&#128190; Lokaler Browser-Speicher</h4>
+              <p class="opt-desc" id="save-info">Wird geladen&hellip;</p>
+            </div>
+
+            <!-- Zur&#252;cksetzen -->
+            <div class="opt-section opt-danger">
+              <h4>&#9888; Alles zur&#252;cksetzen</h4>
+              <p class="opt-desc">L&ouml;scht alle Mitglieder im Browser und stellt die urspr&uuml;nglichen Daten wieder her. Bei aktivem Cloud-Sync wird vorher automatisch ein Server-Snapshot des aktuellen Stands angelegt.</p>
+              <button class="btn btn-clear" onclick="zuruecksetzen()">&#8635; Zur&uuml;cksetzen</button>
+            </div>
+
           </div>
-          <p style="margin-bottom:.5rem;font-size:.8rem;color:var(--grey700)">
-            Bei jeder &Auml;nderung wird automatisch ein Snapshot angelegt (max. 20). Bei L&ouml;schungen und Imports wird IMMER zuerst gesichert &ndash; so kann nichts verloren gehen.
-          </p>
-          <div id="snap-list"></div>
-        </div>
+        </details>
       </div>
     </div>
   </div>
@@ -1735,13 +1749,15 @@ function vcf(s){
 
 // ── PWA Install ──────────────────────────────────────────────────────────
 var deferredPrompt = null;
+function _showInstallBanner(){var el=document.getElementById('installBanner');if(el)el.style.display='block';}
+function _hideInstallBanner(){var el=document.getElementById('installBanner');if(el)el.style.display='none';}
 window.addEventListener('beforeinstallprompt', function(e){
   e.preventDefault();
   deferredPrompt = e;
-  document.getElementById('installBanner').classList.add('show');
+  _showInstallBanner();
 });
 window.addEventListener('appinstalled', function(){
-  document.getElementById('installBanner').classList.remove('show');
+  _hideInstallBanner();
   deferredPrompt = null;
   toast('App wurde installiert! ✓');
 });
@@ -1773,12 +1789,14 @@ if ('serviceWorker' in navigator) {
   var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
   var dismissed = localStorage.getItem('iosDismissed');
   if(isIOS && !isStandalone && !dismissed){
-    var banner = document.getElementById('installBanner');
-    if(banner){
-      banner.innerHTML = '<span>&#128247; Tipp: Tippe auf <strong>Teilen</strong> → <strong>Zum Home-Bildschirm</strong> um die App zu installieren</span>'
-        + '<button class="btn-onedrive" onclick="document.getElementById(\'installBanner\').classList.remove(\'show\');localStorage.setItem(\'iosDismissed\',\'1\')">✕</button>';
-      banner.classList.add('show');
+    var txt = document.getElementById('installBannerText');
+    var btn = document.getElementById('installBannerBtn');
+    if(txt) txt.innerHTML = '&#128241; Tippe auf <strong>Teilen</strong> &rarr; <strong>Zum Home-Bildschirm</strong> um die App zu installieren.';
+    if(btn){
+      btn.textContent = 'Hinweis ausblenden';
+      btn.onclick = function(){localStorage.setItem('iosDismissed','1');_hideInstallBanner();};
     }
+    _showInstallBanner();
   }
 })();
 
@@ -2725,6 +2743,78 @@ function syncBootstrap(){
 
 // Periodisch Status-Anzeige refreshen (Zeitstempel altert)
 setInterval(function(){if(syncIsConfigured())renderSyncCard();}, 30000);
+
+// === Server-Snapshots =====================================================
+function syncFetchSnapshots(){
+  if(!syncIsConfigured()) return Promise.reject(new Error('Sync nicht eingerichtet'));
+  return fetch(syncGetUrl()+'?action=list_snapshots',{
+    headers:{'Authorization':'Bearer '+syncGetToken()}
+  }).then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return r.json();
+  }).then(function(d){return d.snapshots||[];});
+}
+
+function syncRenderSnapshotList(){
+  var el = document.getElementById('server-snap-list');
+  if(!el) return;
+  if(!syncIsConfigured()){
+    el.innerHTML = '<p class="snap-empty">Cloud-Sync nicht eingerichtet &ndash; erst oben „Einrichten" klicken.</p>';
+    return;
+  }
+  el.innerHTML = '<p class="snap-empty">Lade Snapshots vom Server&hellip;</p>';
+  syncFetchSnapshots().then(function(snaps){
+    if(!snaps.length){
+      el.innerHTML = '<p class="snap-empty">Noch keine Server-Snapshots vorhanden. Werden bei jeder &Auml;nderung automatisch angelegt.</p>';
+      return;
+    }
+    var html = '<ul class="snap-list">'+snaps.map(function(s){
+      var d = s.ts ? new Date(s.ts) : null;
+      var label = d ? d.toLocaleString('de-DE') : s.name;
+      var age = d ? syncFormatAge(s.ts) : '';
+      var count = (s.count!=null) ? s.count+' Eintr&auml;ge' : '';
+      return '<li>'
+        +'<div class="snap-meta"><strong>'+escapeHtml(label)+'</strong>'
+        +(age?'<span class="snap-age">'+escapeHtml(age)+'</span>':'')
+        +(count?'<span class="snap-count">'+count+'</span>':'')
+        +'</div>'
+        +'<button class="btn btn-clear snap-restore" onclick="syncRestoreSnapshot(\''+escapeHtml(s.name)+'\', \''+escapeHtml(label)+'\', '+(s.count||0)+')">Wiederherstellen</button>'
+        +'</li>';
+    }).join('')+'</ul>';
+    el.innerHTML = html;
+  }).catch(function(err){
+    el.innerHTML = '<p class="snap-empty" style="color:var(--orange)">Fehler beim Laden: '+escapeHtml(err.message||'Unbekannt')+'</p>';
+  });
+}
+
+function syncRestoreSnapshot(name, label, count){
+  if(!confirm('Snapshot vom '+label+' wiederherstellen?\n\n'
+    +'Lokale '+members.length+' Einträge werden durch '+count+' Einträge aus dem Snapshot ersetzt.\n'
+    +'Vor dem Zurückspielen wird der aktuelle Stand automatisch als neuer Snapshot auf dem Server gesichert.')) return;
+  syncSetStatus('busy','Wiederherstellen…');
+  // 1. Aktuellen Stand erst noch sichern (push, damit ein Snapshot davon entsteht)
+  syncPush().then(function(){
+    // 2. Snapshot vom Server laden
+    return fetch(syncGetUrl()+'?action=snapshot&name='+encodeURIComponent(name),{
+      headers:{'Authorization':'Bearer '+syncGetToken()}
+    });
+  }).then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return r.json();
+  }).then(function(data){
+    if(!data || !Array.isArray(data.members)) throw new Error('Snapshot enthält keine Mitgliederliste');
+    // 3. Snapshot-Daten anwenden
+    syncApplyServerData(data);
+    // 4. Diesen Stand als neuen current.json pushen, damit andere Geräte ihn ebenfalls bekommen
+    return syncPush();
+  }).then(function(){
+    toast('✔ Snapshot wiederhergestellt: '+count+' Einträge');
+    syncRenderSnapshotList();
+  }).catch(function(err){
+    toast('Fehler beim Wiederherstellen: '+(err.message||'Unbekannt'), true);
+    syncSetStatus('err','⚠ Fehler');
+  });
+}
 
 init();
 syncBootstrap();
