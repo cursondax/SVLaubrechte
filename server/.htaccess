@@ -1,3 +1,14 @@
+# Authorization-Header an PHP durchreichen
+# (Ionos/FastCGI filtert ihn sonst aus Sicherheitsgruenden weg)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTP:Authorization} ^(.+)$
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%1]
+</IfModule>
+<IfModule mod_setenvif.c>
+    SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+</IfModule>
+
 # Schuetzt das data/-Verzeichnis vor direktem Browser-Zugriff.
 # Nur api.php darf rein.
 <FilesMatch "\.(json|tmp)$">

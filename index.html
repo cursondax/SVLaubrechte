@@ -2527,7 +2527,10 @@ function syncShowSetupStatus(msg, kind){
 
 function syncSaveSetup(){
   var url = (document.getElementById('sync-url-input').value||'').trim();
-  var token = (document.getElementById('sync-token-input').value||'').trim();
+  // Token: Leerzeichen + Newlines + unsichtbare Zeichen aggressiv entfernen
+  var token = (document.getElementById('sync-token-input').value||'').replace(/\s+/g,'').trim();
+  // Im Feld auch korrigieren, damit Bert sieht was wirklich gesendet wird
+  document.getElementById('sync-token-input').value = token;
   if(!url || !/^https?:\/\//i.test(url)){
     syncShowSetupStatus('⚠ Server-Adresse muss mit https:// beginnen.','err');
     return;

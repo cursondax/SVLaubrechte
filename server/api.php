@@ -42,14 +42,23 @@ function fail($code, $msg) {
 }
 
 function get_bearer_token() {
+    // Verschiedene Stellen pruefen - Ionos/Apache/FastCGI legen den
+    // Authorization-Header an unterschiedlichen Plaetzen ab.
     $hdr = '';
-    if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+    if (!empty($_SERVER['HTTP_AUTHORIZATION'])) {
         $hdr = $_SERVER['HTTP_AUTHORIZATION'];
+    } elseif (!empty($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+        $hdr = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
     } elseif (function_exists('apache_request_headers')) {
         $h = apache_request_headers();
-        $hdr = $h['Authorization'] ?? $h['authorization'] ?? '';
-    } elseif (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
-        $hdr = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+        foreach (['Authorization','authorization','AUTHORIZATION'] as $k) {
+            if (!empty($h[$k])) { $hdr = $h[$k]; break; }
+        }
+    } elseif (function_exists('getallheaders')) {
+        $h = getallheaders();
+        foreach (['Authorization','authorization','AUTHORIZATION'] as $k) {
+            if (!empty($h[$k])) { $hdr = $h[$k]; break; }
+        }
     }
     if (preg_match('/Bearer\s+(.+)/i', $hdr, $m)) {
         return trim($m[1]);
@@ -69,8 +78,11 @@ if ($expected === '' || $expected === 'HIER-DEIN-64-ZEICHEN-HEX-TOKEN-EINTRAGEN'
 }
 
 $given = get_bearer_token();
-if ($given === '' || !hash_equals($expected, $given)) {
-    fail(401, 'Ungueltiges oder fehlendes Token.');
+if ($given === '') {
+    fail(401, 'Authorization-Header fehlt (Server schluckt ihn moeglicherweise - .htaccess pruefen).');
+}
+if (!hash_equals($expected, $given)) {
+    fail(401, 'Token stimmt nicht ueberein (gesendet: ' . substr($given, 0, 6) . '..., erwartet: ' . substr($expected, 0, 6) . '...).');
 }
 
 // --- Storage ---------------------------------------------------------------
