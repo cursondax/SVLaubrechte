@@ -1,6 +1,6 @@
 // SV Lau-Brechte Service Worker
 // Versions-String bei jedem Release erhöhen, damit Clients neu laden
-const CACHE_VERSION = 'svlb-v7';
+const CACHE_VERSION = 'svlb-v8';
 const PRECACHE = [
   './',
   './index.html',
@@ -32,10 +32,16 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const req = event.request;
+  // Nicht-GET-Requests (POST an die Sync-API) gar nicht abfangen
   if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  // Sync-API NIEMALS cachen – Server-Stand muss immer frisch sein.
+  // Matcht alle PHP-Endpoints auf fremden Hosts (z.B. raw-bert.de/svlb/api.php).
+  if (url.origin !== self.location.origin && url.pathname.endsWith('.php')) {
+    return; // an Browser-Default fetch durchreichen, kein Cache-Touch
+  }
   // Network-first für die index.html (damit Updates schnell beim Nutzer landen),
   // Cache-first für alles andere (Icons, Manifest).
-  const url = new URL(req.url);
   const isHtml = req.mode === 'navigate' || url.pathname.endsWith('/') || url.pathname.endsWith('.html');
   if (isHtml) {
     event.respondWith(
