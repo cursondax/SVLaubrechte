@@ -1,6 +1,6 @@
 // SV Lau-Brechte Service Worker
 // Versions-String bei jedem Release erhöhen, damit Clients neu laden
-const CACHE_VERSION = 'svlb-v14';
+const CACHE_VERSION = 'svlb-v15';
 const PRECACHE = [
   './',
   './index.html',
