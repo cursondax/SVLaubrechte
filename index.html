@@ -376,6 +376,22 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
 }
 .install-banner.show { display: flex; }
 
+/* Koenige-Tab */
+.king-toolbar{display:flex;gap:.6rem;margin-bottom:.85rem;flex-wrap:wrap;align-items:center}
+.king-toolbar input{padding:.45rem .8rem;border:1.5px solid var(--grey300);border-radius:6px;font-size:.88rem;font-family:inherit;flex:1;min-width:200px;max-width:340px}
+.king-toolbar input:focus{outline:none;border-color:var(--navym);box-shadow:0 0 0 3px rgba(46,117,182,.15)}
+.king-tbl{width:100%;border-collapse:collapse;font-size:.88rem}
+.king-tbl thead th{background:var(--navy);color:#fff;padding:.55rem .75rem;text-align:left;font-size:.76rem;letter-spacing:.04em;white-space:nowrap}
+.king-tbl tbody tr:nth-child(even){background:var(--navyp)}
+.king-tbl tbody tr:hover{background:#d4e8f5}
+.king-tbl tbody td{padding:.48rem .75rem;border-bottom:1px solid var(--grey100);vertical-align:middle}
+.king-tbl .yr{font-weight:700;color:var(--navy);white-space:nowrap;width:60px}
+.king-tbl .king-link{color:var(--navym);text-decoration:none;border-bottom:1px dotted var(--navym);cursor:pointer}
+.king-tbl .king-link:hover{color:var(--navy);border-bottom-style:solid}
+.king-tbl .king-nolink{color:var(--grey700)}
+.king-tbl .note{color:var(--grey700);font-size:.82rem;font-style:italic}
+.king-tbl .actions{white-space:nowrap;text-align:right;width:90px}
+.king-empty{padding:2rem;text-align:center;color:var(--grey700);font-style:italic}
 /* Karte / Route */
 #map{height:60vh;min-height:380px;border-radius:var(--r);border:1px solid var(--grey300);z-index:1}
 .map-toolbar{display:grid;grid-template-columns:1fr auto;gap:.7rem;margin-bottom:.85rem;align-items:end}
@@ -440,6 +456,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
     <button class="tab on" onclick="showTab('uebersicht',this)">&#128203; &#220;bersicht</button>
     <button class="tab"    onclick="showTab('eingabe',this)">&#10133; Neues Mitglied</button>
     <button class="tab"    onclick="showTab('bezirke',this)">&#128193; Bezirke</button>
+    <button class="tab"    onclick="showTab('koenige',this)">&#128081; K&ouml;nige</button>
     <button class="tab"    onclick="showTab('import',this)">&#128229; Import / Speichern</button>
     <button class="tab" onclick="showTab('export',this)">&#128228; Serienbrief-Export</button>
     <button class="tab" onclick="showTab('karte',this)">&#128506; Karte / Route</button>
@@ -565,6 +582,42 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
       <button class="btn btn-pdf" onclick="exportPDF()">&#128438; Drucken / Als PDF speichern</button>
     </div>
     <div class="bgrid" id="bgrid"></div>
+  </div>
+
+  <!-- KÖNIGE -->
+  <div class="sec" id="sec-koenige">
+    <div class="card">
+      <div class="card-hd">
+        <h2>&#128081; Sch&uuml;tzenk&ouml;nige</h2>
+        <span id="king-count" style="font-size:.8rem;opacity:.8">0</span>
+      </div>
+      <div class="card-bd">
+        <div class="king-toolbar">
+          <input id="king-search" type="search" placeholder="&#128269; Suche: Jahr, K&ouml;nig, K&ouml;nigin..." oninput="renderKings()">
+          <button class="btn btn-save" onclick="openKingEdit(-1)">&#10133; Neuer K&ouml;nig</button>
+          <button class="btn btn-import" onclick="document.getElementById('king-file-input').click()">&#128229; CSV importieren</button>
+          <button class="btn btn-clear" onclick="exportKingsCSV()">&#128228; CSV exportieren</button>
+          <input type="file" id="king-file-input" accept=".csv,.txt" style="display:none" onchange="importKingsCSVFile(event)">
+        </div>
+        <p style="font-size:.82rem;color:var(--grey700);margin-bottom:.85rem;line-height:1.5">
+          Schwarze Namen = K&ouml;nig nicht in der Adressliste gefunden. Blaue, unterstrichene Namen sind verkn&uuml;pft &ndash; ein Klick &ouml;ffnet den passenden Adress-Eintrag.
+        </p>
+        <div style="overflow-x:auto;border-radius:0 0 var(--r) var(--r)">
+          <table class="king-tbl">
+            <thead>
+              <tr>
+                <th>Jahr</th>
+                <th>Sch&uuml;tzenk&ouml;nig</th>
+                <th>K&ouml;nigin</th>
+                <th>Notiz</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="king-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- IMPORT / SPEICHERN -->
@@ -868,8 +921,8 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
     <button class="bnav-btn" id="bn-export" onclick="showTab('export',this,'bn-export')">
       <span class="ico">&#128228;</span><span>Export</span>
     </button>
-    <button class="bnav-btn" id="bn-import" onclick="showTab('import',this,'bn-import')">
-      <span class="ico">&#128229;</span><span>Mehr</span>
+    <button class="bnav-btn" id="bn-more" onclick="openMoreSheet()">
+      <span class="ico">&#9776;</span><span>Mehr</span>
     </button>
   </div>
 </nav>
@@ -1005,12 +1058,60 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
   </div>
 </div>
 
+<!-- KÖNIG-EDIT MODAL -->
+<div class="modal-bg" id="kingModal" onclick="if(event.target===this)closeKingModal()">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3 id="king-modal-title">&#128081; Sch&uuml;tzenk&ouml;nig</h3>
+      <button class="modal-close" onclick="closeKingModal()">&#10005;</button>
+    </div>
+    <div class="modal-bd">
+      <div class="fgrid">
+        <div class="fg"><label>Jahr *</label>
+          <input type="number" id="k-jahr" placeholder="z.B. 2025" inputmode="numeric"></div>
+        <div class="fg"><label>K&ouml;nig-Vorname *</label>
+          <input type="text" id="k-vor" placeholder="z.B. Andreas"></div>
+        <div class="fg"><label>K&ouml;nig-Nachname *</label>
+          <input type="text" id="k-nach" placeholder="z.B. Hillers"></div>
+        <div class="fg" style="grid-column:1 / -1"><label style="font-size:.7rem;color:var(--grey700);text-transform:uppercase">K&ouml;nigin (optional)</label></div>
+        <div class="fg"><label>K&ouml;nigin-Vorname</label>
+          <input type="text" id="k-qvor" placeholder="z.B. Stefanie"></div>
+        <div class="fg"><label>K&ouml;nigin-Nachname</label>
+          <input type="text" id="k-qnach" placeholder="z.B. Hillers"></div>
+        <div class="fg" style="grid-column:1 / -1"><label>Notiz</label>
+          <input type="text" id="k-notiz" placeholder="z.B. Jubil&auml;umsk&ouml;nig"></div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-danger" id="k-del-btn" onclick="deleteKing()" style="display:none">&#128465; L&ouml;schen</button>
+      <button class="btn btn-clear" onclick="closeKingModal()">Abbrechen</button>
+      <button class="btn btn-save" onclick="saveKingEdit()">&#10004; Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- MOBILE "MEHR"-SHEET -->
+<div class="modal-bg" id="moreSheet" onclick="if(event.target===this)closeMoreSheet()">
+  <div class="modal" style="width:min(420px,95vw)">
+    <div class="modal-hd">
+      <h3>&#9776; Mehr Bereiche</h3>
+      <button class="modal-close" onclick="closeMoreSheet()">&#10005;</button>
+    </div>
+    <div class="modal-bd" style="display:flex;flex-direction:column;gap:.6rem">
+      <button class="btn btn-navy" style="justify-content:flex-start;width:100%" onclick="closeMoreSheet();showTab('koenige',document.querySelectorAll('.tab')[3])">&#128081; K&ouml;nige</button>
+      <button class="btn btn-navy" style="justify-content:flex-start;width:100%" onclick="closeMoreSheet();showTab('import',document.querySelectorAll('.tab')[4])">&#128229; Import / Speichern</button>
+    </div>
+  </div>
+</div>
+
 <script>
 var BZ_DATA = {};  // ehem. Inline-Daten – aus Datenschutz-Gruenden entfernt
 var ADDR_DATA = [];  // Inline-Mitgliederdaten entfernt – Daten kommen jetzt nur via Cloud-Sync oder CSV-Import
 var members = [];
 var nextNr = 1;
 var editIdx = -1;
+var kings = [];     // Schuetzenkoenige: {jahr,koenig_vor,koenig_nach,koenigin_vor,koenigin_nach,notiz}
+var kingEditIdx = -1;
 
 // Header-Normalisierung: Umlaute, Sonderzeichen, Case und Encoding-Korruption ignorieren.
 // So findet mkM "Straße" auch als "Strasse", "straße", "Stra�e" (Replacement-Char nach Excel-CSV),
@@ -1055,9 +1156,14 @@ function mkM(r,i){
 function init(){
   members = [];
   nextNr = 1;
+  kings = [];
   try{
     var raw=localStorage.getItem('sgO_members');
     if(raw){var s=JSON.parse(raw);if(Array.isArray(s)){members=s;nextNr=members.length+1;}}
+  }catch(e){}
+  try{
+    var rawK=localStorage.getItem('sgO_kings');
+    if(rawK){var k=JSON.parse(rawK);if(Array.isArray(k)) kings=k;}
   }catch(e){}
   // Fallback auf ADDR_DATA nur falls vorhanden (i.d.R. leer aus Datenschutz-Gruenden).
   if(!members.length && ADDR_DATA && ADDR_DATA.length){
@@ -1101,6 +1207,7 @@ function migrateAnrede(){
 
 function renderAll(){
   renderStats();renderTable();renderBezirke();renderRecent();
+  if(typeof renderKings==='function') renderKings();
   document.getElementById('hdrbadge').textContent=members.length+' Einträge';
   // Welcome-Banner ein/ausblenden je nach Daten-Stand
   var welcome=document.getElementById('welcome-empty');
@@ -2715,6 +2822,11 @@ function syncApplyServerData(data){
   if(data.start_coord){
     try{localStorage.setItem('sgO_start_coord',JSON.stringify(data.start_coord));}catch(e){}
   }
+  // Schuetzenkoenige uebernehmen
+  if(Array.isArray(data.kings)){
+    kings = data.kings;
+    try{localStorage.setItem('sgO_kings',JSON.stringify(kings));}catch(e){}
+  }
   // localStorage speichern, aber NICHT direkt wieder pushen
   try{
     localStorage.setItem('sgO_members',JSON.stringify(members));
@@ -2737,6 +2849,7 @@ function syncDisconnect(){
 
 function syncCollectPayload(){
   var pl = {members: members};
+  if(Array.isArray(kings) && kings.length) pl.kings = kings;
   try{var g=localStorage.getItem('sgO_geocache');if(g)pl.geocache=JSON.parse(g);}catch(e){}
   try{var x=localStorage.getItem('sgO_excluded');if(x)pl.excluded=JSON.parse(x);}catch(e){}
   var s = localStorage.getItem('sgO_start');if(s)pl.start = s;
@@ -2899,6 +3012,212 @@ function syncRestoreSnapshot(name, label, count){
     syncSetStatus('err','⚠ Fehler');
   });
 }
+
+// === Schuetzenkoenige =====================================================
+function persistKings(opts){
+  try{localStorage.setItem('sgO_kings', JSON.stringify(kings));}catch(e){}
+  if(typeof syncTriggerPush==='function') syncTriggerPush();
+}
+
+function kingMatchMember(vor, nach){
+  // Exakter Match auf name + vor (case-insensitive, getrimmt)
+  if(!vor || !nach) return -1;
+  var nv = String(vor).trim().toLowerCase();
+  var nn = String(nach).trim().toLowerCase();
+  for(var i=0;i<members.length;i++){
+    if((members[i].vor||'').trim().toLowerCase()===nv &&
+       (members[i].name||'').trim().toLowerCase()===nn) return i;
+  }
+  return -1;
+}
+
+function renderKings(){
+  var tbody = document.getElementById('king-tbody');
+  var cnt = document.getElementById('king-count');
+  if(!tbody) return;
+  var q = (document.getElementById('king-search').value||'').toLowerCase().trim();
+  // Sortiert nach Jahr absteigend (neueste zuerst)
+  var sorted = kings.slice().sort(function(a,b){return (b.jahr||0)-(a.jahr||0);});
+  var filtered = !q ? sorted : sorted.filter(function(k){
+    var hay = [k.jahr, k.koenig_vor, k.koenig_nach, k.koenigin_vor, k.koenigin_nach, k.notiz].join(' ').toLowerCase();
+    return hay.indexOf(q)!==-1;
+  });
+  cnt.textContent = kings.length + ' Eintr' + (kings.length===1?'ag':'äge');
+  if(!filtered.length){
+    tbody.innerHTML = '<tr><td colspan="5"><div class="king-empty">'
+      +(kings.length===0 ? 'Noch keine K&ouml;nige eingetragen. <strong>„Neuer K&ouml;nig"</strong> oder <strong>„CSV importieren"</strong> klicken.' : 'Keine Treffer f&uuml;r „'+esc(q)+'".')
+      +'</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map(function(k){
+    var origIdx = kings.indexOf(k);
+    var kMatch = kingMatchMember(k.koenig_vor, k.koenig_nach);
+    var qMatch = kingMatchMember(k.koenigin_vor, k.koenigin_nach);
+    function nameCell(vor, nach, idx){
+      if(!vor && !nach) return '<span class="king-nolink">–</span>';
+      var full = esc((vor||'')+' '+(nach||''));
+      if(idx>=0){
+        return '<a class="king-link" onclick="openEdit('+idx+')" title="Adresse anzeigen">'+full+'</a>';
+      }
+      return '<span class="king-nolink">'+full+'</span>';
+    }
+    return '<tr>'
+      +'<td class="yr">'+esc(k.jahr||'')+'</td>'
+      +'<td>'+nameCell(k.koenig_vor, k.koenig_nach, kMatch)+'</td>'
+      +'<td>'+nameCell(k.koenigin_vor, k.koenigin_nach, qMatch)+'</td>'
+      +'<td class="note">'+esc(k.notiz||'')+'</td>'
+      +'<td class="actions"><button class="btn-edit" onclick="openKingEdit('+origIdx+')">✎</button></td>'
+      +'</tr>';
+  }).join('');
+}
+
+function openKingEdit(idx){
+  kingEditIdx = idx;
+  var k = (idx>=0) ? kings[idx] : {jahr:'',koenig_vor:'',koenig_nach:'',koenigin_vor:'',koenigin_nach:'',notiz:''};
+  document.getElementById('king-modal-title').innerHTML = (idx>=0) ? '👑 König bearbeiten' : '👑 Neuer König';
+  document.getElementById('k-jahr').value  = k.jahr || '';
+  document.getElementById('k-vor').value   = k.koenig_vor || '';
+  document.getElementById('k-nach').value  = k.koenig_nach || '';
+  document.getElementById('k-qvor').value  = k.koenigin_vor || '';
+  document.getElementById('k-qnach').value = k.koenigin_nach || '';
+  document.getElementById('k-notiz').value = k.notiz || '';
+  document.getElementById('k-del-btn').style.display = (idx>=0) ? '' : 'none';
+  document.getElementById('kingModal').classList.add('open');
+  setTimeout(function(){document.getElementById('k-jahr').focus();}, 50);
+}
+
+function closeKingModal(){
+  document.getElementById('kingModal').classList.remove('open');
+  kingEditIdx = -1;
+}
+
+function saveKingEdit(){
+  var jahr = parseInt(document.getElementById('k-jahr').value)||0;
+  var vor  = document.getElementById('k-vor').value.trim();
+  var nach = document.getElementById('k-nach').value.trim();
+  if(!jahr || jahr<1600 || jahr>2200){toast('Jahr fehlt oder ungültig',true);return;}
+  if(!vor || !nach){toast('Vor- und Nachname vom König sind Pflicht',true);return;}
+  var k = {
+    jahr: jahr,
+    koenig_vor: vor,
+    koenig_nach: nach,
+    koenigin_vor: document.getElementById('k-qvor').value.trim(),
+    koenigin_nach: document.getElementById('k-qnach').value.trim(),
+    notiz: document.getElementById('k-notiz').value.trim()
+  };
+  if(kingEditIdx>=0){
+    kings[kingEditIdx] = k;
+    toast('✔ '+jahr+' '+vor+' '+nach+' gespeichert');
+  } else {
+    kings.push(k);
+    toast('✔ '+jahr+' '+vor+' '+nach+' neu angelegt');
+  }
+  closeKingModal();
+  persistKings();
+  renderKings();
+}
+
+function deleteKing(){
+  if(kingEditIdx<0) return;
+  var k = kings[kingEditIdx];
+  if(!confirm('König "'+k.jahr+' '+k.koenig_vor+' '+k.koenig_nach+'" löschen?')) return;
+  kings.splice(kingEditIdx,1);
+  closeKingModal();
+  persistKings();
+  renderKings();
+  toast('König gelöscht');
+}
+
+function exportKingsCSV(){
+  if(!kings.length){toast('Keine Könige zum Exportieren',true);return;}
+  var SEP=';';
+  function q(v){var s=String(v==null?'':v);if(s.indexOf(SEP)>=0||s.indexOf('"')>=0||s.indexOf('\n')>=0)return '"'+s.replace(/"/g,'""')+'"';return s;}
+  var lines = ['﻿'+['Jahr','König-Vorname','König-Nachname','Königin-Vorname','Königin-Nachname','Notiz'].join(SEP)];
+  kings.slice().sort(function(a,b){return (a.jahr||0)-(b.jahr||0);}).forEach(function(k){
+    lines.push([k.jahr,k.koenig_vor,k.koenig_nach,k.koenigin_vor,k.koenigin_nach,k.notiz||''].map(q).join(SEP));
+  });
+  var blob=new Blob([lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='Schuetzenkoenige_'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
+  toast(kings.length+' Könige als CSV exportiert');
+}
+
+function importKingsCSVFile(ev){
+  var file = ev.target.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      var buf = e.target.result;
+      var text = new TextDecoder('utf-8',{fatal:false}).decode(buf);
+      if(text.indexOf('�')!==-1){
+        try{var alt=new TextDecoder('windows-1252').decode(buf);if(alt.indexOf('�')===-1) text=alt;}catch(e){}
+      }
+      var firstLine = text.split(/\r?\n/)[0]||'';
+      var sep = firstLine.indexOf(';')!==-1 ? ';' : ',';
+      var rows = parseCSV(text, sep);
+      if(rows.length<2){toast('CSV enthält keine Datenzeilen',true);return;}
+      var headers = rows[0].map(function(h){return String(h||'').trim().toLowerCase();});
+      function colIdx(){
+        for(var i=0;i<arguments.length;i++){
+          var idx = headers.indexOf(arguments[i].toLowerCase());
+          if(idx>=0) return idx;
+        }
+        return -1;
+      }
+      var ix = {
+        jahr: colIdx('jahr','year'),
+        kv:   colIdx('könig-vorname','koenig-vorname','vorname','konig-vorname'),
+        kn:   colIdx('könig-nachname','koenig-nachname','nachname','konig-nachname','name'),
+        qv:   colIdx('königin-vorname','koenigin-vorname','queen-vor'),
+        qn:   colIdx('königin-nachname','koenigin-nachname','queen-nach'),
+        no:   colIdx('notiz','note','bemerkung')
+      };
+      var imported = [];
+      for(var i=1;i<rows.length;i++){
+        var row = rows[i];
+        if(!row || !row.length) continue;
+        var j = parseInt(row[ix.jahr])||0;
+        if(!j) continue;
+        imported.push({
+          jahr: j,
+          koenig_vor:   (row[ix.kv]||'').trim(),
+          koenig_nach:  (row[ix.kn]||'').trim(),
+          koenigin_vor: ix.qv>=0 ? (row[ix.qv]||'').trim() : '',
+          koenigin_nach:ix.qn>=0 ? (row[ix.qn]||'').trim() : '',
+          notiz:        ix.no>=0 ? (row[ix.no]||'').trim() : ''
+        });
+      }
+      if(!imported.length){toast('Keine gültigen Einträge in der CSV',true);return;}
+      var mode = '2';
+      if(kings.length){
+        mode = prompt('Du hast bereits '+kings.length+' Könige.\n\n1 = Ersetzen (alte löschen)\n2 = Zusammenführen (Duplikate vermeiden über Jahr)\n\nAuswahl:','2');
+        if(mode!=='1' && mode!=='2'){toast('Import abgebrochen');return;}
+      }
+      if(mode==='1'){
+        kings = imported;
+      } else {
+        var existingYears = {};
+        kings.forEach(function(k){existingYears[k.jahr]=true;});
+        imported.forEach(function(k){if(!existingYears[k.jahr]) kings.push(k);});
+      }
+      persistKings();
+      renderKings();
+      toast('✔ '+imported.length+' Könige importiert ('+(mode==='1'?'ersetzt':'zusammengeführt')+')');
+    }catch(err){
+      toast('CSV-Fehler: '+(err.message||'unbekannt'),true);
+    }finally{
+      ev.target.value=''; // Reset, damit gleicher File nochmal gewählt werden kann
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// === Mobile "Mehr"-Sheet =================================================
+function openMoreSheet(){document.getElementById('moreSheet').classList.add('open');}
+function closeMoreSheet(){document.getElementById('moreSheet').classList.remove('open');}
 
 init();
 syncBootstrap();
