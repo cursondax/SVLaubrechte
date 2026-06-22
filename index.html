@@ -2634,8 +2634,11 @@ function karteOpenInMaps(){
 var SYNC_URL_KEY   = 'sgO_syncUrl';
 var SYNC_TOKEN_KEY = 'sgO_syncToken';
 var SYNC_LASTOK    = 'sgO_syncLastOk';
-var SYNC_DEBOUNCE  = 1500;
+var SYNC_DEBOUNCE  = 800;      // ms zwischen Aenderung und Push (vorher 1500)
+var SYNC_RETRY_MS  = 30000;    // ms zwischen Retry-Versuchen wenn letzter Push fehlschlug
 var syncPushTimer  = null;
+var syncRetryTimer = null;
+var syncPendingDirty = false;  // true wenn eine Aenderung passiert ist, die noch nicht erfolgreich gepusht wurde
 var syncBusy       = false;
 var syncLastError  = '';
 
@@ -2858,39 +2861,66 @@ function syncCollectPayload(){
   return pl;
 }
 
-function syncPush(){
+function syncPush(opts){
+  opts = opts || {};
   if(!syncIsConfigured())return Promise.resolve();
-  if(syncBusy)return Promise.resolve();
+  if(syncBusy && !opts.keepalive)return Promise.resolve();
   syncBusy = true;
-  syncSetStatus('busy','Sichere…');
+  if(!opts.keepalive) syncSetStatus('busy','Sichere…');
   var payload = syncCollectPayload();
-  return fetch(syncGetUrl(),{
+  var fetchOpts = {
     method:'POST',
     headers:{
       'Authorization':'Bearer '+syncGetToken(),
       'Content-Type':'application/json'
     },
     body: JSON.stringify(payload)
-  }).then(function(res){
+  };
+  // keepalive: erlaubt dass der Request auch beim Tab-Close noch durchgeht
+  if(opts.keepalive) fetchOpts.keepalive = true;
+  return fetch(syncGetUrl(), fetchOpts).then(function(res){
     if(res.status===401)throw new Error('Token ungültig');
     if(!res.ok)throw new Error('HTTP '+res.status);
     return res.json();
   }).then(function(data){
     syncLastError = '';
+    syncPendingDirty = false;
     localStorage.setItem(SYNC_LASTOK, new Date().toISOString());
     syncSetStatus('ok','✔ Synchron');
     renderSyncCard();
+    // Falls Retry-Timer lief: stoppen
+    if(syncRetryTimer){clearTimeout(syncRetryTimer);syncRetryTimer=null;}
   }).catch(function(err){
     syncLastError = err.message || 'Sync fehlgeschlagen';
-    syncSetStatus('warn','⚠ Offline');
+    syncPendingDirty = true;
+    syncSetStatus('warn','⚠ Offline – Retry in '+Math.round(SYNC_RETRY_MS/1000)+'s');
     renderSyncCard();
+    // Retry planen
+    if(syncRetryTimer) clearTimeout(syncRetryTimer);
+    syncRetryTimer = setTimeout(function(){
+      syncRetryTimer = null;
+      if(syncPendingDirty && syncIsConfigured()) syncPush();
+    }, SYNC_RETRY_MS);
   }).then(function(){syncBusy=false;});
 }
 
 function syncTriggerPush(){
   if(!syncIsConfigured())return;
+  syncPendingDirty = true;
+  // Sofort sichtbares Feedback dass eine Aenderung registriert wurde
+  syncSetStatus('busy','⏳ Aenderung wird gesichert…');
   if(syncPushTimer)clearTimeout(syncPushTimer);
   syncPushTimer = setTimeout(function(){syncPushTimer=null;syncPush();}, SYNC_DEBOUNCE);
+}
+
+// Sofort flushen (z.B. beim Tab-Close). Nutzt fetch keepalive damit der
+// Request auch nach dem Schliessen noch zum Server geht.
+function syncFlushNow(){
+  if(!syncIsConfigured())return;
+  if(!syncPendingDirty && !syncPushTimer) return;  // nichts zu tun
+  if(syncPushTimer){clearTimeout(syncPushTimer);syncPushTimer=null;}
+  // Direkt POST mit keepalive — wir warten nicht auf Antwort
+  syncPush({keepalive:true});
 }
 
 function syncManualPush(){
@@ -2940,6 +2970,15 @@ function syncBootstrap(){
 
 // Periodisch Status-Anzeige refreshen (Zeitstempel altert)
 setInterval(function(){if(syncIsConfigured())renderSyncCard();}, 30000);
+
+// Beim Schliessen / Wechsel des Tabs ausstehende Aenderung sofort flushen.
+// pagehide ist zuverlaessiger als beforeunload auf iOS/Safari.
+// visibilitychange greift wenn der User in eine andere App wechselt (Mobile).
+window.addEventListener('pagehide', function(){syncFlushNow();});
+window.addEventListener('beforeunload', function(){syncFlushNow();});
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState === 'hidden') syncFlushNow();
+});
 
 // === Server-Snapshots =====================================================
 function syncFetchSnapshots(){
