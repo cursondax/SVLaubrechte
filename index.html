@@ -66,6 +66,7 @@ tbody tr:nth-child(even){background:var(--navyp)}
 tbody tr:hover{background:#d4e8f5}
 tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-align:middle}
 .badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:.72rem;font-weight:700}
+.b0{background:var(--grey100);color:var(--grey700)}
 .b1{background:#dce9f6;color:var(--navy)}.b2{background:#fce9d6;color:var(--orange)}
 .b3{background:var(--greenbg);color:var(--green)}.b4{background:#f3e6f7;color:#6b2e8a}
 .be{background:var(--orangebg);color:var(--orange);font-size:.68rem}
@@ -477,6 +478,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
         <option value="">Alle Bezirke</option>
         <option value="1">Bezirk 1</option><option value="2">Bezirk 2</option>
         <option value="3">Bezirk 3</option><option value="4">Bezirk 4</option>
+        <option value="0">ohne Bezirk</option>
       </select>
       <select class="fsel" id="fa" onchange="renderTable()">
         <option value="">Alle Anreden</option>
@@ -498,13 +500,14 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
   <div class="sec" id="sec-eingabe">
     <div class="card">
       <div class="card-hd"><h2>&#10133; Neues Mitglied eintragen</h2>
-        <span style="font-size:.8rem;opacity:.8">Pflichtfelder: Bezirk + Nachname</span></div>
+        <span style="font-size:.8rem;opacity:.8">Pflichtfelder: Bezirk-Auswahl + Nachname (für Frauen: „ohne Bezirk")</span></div>
       <div class="card-bd">
         <div class="fgrid">
           <div class="fg"><label>Bezirk *</label>
             <select id="f-bz"><option value="">- bitte w&#228;hlen -</option>
               <option value="1">Bezirk 1</option><option value="2">Bezirk 2</option>
               <option value="3">Bezirk 3</option><option value="4">Bezirk 4</option>
+              <option value="0">ohne Bezirk (z.B. Frauen)</option>
             </select></div>
           <div class="fg"><label>Anrede 1</label>
             <select id="f-a1"><option value="">-</option>
@@ -668,6 +671,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
                 <option value="2">Bezirk 2</option>
                 <option value="3">Bezirk 3</option>
                 <option value="4">Bezirk 4</option>
+                <option value="0">ohne Bezirk</option>
               </select>
             </div>
 
@@ -769,6 +773,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
                 <option value="">Alle Bezirke</option>
                 <option value="1">Bezirk 1</option><option value="2">Bezirk 2</option>
                 <option value="3">Bezirk 3</option><option value="4">Bezirk 4</option>
+                <option value="0">ohne Bezirk</option>
               </select>
             </div>
             <div class="fg"><label>Anrede</label>
@@ -882,10 +887,11 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
     </div>
     <div class="modal-bd">
       <div class="fgrid">
-        <div class="fg"><label>Bezirk *</label>
+        <div class="fg"><label>Bezirk</label>
           <select id="e-bz">
             <option value="1">Bezirk 1</option><option value="2">Bezirk 2</option>
             <option value="3">Bezirk 3</option><option value="4">Bezirk 4</option>
+            <option value="0">ohne Bezirk</option>
           </select></div>
         <div class="fg"><label>Anrede 1</label>
           <select id="e-a1"><option value="">-</option>
@@ -1065,6 +1071,19 @@ function init(){
       persist({snapshot:'force'});
       toast(migrated+' Anreden migriert: "Herrn"/"Hern" → "Herr"');
     }
+    // Einmalige Migration: Frauen aus Bezirken entfernen (Vereins-Regel)
+    if(!localStorage.getItem('sgO_migratedFrauenOhneBezirk')){
+      var moved = 0;
+      members.forEach(function(m){
+        var isFrau = (m.a1==='Frau' || m.a2==='Frau');
+        if(isFrau && m.bz){ m.bz = null; moved++; }
+      });
+      if(moved>0){
+        persist({snapshot:'force'});
+        toast(moved+' Frauen aus Bezirken entfernt (jetzt „ohne Bezirk")');
+      }
+      try{localStorage.setItem('sgO_migratedFrauenOhneBezirk','1');}catch(e){}
+    }
   }
   renderAll();
   updateSaveInfo();
@@ -1111,7 +1130,8 @@ function renderTable(){
   var an=document.getElementById('fa').value;
   var f=members.filter(function(m){
     var t=[m.name,m.vor,m.str,m.ort,m.plz].join(' ').toLowerCase();
-    return(!q||t.indexOf(q)!==-1)&&(!bz||String(m.bz)===bz)&&(!an||m.a1===an||m.a2===an);
+    var bzOk = !bz || (bz==='0' ? !m.bz : String(m.bz)===bz);
+    return(!q||t.indexOf(q)!==-1)&&bzOk&&(!an||m.a1===an||m.a2===an);
   });
   document.getElementById('rcnt').textContent=f.length+' von '+members.length;
   var rows=f.map(function(m){
@@ -1120,7 +1140,7 @@ function renderTable(){
     return '<tr>'
       +fotoCell
       +'<td>'+m.nr+'</td>'
-      +'<td><span class="badge b'+(m.bz||0)+'">B'+(m.bz||'?')+'</span></td>'
+      +'<td><span class="badge b'+(m.bz||0)+'">'+(m.bz?'B'+m.bz:'—')+'</span></td>'
       +'<td>'+esc(m.a1)+'</td>'
       +'<td><strong>'+esc(m.name)+'</strong></td>'
       +'<td>'+esc(m.vor)+'</td>'
@@ -1156,7 +1176,7 @@ function renderBezirke(){
 function renderRecent(){
   var last=members.slice(-5).reverse();
   document.getElementById('tbody-recent').innerHTML=last.map(function(m){
-    return '<tr><td>'+m.nr+'</td><td><span class="badge b'+m.bz+'">B'+m.bz+'</span></td>'
+    return '<tr><td>'+m.nr+'</td><td><span class="badge b'+(m.bz||0)+'">'+(m.bz?'B'+m.bz:'—')+'</span></td>'
       +'<td><strong>'+esc(m.name)+'</strong>'+(m.vor?', '+esc(m.vor):'')+'</td>'
       +'<td>'+esc(m.str)+'</td><td>'+esc(m.plz)+'</td><td>'+esc(m.ort)+'</td></tr>';
   }).join('');
@@ -1184,9 +1204,10 @@ function showTab(id,btn,bnId){
 function saveMember(){
   var bz=document.getElementById('f-bz').value;
   var name=document.getElementById('f-na').value.trim();
-  if(!bz){toast('Bitte Bezirk auswählen!',true);return;}
+  if(bz===''){toast('Bitte Bezirk auswählen (oder "ohne Bezirk")!',true);return;}
   if(!name){toast('Bitte Nachname eingeben!',true);return;}
-  var m={nr:nextNr++,bz:parseInt(bz),
+  var bzNum = parseInt(bz)||null;
+  var m={nr:nextNr++,bz:bzNum,
     a1:document.getElementById('f-a1').value,a2:document.getElementById('f-a2').value,
     name:name,vor:document.getElementById('f-vo').value.trim(),
     str:document.getElementById('f-st').value.trim(),
@@ -1196,7 +1217,7 @@ function saveMember(){
     tel:document.getElementById('f-tel').value.trim(),
     email:document.getElementById('f-email').value.trim(),foto:''};
   members.push(m);renderAll();clearForm();persist();
-  toast('Gespeichert: '+m.name+(m.vor?', '+m.vor:'')+'  (Bezirk '+bz+')');
+  toast('Gespeichert: '+m.name+(m.vor?', '+m.vor:'')+'  ('+(bzNum?'Bezirk '+bzNum:'ohne Bezirk')+')');
 }
 
 function clearForm(){
@@ -1251,7 +1272,7 @@ function renderBezirkePrint(){
 function openEdit(idx){
   editIdx=idx;
   var m=members[idx];
-  document.getElementById('e-bz').value=m.bz||1;
+  document.getElementById('e-bz').value=(m.bz!=null?m.bz:0);
   document.getElementById('e-a1').value=m.a1||'';
   document.getElementById('e-a2').value=m.a2||'';
   document.getElementById('e-na').value=m.name||'';
@@ -1358,7 +1379,7 @@ function saveEdit(){
   if(!name){toast('Bitte Nachname eingeben!',true);return;}
   var m=members[editIdx];
   var oldBz=m.bz;
-  m.bz=parseInt(document.getElementById('e-bz').value);
+  m.bz=parseInt(document.getElementById('e-bz').value)||null;
   m.a1=document.getElementById('e-a1').value;
   m.a2=document.getElementById('e-a2').value;
   m.name=name;
@@ -1374,14 +1395,19 @@ function saveEdit(){
     ?document.getElementById('foto-preview-img').src:'';
   closeModal();renderAll();persist();
   var msg=m.name+(m.vor?', '+m.vor:'');
-  if(oldBz!==m.bz)msg+=' (Bezirk '+oldBz+' → '+m.bz+')';
+  if(oldBz!==m.bz){
+    var fromLbl=(oldBz?'Bezirk '+oldBz:'ohne Bezirk');
+    var toLbl  =(m.bz ?'Bezirk '+m.bz :'ohne Bezirk');
+    msg += ' ('+fromLbl+' → '+toLbl+')';
+  }
   toast('\u2714 '+msg+' gespeichert');
 }
 
 function deleteMember(){
   if(editIdx<0)return;
   var m=members[editIdx];
-  if(!confirm('Adresse löschen: '+m.name+(m.vor?', '+m.vor:'')+' (Bezirk '+m.bz+')?\n\nVorher wird ein Sicherungs-Snapshot angelegt – die Adresse kann jederzeit aus dem Snapshot wiederhergestellt werden.'))return;
+  var bezLbl = (m.bz ? 'Bezirk '+m.bz : 'ohne Bezirk');
+  if(!confirm('Adresse löschen: '+m.name+(m.vor?', '+m.vor:'')+' ('+bezLbl+')?\n\nVorher wird ein Sicherungs-Snapshot angelegt – die Adresse kann jederzeit aus dem Snapshot wiederhergestellt werden.'))return;
   persist({snapshot:'force'}); // Löschung ist heikel → immer Snapshot davor
   members.splice(editIdx,1);
   members.forEach(function(x,i){x.nr=i+1;});
@@ -1724,7 +1750,7 @@ function exGetFiltered(){
   var tel    = document.getElementById('ex-tel').value;
 
   return members.filter(function(m){
-    if(bz     && String(m.bz)!==bz) return false;
+    if(bz){ if(bz==='0' ? !!m.bz : String(m.bz)!==bz) return false; }
     if(anrede && m.a1!==anrede && m.a2!==anrede) return false;
     if(ehren==='ja'   && !m.ehren)  return false;
     if(ehren==='nein' &&  m.ehren)  return false;
@@ -1742,7 +1768,7 @@ function exPreview(){
   var rows = filtered.slice(0,10).map(function(m){
     return '<tr>'
       +'<td>'+m.nr+'</td>'
-      +'<td><span class="badge b'+(m.bz||0)+'">B'+(m.bz||'?')+'</span></td>'
+      +'<td><span class="badge b'+(m.bz||0)+'">'+(m.bz?'B'+m.bz:'—')+'</span></td>'
       +'<td><strong>'+esc(m.name)+'</strong></td>'
       +'<td>'+esc(m.vor)+'</td>'
       +'<td>'+esc(m.str)+'</td>'
@@ -1949,7 +1975,7 @@ function karteFiltered(){
   var q = sEl ? (sEl.value||'').trim().toLowerCase() : '';
   var ortsChecked = karteState.orteChecked || {};
   return members.filter(function(m){
-    if (bz && String(m.bz)!==bz) return false;
+    if (bz) { if (bz==='0' ? !!m.bz : String(m.bz)!==bz) return false; }
     if (an && m.a1!==an && m.a2!==an) return false;
     if (eh==='ja' && !m.ehren) return false;
     if (eh==='nein' && m.ehren) return false;
