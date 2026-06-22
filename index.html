@@ -447,6 +447,8 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
     <div class="sync-badge" id="sync-badge" onclick="syncOpenSetup()" title="Cloud-Sync einrichten">
       <span class="dot"></span><span class="lbl" id="sync-badge-label">Sync aus</span>
     </div>
+    <button class="hdr-invite-btn" onclick="document.getElementById('antrag-file-input').click()" title="Antrag aus E-Mail-JSON importieren">&#128229; Antrag</button>
+    <input type="file" id="antrag-file-input" accept=".json,application/json" style="display:none" onchange="importAntragFromFile(event)">
     <button class="hdr-invite-btn" onclick="openInviteModal()" title="Antragslink für Interessenten erstellen">&#128231; Einladen</button>
     <div class="hdr-badge" id="hdrbadge">&#8230;</div>
   </div>
@@ -543,6 +545,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
             <select id="f-eh"><option value="">Nein</option><option value="x">Ja (x)</option></select></div>
           <div class="fg"><label>Helga-Liste</label>
             <select id="f-hg"><option value="">Nein</option><option value="Helga">Ja</option></select></div>
+          <div class="fg"><label>Geburtsdatum</label><input type="date" id="f-gebdat"></div>
           <div class="fg"><label>Handy / Tel.</label><input type="text" id="f-tel" placeholder="+49 123 456789"></div>
           <div class="fg"><label>E-Mail</label><input type="email" id="f-email" placeholder="name@example.com"></div>
         </div>
@@ -963,6 +966,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
           <select id="e-eh"><option value="">Nein</option><option value="x">Ja (x)</option></select></div>
         <div class="fg"><label>Helga-Liste</label>
           <select id="e-hg"><option value="">Nein</option><option value="Helga">Ja</option></select></div>
+        <div class="fg"><label>Geburtsdatum</label><input type="date" id="e-gebdat"></div>
         <div class="fg"><label>Handy / Tel.</label><input type="text" id="e-tel" placeholder="+49 123 456789"></div>
         <div class="fg"><label>E-Mail</label><input type="email" id="e-email" placeholder="name@example.com"></div>
       </div>
@@ -1148,6 +1152,7 @@ function mkM(r,i){
     ehren:String(get('Ehrenmitglied','Ehren')||''),
     helga:String(get('Helga')||''),
     foto: get('foto','Foto')||'',
+    gebdat: String(get('Geburtsdatum','Geb','Geb.','GebDat')||'').trim(),
     tel:  String(get('Handy/Tel','Handy','Tel','Telefon','Mobil')||'').trim(),
     email:String(get('E-Mail','Email','Mail')||'').trim()
   };
@@ -1321,6 +1326,7 @@ function saveMember(){
     plz:document.getElementById('f-plz').value.trim(),
     ort:document.getElementById('f-ort').value.trim(),
     ehren:document.getElementById('f-eh').value,helga:document.getElementById('f-hg').value,
+    gebdat:document.getElementById('f-gebdat').value,
     tel:document.getElementById('f-tel').value.trim(),
     email:document.getElementById('f-email').value.trim(),foto:''};
   members.push(m);renderAll();clearForm();persist();
@@ -1328,7 +1334,7 @@ function saveMember(){
 }
 
 function clearForm(){
-  ['f-bz','f-a1','f-a2','f-na','f-vo','f-st','f-plz','f-ort','f-eh','f-hg','f-tel','f-email']
+  ['f-bz','f-a1','f-a2','f-na','f-vo','f-st','f-plz','f-ort','f-eh','f-hg','f-gebdat','f-tel','f-email']
     .forEach(function(id){document.getElementById(id).value='';});
 }
 
@@ -1389,6 +1395,7 @@ function openEdit(idx){
   document.getElementById('e-ort').value=m.ort||'';
   document.getElementById('e-eh').value=m.ehren||'';
   document.getElementById('e-hg').value=m.helga||'';
+  document.getElementById('e-gebdat').value=m.gebdat||'';
   document.getElementById('e-tel').value=m.tel||'';
   document.getElementById('e-email').value=m.email||'';
   var foto=m.foto||'';
@@ -1480,6 +1487,82 @@ function shareInviteMail(){
   window.location.href = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
 }
 
+// ============================================================
+// Antrag-Import — JSON aus E-Mail-Anhang in Mitgliederliste übernehmen
+// Erwartet { type:"svlb-antrag", name, str, plzort, gebdat, tel, mail, ... }
+// ============================================================
+function importAntragFromFile(ev){
+  var file = ev.target.files && ev.target.files[0];
+  ev.target.value = ''; // gleiche Datei nochmal wählbar
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try {
+      var data = JSON.parse(e.target.result);
+      if (!data || data.type !== 'svlb-antrag'){
+        toast('Datei ist keine gültige Beitrittserklärung.', true); return;
+      }
+      applyAntragImport(data);
+    } catch(err){
+      toast('Datei konnte nicht gelesen werden: ' + err.message, true);
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function applyAntragImport(data){
+  // "Nachname, Vorname" splitten — sonst gesamten Text als Nachname übernehmen
+  var fullName = String(data.name || '').trim();
+  var nach = fullName, vor = '';
+  var commaIdx = fullName.indexOf(',');
+  if (commaIdx > -1){
+    nach = fullName.slice(0, commaIdx).trim();
+    vor  = fullName.slice(commaIdx + 1).trim();
+  }
+  // "48607 Ochtrup" splitten — erste 5 Ziffern als PLZ
+  var pz = String(data.plzort || '').trim();
+  var plz = '', ort = '';
+  var m = pz.match(/^(\d{4,5})\s+(.+)$/);
+  if (m){ plz = m[1]; ort = m[2].trim(); }
+  else { ort = pz; }
+  // Datum "DD.MM.YYYY" → "YYYY-MM-DD" (für <input type="date">)
+  var iso = '';
+  var dm = String(data.gebdat || '').match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (dm){
+    iso = dm[3] + '-' + ('0'+dm[2]).slice(-2) + '-' + ('0'+dm[1]).slice(-2);
+  } else if (/^\d{4}-\d{2}-\d{2}$/.test(data.gebdat)){
+    iso = data.gebdat;
+  }
+  // Duplikat-Hinweis (Nachname + Vorname)
+  var dupKey = (nach + '|' + vor).toLowerCase();
+  var dup = members.find(function(x){ return ((x.name||'')+'|'+(x.vor||'')).toLowerCase() === dupKey; });
+  if (dup){
+    if (!confirm('Es gibt bereits einen Eintrag "'+nach+(vor?', '+vor:'')+'". Trotzdem als neuen Antrag anlegen?')){
+      toast('Import abgebrochen'); return;
+    }
+  }
+  var nm = {
+    nr: nextNr++,
+    bz: null,           // "ohne Bezirk" — Vorstand vergibt im nächsten Schritt
+    a1: '', a2: '',
+    name: nach, vor: vor,
+    str: String(data.str || '').trim(),
+    plz: plz, ort: ort,
+    ehren: '', helga: '',
+    gebdat: iso,
+    tel: String(data.tel || '').trim(),
+    email: String(data.mail || '').trim(),
+    foto: ''
+  };
+  members.push(nm);
+  renderAll();
+  persist();
+  var idx = members.indexOf(nm);
+  toast('✔ Antrag importiert: ' + nach + (vor?', '+vor:'') + ' — Bezirk bitte zuweisen');
+  // Direkt das Edit-Modal öffnen, damit Bezirk + Anrede ergänzt werden können
+  setTimeout(function(){ openEdit(idx); }, 250);
+}
+
 function saveEdit(){
   if(editIdx<0)return;
   var name=document.getElementById('e-na').value.trim();
@@ -1496,6 +1579,7 @@ function saveEdit(){
   m.ort=document.getElementById('e-ort').value.trim();
   m.ehren=document.getElementById('e-eh').value;
   m.helga=document.getElementById('e-hg').value;
+  m.gebdat=document.getElementById('e-gebdat').value;
   m.tel=document.getElementById('e-tel').value.trim();
   m.email=document.getElementById('e-email').value.trim();
   m.foto=document.getElementById('foto-preview-img').style.display!=='none'
@@ -1703,7 +1787,7 @@ function importCSV(file){
 
       // Felder, die beim Update aus der CSV übernommen werden (nr bleibt erhalten,
       // damit die laufende Nummerierung der bestehenden Liste nicht durcheinandergerät)
-      var UPDATE_FIELDS=['bz','a1','a2','name','vor','str','plz','ort','ehren','helga','foto','tel','email'];
+      var UPDATE_FIELDS=['bz','a1','a2','name','vor','str','plz','ort','ehren','helga','foto','gebdat','tel','email'];
 
       if(mode==='merge'){
         // Dedup-Key: Nachname + Vorname + PLZ
@@ -1783,10 +1867,10 @@ function importCSV(file){
 
 function exportCSV(){
   var SEP=';';
-  var cols=['lfd.-Nr.:','Bezirk','Anrede1','Anrede2','Nachname','Vorname','Straße','PLZ','Ort','Ehrenmitglied','Helga','Handy/Tel','E-Mail'];
+  var cols=['lfd.-Nr.:','Bezirk','Anrede1','Anrede2','Nachname','Vorname','Straße','PLZ','Ort','Ehrenmitglied','Helga','Geburtsdatum','Handy/Tel','E-Mail'];
   function q(v){var s=String(v===null||v===undefined?'':v);return s.indexOf(SEP)!==-1||s.indexOf('"')!==-1?'"'+s.replace(/"/g,'""')+'"':s;}
   var lines=[cols.map(q).join(SEP)];
-  members.forEach(function(m){lines.push([m.nr,m.bz,m.a1,m.a2,m.name,m.vor,m.str,m.plz,m.ort,m.ehren,m.helga,m.tel||'',m.email||''].map(q).join(SEP));});
+  members.forEach(function(m){lines.push([m.nr,m.bz,m.a1,m.a2,m.name,m.vor,m.str,m.plz,m.ort,m.ehren,m.helga,m.gebdat||'',m.tel||'',m.email||''].map(q).join(SEP));});
   var blob=new Blob(['\uFEFF'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
   var a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download='Adressliste_'+new Date().toISOString().slice(0,10)+'.csv';
