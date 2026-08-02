@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ROMA">
+<meta name="theme-color" content="#2b2118">
+<meta name="description" content="ROMA - Aufbau- und Wirtschaftssimulation im alten Rom. Für iPad und Browser.">
+<title>ROMA – Aufbau &amp; Handel im alten Rom</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./icon-180.png">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+<canvas id="cv"></canvas>
+
+<!-- Kopfleiste -->
+<header id="top">
+  <div class="tl">
+    <div class="logo">ROMA</div>
+    <div id="waren" class="waren"></div>
+  </div>
+  <div class="tr">
+    <div class="kennz">
+      <div class="kz"><span>👥</span><b id="pop">0</b></div>
+      <div class="kz"><span>😊</span><b id="zufr">0 %</b></div>
+      <div class="kz"><span>👷</span><b id="arbeiter">0 frei</b></div>
+      <div class="kz"><span>📈</span><b id="bilanz">0</b></div>
+      <div class="kz datum"><b id="datum">Jahr 1 a.u.c.</b></div>
+    </div>
+    <div id="speed" class="speed">
+      <button data-v="0" title="Pause">⏸</button>
+      <button data-v="1" class="an" title="Normal">▶</button>
+      <button data-v="3" title="Schnell">⏩</button>
+      <button data-v="8" title="Sehr schnell">⏭</button>
+    </div>
+    <button class="ibtn" id="btn-stat" title="Statistik">📊</button>
+    <button class="ibtn" id="btn-ziele" title="Meilensteine">🎯</button>
+    <button class="ibtn" id="btn-menu" title="Menü">☰</button>
+  </div>
+</header>
+
+<!-- Bauhinweis im Baumodus -->
+<div id="bauhinweis" class="bauhinweis weg">
+  <div class="bh-t"><b id="bh-name"></b><span id="bh-text"></span></div>
+  <button id="bh-abbruch">Abbrechen</button>
+</div>
+
+<!-- Infopanel -->
+<aside id="info" class="panel weg">
+  <div class="panel-kopf">
+    <h3 id="info-titel"></h3>
+    <button id="info-zu">✕</button>
+  </div>
+  <div id="info-inhalt" class="panel-inhalt"></div>
+</aside>
+
+<!-- Bauleiste -->
+<footer id="bau">
+  <div id="kats" class="kats"></div>
+  <div id="gebliste" class="gebliste"></div>
+</footer>
+
+<div id="toasts"></div>
+
+<!-- Modal -->
+<div id="modal" class="overlay weg">
+  <div class="box">
+    <div class="box-kopf">
+      <h2 id="modal-titel"></h2>
+      <button id="modal-zu">✕</button>
+    </div>
+    <div id="modal-inhalt" class="box-inhalt"></div>
+  </div>
+</div>
+
+<script src="./js/data.js"></script>
+<script src="./js/world.js"></script>
+<script src="./js/sim.js"></script>
+<script src="./js/render.js"></script>
+<script src="./js/ui.js"></script>
+<script src="./js/main.js"></script>
+</body>
+</html>
