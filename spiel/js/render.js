@@ -81,6 +81,23 @@ Renderer.prototype.aktualisiereBereich = function (bx, by, s) {
   var minY = this.px(x0, y0).y - 48;
   var maxY = this.px(x1, y1).y + TH + 12;
 
+  /* Alle Kacheln bestimmen, die in dieses Pixelrechteck hineinragen -
+     die Raute einer Kachel reicht ueber ihre Gitterposition hinaus. */
+  var self = this;
+  function feldAn(pxx, pyy) {
+    var u = (pxx - self.offX) / (TW / 2);
+    var v = (pyy - TH / 2) / (TH / 2);
+    return { x: (u + v) / 2, y: (v - u) / 2 };
+  }
+  var ecken = [feldAn(minX, minY), feldAn(maxX, minY), feldAn(minX, maxY), feldAn(maxX, maxY)];
+  var fx0 = Infinity, fy0 = Infinity, fx1 = -Infinity, fy1 = -Infinity;
+  for (var e = 0; e < 4; e++) {
+    fx0 = Math.min(fx0, ecken[e].x); fx1 = Math.max(fx1, ecken[e].x);
+    fy0 = Math.min(fy0, ecken[e].y); fy1 = Math.max(fy1, ecken[e].y);
+  }
+  fx0 = Math.max(0, Math.floor(fx0) - 2); fy0 = Math.max(0, Math.floor(fy0) - 2);
+  fx1 = Math.min(w.w - 1, Math.ceil(fx1) + 2); fy1 = Math.min(w.h - 1, Math.ceil(fy1) + 2);
+
   var c = this.terrainCache.getContext('2d');
   c.save();
   c.beginPath();
@@ -88,8 +105,8 @@ Renderer.prototype.aktualisiereBereich = function (bx, by, s) {
   c.clip();
   c.fillStyle = '#24587a';
   c.fillRect(minX, minY, maxX - minX, maxY - minY);
-  for (var d = x0 + y0; d <= x1 + y1; d++) {
-    for (var x = Math.max(x0, d - y1); x <= Math.min(x1, d - y0); x++) {
+  for (var d = fx0 + fy0; d <= fx1 + fy1; d++) {
+    for (var x = Math.max(fx0, d - fy1); x <= Math.min(fx1, d - fy0); x++) {
       this.zeichneFeld(c, x, d - x);
     }
   }

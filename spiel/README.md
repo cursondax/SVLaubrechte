@@ -4,7 +4,7 @@ Eine Wirtschafts- und Aufbausimulation im Stil von *Anno*, gebaut für das iPad.
 Läuft komplett im Browser, ohne Server, ohne Framework, ohne Tracking – und nach
 dem ersten Laden auch offline.
 
-![Kategorien](icon-192.png)
+![ROMA – eine junge Stadt am Meer](screenshot.png)
 
 ## Spielprinzip
 
