@@ -20,7 +20,7 @@ automatisch auf deinem Ionos-Webspace (raw-bert.de) sichern lässt.
 
 ## Schritt 1: Dateien lokal bereit legen
 
-Du brauchst diese **4 Dateien** vom Ordner `D:\Dev\Tools\SVLaubrechte\server\`:
+Du brauchst diese **4 Dateien** vom Ordner `D:\Dev\SVLaubrechte\Mitgliederverwaltung\server\`:
 
 | Datei | Inhalt |
 |---|---|
@@ -30,7 +30,7 @@ Du brauchst diese **4 Dateien** vom Ordner `D:\Dev\Tools\SVLaubrechte\server\`:
 | `ANLEITUNG.md` | Diese Anleitung (optional, schadet nicht) |
 
 Öffne den Ordner schon mal im Windows-Explorer:
-**D:\Dev\Tools\SVLaubrechte\server\**
+**D:\Dev\SVLaubrechte\Mitgliederverwaltung\server\**
 
 > ⚠ Wichtig: die Datei `.htaccess` beginnt mit einem **Punkt**. Windows zeigt sie
 > manchmal nicht an oder versteckt die Endung. Falls du sie nicht siehst:
@@ -70,7 +70,7 @@ Windows-Explorer-Fenster.
 ## Schritt 4: Die 4 Dateien hochladen
 
 1. Im Webspace-Explorer **„Hochladen"** klicken (oder Drag-&-Drop benutzen).
-2. Alle 4 Dateien aus `D:\Dev\Tools\SVLaubrechte\server\` auswählen:
+2. Alle 4 Dateien aus `D:\Dev\SVLaubrechte\Mitgliederverwaltung\server\` auswählen:
    - `api.php`
    - `config.php`
    - `.htaccess`
@@ -86,7 +86,7 @@ Datei nach dem Upload fehlt:
 1. Lade die anderen 3 Dateien hoch (`api.php`, `config.php`, `ANLEITUNG.md`).
 2. Im Webspace-Explorer **„Neue Datei"** klicken → Name: **`.htaccess`** (mit Punkt).
 3. Dann **„Bearbeiten"** auf die neue Datei → den Inhalt aus
-   `D:\Dev\Tools\SVLaubrechte\server\.htaccess` rein-kopieren → speichern.
+   `D:\Dev\SVLaubrechte\Mitgliederverwaltung\server\.htaccess` rein-kopieren → speichern.
 
 Notfall-Variante, falls das Ionos-Interface keine Dateinamen mit Punkt am
 Anfang akzeptiert:
@@ -143,7 +143,7 @@ Mögliche Antworten:
     nochmal markieren und einfügen.
   - HTTPS nicht aktiviert (siehe Tabelle oben).
   - `config.php` enthält ein anderes Token als hier in der Anleitung steht.
-    Schau zur Sicherheit nochmal in `D:\Dev\Tools\SVLaubrechte\server\config.php`
+    Schau zur Sicherheit nochmal in `D:\Dev\SVLaubrechte\Mitgliederverwaltung\server\config.php`
     rein – dort steht das echte Token zwischen Anführungszeichen.
 
 ---
