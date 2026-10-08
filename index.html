@@ -802,7 +802,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
           <div style="font-size:.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.5rem">Vorschau (max. 10)</div>
           <div class="tbl-wrap card">
             <table><thead><tr>
-              <th>Nr.</th><th>Bz.</th><th>Name</th><th>Vorname</th><th>Stra&#223;e</th><th>PLZ</th><th>Ort</th><th>Tel.</th><th>E-Mail</th>
+              <th>Nr.</th><th>Bz.</th><th>Anrede</th><th>Name</th><th>Vorname</th><th>Stra&#223;e</th><th>PLZ</th><th>Ort</th><th>Tel.</th><th>E-Mail</th>
             </tr></thead><tbody id="ex-preview-tbody"></tbody></table>
           </div>
         </div>
@@ -1953,13 +1953,24 @@ function exGetFiltered(){
   });
 }
 
+// Ist im Export eine Anrede gewählt, bleibt nur diese stehen (in ihrer Spalte),
+// die andere wird geleert. Sonst greift die Presse-App (Anrede2 vor Anrede1)
+// beim Serienbrief womöglich zur falschen Anrede.
+function exAnreden(m){
+  var anrede = document.getElementById('ex-anrede').value;
+  if(!anrede) return [m.a1||'', m.a2||''];
+  return m.a2===anrede ? ['', anrede] : [anrede, ''];
+}
+
 function exPreview(){
   var filtered = exGetFiltered();
   document.getElementById('ex-count').textContent = filtered.length;
   var rows = filtered.slice(0,10).map(function(m){
+    var an = exAnreden(m);
     return '<tr>'
       +'<td>'+m.nr+'</td>'
       +'<td><span class="badge b'+(m.bz||0)+'">'+(m.bz?'B'+m.bz:'—')+'</span></td>'
+      +'<td>'+esc(an[1]||an[0])+'</td>'
       +'<td><strong>'+esc(m.name)+'</strong></td>'
       +'<td>'+esc(m.vor)+'</td>'
       +'<td>'+esc(m.str)+'</td>'
@@ -1969,7 +1980,7 @@ function exPreview(){
       +'<td>'+esc(m.email||'')+'</td>'
       +'</tr>';
   });
-  if(filtered.length>10) rows.push('<tr><td colspan="9" style="text-align:center;color:var(--grey700);font-style:italic">... und '+(filtered.length-10)+' weitere</td></tr>');
+  if(filtered.length>10) rows.push('<tr><td colspan="10"style="text-align:center;color:var(--grey700);font-style:italic">... und '+(filtered.length-10)+' weitere</td></tr>');
   document.getElementById('ex-preview-tbody').innerHTML = rows.join('');
 }
 
@@ -1981,7 +1992,8 @@ function exExportCSV(){
   function q(v){var s=String(v===null||v===undefined?'':v);return s.indexOf(SEP)!==-1||s.indexOf('"')!==-1?'"'+s.replace(/"/g,'""')+'"':s;}
   var lines=[cols.map(q).join(SEP)];
   filtered.forEach(function(m){
-    lines.push([m.a1,m.a2,m.name,m.vor,m.str,m.plz,m.ort,m.bz||'',m.ehren,m.helga,m.tel||'',m.email||''].map(q).join(SEP));
+    var an = exAnreden(m);
+    lines.push([an[0],an[1],m.name,m.vor,m.str,m.plz,m.ort,m.bz||'',m.ehren,m.helga,m.tel||'',m.email||''].map(q).join(SEP));
   });
   var blob=new Blob(['\uFEFF'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
   var a=document.createElement('a');a.href=URL.createObjectURL(blob);
@@ -1999,7 +2011,8 @@ function exExportVCF(){
     lines.push('BEGIN:VCARD');
     lines.push('VERSION:3.0');
     lines.push('N:'+vcf(m.name)+';'+vcf(m.vor)+';;;');
-    lines.push('FN:'+vcf(m.a2?m.a2+' ':'')+vcf(m.name)+(m.vor?' '+vcf(m.vor):''));
+    var an = exAnreden(m), anr = an[1]||an[0];
+    lines.push('FN:'+vcf(anr?anr+' ':'')+vcf(m.name)+(m.vor?' '+vcf(m.vor):''));
     if(m.str||m.plz||m.ort)
       lines.push('ADR;TYPE=HOME:;;'+vcf(m.str)+';'+vcf(m.ort)+';;'+vcf(m.plz)+';Deutschland');
     if(m.tel)  lines.push('TEL;TYPE=CELL:'+vcf(m.tel));
