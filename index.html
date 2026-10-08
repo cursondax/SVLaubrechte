@@ -1127,6 +1127,35 @@ function normH(s){
     .replace(/[^a-z0-9]/g,''); // Punkte, Slashes, Bindestriche, Whitespace weg
 }
 
+// Geburtsdatum vereinheitlichen. Intern wird IMMER "JJJJ-MM-TT" gespeichert,
+// weil das Datumsfeld (<input type="date">) nur dieses Format versteht.
+// Akzeptiert: "1.2.1970", "01.02.1970", "01.02.70", "1970-02-01", "1970-2-1".
+// Nicht erkennbare Werte werden unveraendert zurueckgegeben (nie still loeschen).
+function normDate(s){
+  var v = String(s==null?'':s).trim();
+  if(!v) return '';
+  var y, mo, d, m;
+  if((m = v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/))){ y=+m[1]; mo=+m[2]; d=+m[3]; }
+  else if((m = v.match(/^(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{2}|\d{4})$/))){
+    d=+m[1]; mo=+m[2]; y=+m[3];
+    if(m[3].length===2){
+      // Zweistellige Jahre: liegt das Jahr in der Zukunft, ist das letzte Jahrhundert gemeint
+      var cur = new Date().getFullYear() % 100;
+      y += (y > cur) ? 1900 : 2000;
+    }
+  }
+  else return v;
+  var dt = new Date(Date.UTC(y, mo-1, d));
+  if(dt.getUTCFullYear()!==y || dt.getUTCMonth()!==mo-1 || dt.getUTCDate()!==d) return v; // z.B. 31.02.
+  return y+'-'+('0'+mo).slice(-2)+'-'+('0'+d).slice(-2);
+}
+// Fuer Exporte und Anzeige: "JJJJ-MM-TT" -> "TT.MM.JJJJ"
+function fmtDateDE(s){
+  var m = String(s||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? (m[3]+'.'+m[2]+'.'+m[1]) : String(s||'');
+}
+function isIsoDate(s){ return /^\d{4}-\d{2}-\d{2}$/.test(String(s||'')); }
+
 function mkM(r,i){
   // Baue Lookup-Tabelle: normalisierter Header → Wert
   var lookup={};
@@ -1152,7 +1181,7 @@ function mkM(r,i){
     ehren:String(get('Ehrenmitglied','Ehren')||''),
     helga:String(get('Helga')||''),
     foto: get('foto','Foto')||'',
-    gebdat: String(get('Geburtsdatum','Geb','Geb.','GebDat')||'').trim(),
+    gebdat: normDate(get('Geburtsdatum','Geb','Geb.','GebDat')),
     tel:  String(get('Handy/Tel','Handy','Tel','Telefon','Mobil')||'').trim(),
     email:String(get('E-Mail','Email','Mail')||'').trim()
   };
@@ -1182,6 +1211,13 @@ function init(){
       persist({snapshot:'force'});
       toast(migrated+' Anreden migriert: "Herrn"/"Hern" → "Herr"');
     }
+    // Geburtsdaten im deutschen Format ("01.02.1970") ins interne Format umwandeln,
+    // damit sie im Bearbeiten-Dialog sichtbar sind und beim Speichern nicht verloren gehen.
+    var datesFixed = migrateGebdat();
+    if(datesFixed>0){
+      persist({snapshot:'force'});
+      toast(datesFixed+' Geburtsdaten ins einheitliche Format umgewandelt');
+    }
     // Einmalige Migration: Frauen aus Bezirken entfernen (Vereins-Regel)
     if(!localStorage.getItem('sgO_migratedFrauenOhneBezirk')){
       var moved = 0;
@@ -1206,6 +1242,16 @@ function migrateAnrede(){
   members.forEach(function(m){
     if(m.a1==='Herrn'||m.a1==='Hern'){m.a1='Herr';count++;}
     if(m.a2==='Herrn'||m.a2==='Hern'){m.a2='Herr';count++;}
+  });
+  return count;
+}
+
+function migrateGebdat(){
+  var count=0;
+  members.forEach(function(m){
+    if(!m.gebdat) return;
+    var n = normDate(m.gebdat);
+    if(n!==m.gebdat){ m.gebdat=n; count++; }
   });
   return count;
 }
@@ -1579,7 +1625,11 @@ function saveEdit(){
   m.ort=document.getElementById('e-ort').value.trim();
   m.ehren=document.getElementById('e-eh').value;
   m.helga=document.getElementById('e-hg').value;
-  m.gebdat=document.getElementById('e-gebdat').value;
+  // Schutz: Ein Altwert, den das Datumsfeld nicht anzeigen konnte (z.B. "ca. 1950"),
+  // wird bei leerem Feld NICHT geloescht. Bewusst loeschen geht weiterhin,
+  // sobald ein gueltiges Datum gespeichert war.
+  var gebNeu=document.getElementById('e-gebdat').value;
+  if(gebNeu || isIsoDate(m.gebdat) || !m.gebdat) m.gebdat=gebNeu;
   m.tel=document.getElementById('e-tel').value.trim();
   m.email=document.getElementById('e-email').value.trim();
   m.foto=document.getElementById('foto-preview-img').style.display!=='none'
@@ -1870,7 +1920,7 @@ function exportCSV(){
   var cols=['lfd.-Nr.:','Bezirk','Anrede1','Anrede2','Nachname','Vorname','Straße','PLZ','Ort','Ehrenmitglied','Helga','Geburtsdatum','Handy/Tel','E-Mail'];
   function q(v){var s=String(v===null||v===undefined?'':v);return s.indexOf(SEP)!==-1||s.indexOf('"')!==-1?'"'+s.replace(/"/g,'""')+'"':s;}
   var lines=[cols.map(q).join(SEP)];
-  members.forEach(function(m){lines.push([m.nr,m.bz,m.a1,m.a2,m.name,m.vor,m.str,m.plz,m.ort,m.ehren,m.helga,m.gebdat||'',m.tel||'',m.email||''].map(q).join(SEP));});
+  members.forEach(function(m){lines.push([m.nr,m.bz,m.a1,m.a2,m.name,m.vor,m.str,m.plz,m.ort,m.ehren,m.helga,fmtDateDE(m.gebdat),m.tel||'',m.email||''].map(q).join(SEP));});
   var blob=new Blob(['\uFEFF'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
   var a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download='Adressliste_'+new Date().toISOString().slice(0,10)+'.csv';
@@ -2736,7 +2786,9 @@ var SYNC_RETRY_MS  = 30000;    // ms zwischen Retry-Versuchen wenn letzter Push 
 var syncPushTimer  = null;
 var syncRetryTimer = null;
 var syncPendingDirty = false;  // true wenn eine Aenderung passiert ist, die noch nicht erfolgreich gepusht wurde
-var syncBusy       = false;
+var syncInFlight   = null;     // Promise des laufenden Uploads (null = kein Upload aktiv)
+var syncFollowUp   = null;     // Promise eines nachgelagerten Uploads, der nach dem laufenden startet
+var syncChangeSeq  = 0;        // Zaehler: wird bei JEDER Aenderung erhoeht
 var syncLastError  = '';
 
 function syncGetUrl(){return localStorage.getItem(SYNC_URL_KEY)||'';}
@@ -2909,6 +2961,7 @@ function syncApplyServerData(data){
   if(!data || !Array.isArray(data.members))return;
   members = data.members.map(function(m,i){m.nr=i+1;return m;});
   nextNr = members.length+1;
+  migrateGebdat(); // Serverdaten koennen noch Altformat "01.02.1970" enthalten
   // Optionale Felder mitnehmen
   if(data.geocache){
     try{localStorage.setItem('sgO_geocache',JSON.stringify(data.geocache));}catch(e){}
@@ -2958,12 +3011,25 @@ function syncCollectPayload(){
   return pl;
 }
 
+// Laedt den KOMPLETTEN aktuellen Stand hoch.
+// Laeuft bereits ein Upload, wird NICHT mehr uebersprungen (alter Fehler: die
+// zweite Aenderung ging verloren und die App meldete trotzdem "Synchron"),
+// sondern genau ein Folge-Upload eingeplant, der nach dem laufenden startet
+// und dann den neuesten Stand mitnimmt.
 function syncPush(opts){
   opts = opts || {};
   if(!syncIsConfigured())return Promise.resolve();
-  if(syncBusy && !opts.keepalive)return Promise.resolve();
-  syncBusy = true;
+  if(syncInFlight && !opts.keepalive){
+    if(!syncFollowUp){
+      syncFollowUp = syncInFlight.then(function(){
+        syncFollowUp = null;
+        return syncPush(opts);
+      });
+    }
+    return syncFollowUp;
+  }
   if(!opts.keepalive) syncSetStatus('busy','Sichere…');
+  var sentSeq = syncChangeSeq;   // welcher Aenderungsstand steckt in diesem Upload?
   var payload = syncCollectPayload();
   var fetchOpts = {
     method:'POST',
@@ -2975,18 +3041,24 @@ function syncPush(opts){
   };
   // keepalive: erlaubt dass der Request auch beim Tab-Close noch durchgeht
   if(opts.keepalive) fetchOpts.keepalive = true;
-  return fetch(syncGetUrl(), fetchOpts).then(function(res){
+  var p = fetch(syncGetUrl(), fetchOpts).then(function(res){
     if(res.status===401)throw new Error('Token ungültig');
     if(!res.ok)throw new Error('HTTP '+res.status);
     return res.json();
   }).then(function(data){
     syncLastError = '';
-    syncPendingDirty = false;
     localStorage.setItem(SYNC_LASTOK, new Date().toISOString());
-    syncSetStatus('ok','✔ Synchron');
-    renderSyncCard();
     // Falls Retry-Timer lief: stoppen
     if(syncRetryTimer){clearTimeout(syncRetryTimer);syncRetryTimer=null;}
+    // Nur "synchron", wenn waehrend des Uploads KEINE weitere Aenderung kam
+    if(syncChangeSeq === sentSeq){
+      syncPendingDirty = false;
+      syncSetStatus('ok','✔ Synchron');
+    } else {
+      syncPendingDirty = true;
+      syncSetStatus('busy','⏳ Weitere Änderung wird gesichert…');
+    }
+    renderSyncCard();
   }).catch(function(err){
     syncLastError = err.message || 'Sync fehlgeschlagen';
     syncPendingDirty = true;
@@ -2998,11 +3070,22 @@ function syncPush(opts){
       syncRetryTimer = null;
       if(syncPendingDirty && syncIsConfigured()) syncPush();
     }, SYNC_RETRY_MS);
-  }).then(function(){syncBusy=false;});
+  });
+  if(opts.keepalive) return p;   // Tab wird geschlossen: nicht als "laufend" vormerken
+  syncInFlight = p.then(function(){
+    syncInFlight = null;
+    // Sicherheitsnetz: Aenderung kam waehrend des Uploads, aber weder Timer
+    // noch Folge-Upload sind geplant -> jetzt nachschieben.
+    if(syncPendingDirty && !syncLastError && !syncPushTimer && !syncFollowUp){
+      syncPushTimer = setTimeout(function(){syncPushTimer=null;syncPush();}, SYNC_DEBOUNCE);
+    }
+  });
+  return syncInFlight;
 }
 
 function syncTriggerPush(){
   if(!syncIsConfigured())return;
+  syncChangeSeq++;
   syncPendingDirty = true;
   // Sofort sichtbares Feedback dass eine Aenderung registriert wurde
   syncSetStatus('busy','⏳ Aenderung wird gesichert…');
