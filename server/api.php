@@ -82,11 +82,16 @@ if ($given === '') {
     fail(401, 'Authorization-Header fehlt (Server schluckt ihn moeglicherweise - .htaccess pruefen).');
 }
 if (!hash_equals($expected, $given)) {
-    fail(401, 'Token stimmt nicht ueberein (gesendet: ' . substr($given, 0, 6) . '..., erwartet: ' . substr($expected, 0, 6) . '...).');
+    // Bewusst KEINE Teile des Tokens in der Antwort (frueher wurden die ersten
+    // 6 Zeichen des echten Tokens verraten). Kurze Pause bremst Durchprobieren.
+    usleep(1000000);
+    fail(401, 'Token ungueltig.');
 }
 
 // --- Storage ---------------------------------------------------------------
-$data_dir = __DIR__ . '/data';
+// Optional in config.php: 'data_dir' => '/pfad/ausserhalb/des/webroots'
+// Ohne Angabe wie bisher: Unterordner data/ neben api.php.
+$data_dir = rtrim($config['data_dir'] ?? (__DIR__ . '/data'), '/');
 $snap_dir = $data_dir . '/snapshots';
 $current  = $data_dir . '/current.json';
 
@@ -94,6 +99,19 @@ if (!is_dir($data_dir)) { @mkdir($data_dir, 0775, true); }
 if (!is_dir($snap_dir)) { @mkdir($snap_dir, 0775, true); }
 if (!is_dir($data_dir) || !is_writable($data_dir)) {
     fail(500, 'Daten-Verzeichnis nicht beschreibbar.');
+}
+
+// Zweite Schutzschicht: eigene .htaccess direkt im Datenordner, die JEDEN
+// Browser-Zugriff sperrt - unabhaengig davon, ob die .htaccess im
+// Elternordner hochgeladen wurde. api.php liest die Dateien direkt vom
+// Dateisystem und ist davon nicht betroffen.
+$guard = $data_dir . '/.htaccess';
+if (!is_file($guard)) {
+    @file_put_contents($guard,
+        "# Automatisch von api.php angelegt - nicht loeschen\n"
+      . "<IfModule mod_authz_core.c>\n    Require all denied\n</IfModule>\n"
+      . "<IfModule !mod_authz_core.c>\n    Order allow,deny\n    Deny from all\n</IfModule>\n"
+      . "Options -Indexes\n");
 }
 
 // --- Routes ----------------------------------------------------------------

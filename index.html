@@ -1180,7 +1180,7 @@ function mkM(r,i){
     ort:  String(get('Ort','Stadt','Wohnort')||'').trim(),
     ehren:String(get('Ehrenmitglied','Ehren')||''),
     helga:String(get('Helga')||''),
-    foto: get('foto','Foto')||'',
+    foto: safeFoto(get('foto','Foto')),
     gebdat: normDate(get('Geburtsdatum','Geb','Geb.','GebDat')),
     tel:  String(get('Handy/Tel','Handy','Tel','Telefon','Mobil')||'').trim(),
     email:String(get('E-Mail','Email','Mail')||'').trim()
@@ -1294,7 +1294,7 @@ function renderTable(){
   document.getElementById('rcnt').textContent=f.length+' von '+members.length;
   var rows=f.map(function(m){
     var idx=members.indexOf(m);
-    var fotoCell=m.foto?'<td class="td-foto"><img class="member-foto" src="'+esc(m.foto)+'" alt=""></td>':'<td class="td-foto"><div class="foto-placeholder" onclick="uploadFotoFromTable('+idx+')" title="Foto hinzufügen">&#128247;</div></td>';
+    var fotoCell=safeFoto(m.foto)?'<td class="td-foto"><img class="member-foto" src="'+esc(m.foto)+'" alt=""></td>':'<td class="td-foto"><div class="foto-placeholder" onclick="uploadFotoFromTable('+idx+')" title="Foto hinzufügen">&#128247;</div></td>';
     return '<tr>'
       +fotoCell
       +'<td>'+m.nr+'</td>'
@@ -1444,7 +1444,7 @@ function openEdit(idx){
   document.getElementById('e-gebdat').value=m.gebdat||'';
   document.getElementById('e-tel').value=m.tel||'';
   document.getElementById('e-email').value=m.email||'';
-  var foto=m.foto||'';
+  var foto=safeFoto(m.foto);
   var prev=document.getElementById('foto-preview-img');
   var ph=document.getElementById('foto-placeholder');
   var delBtn=document.getElementById('foto-del-btn');
@@ -1556,9 +1556,26 @@ function importAntragFromFile(ev){
   reader.readAsText(file, 'UTF-8');
 }
 
+// Werte aus einer Antrags-Datei stammen von Fremden -> bereinigen:
+// nur Text, keine Steuerzeichen/Zeilenumbrueche, Laenge begrenzt.
+function antragClean(v, max){
+  if(v==null || typeof v==='object') return '';
+  return String(v).replace(/[\u0000-\u001F\u007F\u2028\u2029]/g,' ').replace(/\s+/g,' ').trim().slice(0, max||120);
+}
+
 function applyAntragImport(data){
+  data = {
+    name:   antragClean(data.name, 120),
+    str:    antragClean(data.str, 120),
+    plzort: antragClean(data.plzort, 80),
+    gebdat: antragClean(data.gebdat, 20),
+    tel:    antragClean(data.tel, 40).replace(/[^0-9+()\/\s.-]/g,''),
+    mail:   antragClean(data.mail, 120)
+  };
+  if(data.mail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.mail)) data.mail = '';
+  if(!data.name){ toast('Antrag enthält keinen Namen.', true); return; }
   // "Nachname, Vorname" splitten — sonst gesamten Text als Nachname übernehmen
-  var fullName = String(data.name || '').trim();
+  var fullName = data.name;
   var nach = fullName, vor = '';
   var commaIdx = fullName.indexOf(',');
   if (commaIdx > -1){
@@ -1937,7 +1954,20 @@ function toast(msg,err){
 }
 
 function esc(s){
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+// Sicheres JS-String-Literal fuer onclick="..."-Attribute.
+// Erst als JS-String kodieren (Anfuehrungszeichen, Backslash, Zeilenumbrueche),
+// dann HTML-kodieren. Nur so kann ein Name wie  O'Neil  oder ein praeparierter
+// Wert aus einem Online-Antrag weder das Attribut noch den JS-Code aufbrechen.
+function jsq(s){
+  return esc(JSON.stringify(String(s==null?'':s)));
+}
+// Fotos nur als eingebettete Bilddaten zulassen (keine externen URLs = kein
+// Nachladen fremder Server, kein Tracking, keine Script-URLs).
+function safeFoto(v){
+  var s=String(v||'').trim();
+  return /^data:image\/(png|jpe?g|gif|webp);base64,[a-z0-9+\/=\s]+$/i.test(s) ? s : '';
 }
 
 
@@ -2266,13 +2296,12 @@ function karteGroupPopup(g){
   // Mehrere Personen an einer Adresse: alle auflisten, jede mit eigenen Aktionen.
   var head = '<strong>'+esc(g.str||'')+'</strong><br>'+esc(g.plz||'')+' '+esc(g.ort||'');
   var rows = g.members.map(function(m){
-    var memKey = karteMemberKey(m).replace(/'/g,"\\'");
     return '<div style="border-top:1px solid #eee;padding-top:.3rem;margin-top:.3rem">'
       +'<strong>'+esc(m.name)+(m.vor?', '+esc(m.vor):'')+'</strong>'
       +(m.ehren?' <span style="color:#C55A11;font-size:.7rem;font-weight:700">EHREN</span>':'')
       +(m.helga?' <span style="color:#375623;font-size:.7rem;font-weight:700">HELGA</span>':'')
       +(m.tel?'<br>📞 <a href="tel:'+esc(m.tel)+'">'+esc(m.tel)+'</a>':'')
-      +'<br><a style="color:#c0392b;cursor:pointer;font-size:.85rem" onclick="karteExcludeFromTour(\''+memKey+'\');karteState.map.closePopup()">✕ Aus Tour entfernen</a>'
+      +'<br><a style="color:#c0392b;cursor:pointer;font-size:.85rem" onclick="karteExcludeFromTour('+jsq(karteMemberKey(m))+');karteState.map.closePopup()">✕ Aus Tour entfernen</a>'
       +'</div>';
   }).join('');
   var maps = '<br><a href="https://www.google.com/maps/search/?api=1&query='+g.lat+','+g.lng+'" target="_blank">📍 Adresse in Google Maps</a>';
@@ -2343,7 +2372,7 @@ function karteRenderExcludedBox(){
     + '<div class="ex-list">'
     + keys.map(function(k){
         var lbl = labelOf[k] || k;
-        return '<span class="ex-item">'+esc(lbl)+'<button title="Wieder einschließen" onclick="karteIncludeAgain(\''+k.replace(/'/g,"\\'")+'\')">↻</button></span>';
+        return '<span class="ex-item">'+esc(lbl)+'<button title="Wieder einschließen" onclick="karteIncludeAgain('+jsq(k)+')">↻</button></span>';
       }).join('')
     + '</div>';
   tlist.appendChild(box);
@@ -2566,13 +2595,12 @@ function karteCalcRoute(){
       +'<br>'+esc(g.plz||'')+' '+esc(g.ort||'')
       +(multi?'<br><em style="color:var(--orange)">'+g.members.length+' Personen an dieser Adresse:</em>':'');
     var personRows = g.members.map(function(m){
-      var memKey = karteMemberKey(m).replace(/'/g,"\\'");
-      return '<div style="border-top:1px solid #eee;padding-top:.3rem;margin-top:.3rem">'
+        return '<div style="border-top:1px solid #eee;padding-top:.3rem;margin-top:.3rem">'
         +'<strong>'+esc(m.name)+(m.vor?', '+esc(m.vor):'')+'</strong>'
         +(m.ehren?' <span style="color:#C55A11;font-size:.7rem;font-weight:700">EHREN</span>':'')
         +(m.helga?' <span style="color:#375623;font-size:.7rem;font-weight:700">HELGA</span>':'')
         +(m.tel?'<br>📞 <a href="tel:'+esc(m.tel)+'">'+esc(m.tel)+'</a>':'')
-        +'<br><a style="color:#c0392b;cursor:pointer;font-size:.85rem" onclick="karteExcludeFromTour(\''+memKey+'\');karteState.map.closePopup()">✕ Aus Tour entfernen</a>'
+        +'<br><a style="color:#c0392b;cursor:pointer;font-size:.85rem" onclick="karteExcludeFromTour('+jsq(karteMemberKey(m))+');karteState.map.closePopup()">✕ Aus Tour entfernen</a>'
         +'</div>';
     }).join('');
     var maps = '<br><a href="https://www.google.com/maps/dir/?api=1&travelmode=bicycling&destination='+p.lat+','+p.lng+'" target="_blank">🚴 Navigation zu diesem Stopp</a>';
@@ -2597,15 +2625,14 @@ function karteCalcRoute(){
       : '';
     var firstTel = g.members.find(function(m){ return m.tel; });
     var telBtn = firstTel
-      ? '<button class="btn-tel" title="Anrufen: '+esc(firstTel.tel)+' ('+esc(firstTel.name)+')" onclick="event.stopPropagation();location.href=\'tel:'+esc(firstTel.tel)+'\'">📞</button>'
+      ? '<button class="btn-tel" title="Anrufen: '+esc(firstTel.tel)+' ('+esc(firstTel.name)+')" onclick="event.stopPropagation();location.href='+jsq('tel:'+firstTel.tel)+'">📞</button>'
       : '';
-    var firstMk = karteMemberKey(firstM).replace(/'/g,"\\'");
-    html += '<li title="Antippen für Navigation zu diesem Stopp" onclick="window.open(\''+navUrl+'\',\'_blank\')">'
+    html += '<li title="Antippen für Navigation zu diesem Stopp" onclick="window.open('+jsq(navUrl)+',\'_blank\')">'
       +'<span>'+nameLine+multiBadge
       +'<br><span style="font-size:.78rem;color:var(--grey700)">'+esc(g.str||'')+', '+esc(g.plz||'')+' '+esc(g.ort||'')+'</span></span>'
       +'<span class="leg">'+leg+' km</span>'
       +telBtn
-      +'<button class="btn-excl" title="Erste Person aus Tour entfernen" onclick="event.stopPropagation();karteExcludeFromTour(\''+firstMk+'\')">✕</button>'
+      +'<button class="btn-excl" title="Erste Person aus Tour entfernen" onclick="event.stopPropagation();karteExcludeFromTour('+jsq(karteMemberKey(firstM))+')">✕</button>'
       +'<span class="nav-hint" title="Antippen für Navigation">▶</span>'
       +'</li>';
   }
@@ -3194,7 +3221,7 @@ function syncRenderSnapshotList(){
         +(age?'<span class="snap-age">'+escapeHtml(age)+'</span>':'')
         +(count?'<span class="snap-count">'+count+'</span>':'')
         +'</div>'
-        +'<button class="btn btn-clear snap-restore" onclick="syncRestoreSnapshot(\''+escapeHtml(s.name)+'\', \''+escapeHtml(label)+'\', '+(s.count||0)+')">Wiederherstellen</button>'
+        +'<button class="btn btn-clear snap-restore" onclick="syncRestoreSnapshot('+jsq(s.name)+', '+jsq(label)+', '+(parseInt(s.count,10)||0)+')">Wiederherstellen</button>'
         +'</li>';
     }).join('')+'</ul>';
     el.innerHTML = html;
