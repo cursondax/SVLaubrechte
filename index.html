@@ -2738,11 +2738,19 @@ function karteExportGPX(){
   lines.push('<gpx version="1.1" creator="SV Lau-Brechte Mitgliederverwaltung" xmlns="http://www.topografix.com/GPX/1/1">');
   lines.push('  <metadata><name>'+xe(name)+'</name></metadata>');
   // Waypoints — eine Markierung pro Stopp mit lesbarem Namen
+  // Jeder Tour-Punkt ist eine Adressgruppe (t[i].g) mit allen Personen dieser Adresse.
+  function stopLabel(i){
+    var g = t[i].g;
+    return i+'. ' + g.members.map(function(m){ return (m.name||'') + (m.vor ? ', '+m.vor : ''); }).join(' / ');
+  }
   lines.push('  <wpt lat="'+t[0].lat+'" lon="'+t[0].lng+'"><name>Start</name><sym>Flag, Green</sym></wpt>');
   for (var i = 1; i < t.length; i++) {
-    var m = t[i].m;
-    var lbl = (i)+'. ' + (m.name||'') + (m.vor ? ', '+m.vor : '');
-    var desc = [m.str, (m.plz||'')+' '+(m.ort||''), m.tel||''].filter(Boolean).join(' · ');
+    var g = t[i].g;
+    var lbl = stopLabel(i);
+    var tels = g.members.filter(function(m){ return m.tel; }).map(function(m){
+      return g.members.length > 1 ? (m.vor||m.name)+': '+m.tel : m.tel;
+    });
+    var desc = [g.str, ((g.plz||'')+' '+(g.ort||'')).trim()].concat(tels).filter(Boolean).join(' · ');
     lines.push('  <wpt lat="'+t[i].lat+'" lon="'+t[i].lng+'">'
       + '<name>'+xe(lbl)+'</name>'
       + '<desc>'+xe(desc)+'</desc>'
@@ -2752,9 +2760,7 @@ function karteExportGPX(){
   lines.push('  <rte><name>'+xe(name)+'</name>');
   lines.push('    <rtept lat="'+t[0].lat+'" lon="'+t[0].lng+'"><name>Start</name></rtept>');
   for (var j = 1; j < t.length; j++) {
-    var mj = t[j].m;
-    var lblj = (j)+'. ' + (mj.name||'') + (mj.vor ? ', '+mj.vor : '');
-    lines.push('    <rtept lat="'+t[j].lat+'" lon="'+t[j].lng+'"><name>'+xe(lblj)+'</name></rtept>');
+    lines.push('    <rtept lat="'+t[j].lat+'" lon="'+t[j].lng+'"><name>'+xe(stopLabel(j))+'</name></rtept>');
   }
   lines.push('  </rte>');
   lines.push('</gpx>');
