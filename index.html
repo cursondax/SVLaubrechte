@@ -1164,7 +1164,11 @@ function mkM(r,i){
   function get(){
     for(var j=0;j<arguments.length;j++){
       var v=lookup[normH(arguments[j])];
-      if(v!==undefined && v!==null) return v;
+      if(v!==undefined && v!==null){
+        // Excel-Textschreibweise ="0171…" aus dem eigenen CSV-Export zuruecknehmen
+        var mx=/^="(.*)"$/.exec(String(v).trim());
+        return mx ? mx[1] : v;
+      }
     }
     return '';
   }
@@ -1996,8 +2000,11 @@ function exportCSV(){
   var SEP=';';
   var cols=['lfd.-Nr.:','Bezirk','Anrede1','Anrede2','Nachname','Vorname','Straße','PLZ','Ort','Ehrenmitglied','Helga','Geburtsdatum','Handy/Tel','E-Mail'];
   function q(v){var s=String(v===null||v===undefined?'':v);return s.indexOf(SEP)!==-1||s.indexOf('"')!==-1?'"'+s.replace(/"/g,'""')+'"':s;}
+  // Excel macht aus "0171…" die Zahl 171… und aus "+49…" eine Formel/Zahl.
+  // ="…" zwingt Excel, den Wert als Text zu zeigen; importCSV nimmt das wieder zurueck.
+  function xt(v){var s=String(v||'').trim();return /^[0+]/.test(s)?'="'+s+'"':s;}
   var lines=[cols.map(q).join(SEP)];
-  members.forEach(function(m){lines.push([m.nr,m.bz,m.a1,m.a2,m.name,m.vor,m.str,m.plz,m.ort,m.ehren,m.helga,fmtDateDE(m.gebdat),m.tel||'',m.email||''].map(q).join(SEP));});
+  members.forEach(function(m){lines.push([m.nr,m.bz,m.a1,m.a2,m.name,m.vor,m.str,xt(m.plz),m.ort,m.ehren,m.helga,fmtDateDE(m.gebdat),xt(m.tel),m.email||''].map(q).join(SEP));});
   var blob=new Blob(['\uFEFF'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
   var a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download='Adressliste_'+new Date().toISOString().slice(0,10)+'.csv';
