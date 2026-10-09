@@ -15,7 +15,9 @@
  * Ohne base_rev (aeltere App-Versionen) wird wie frueher gespeichert.
  *
  * Auth: Bearer-Token im Authorization-Header.
- * Daten: data/current.json + data/snapshots/snap-YYYYMMDD-HHMMSS.json (max 10)
+ * Daten: data/current.json
+ *        data/snapshots/snap-YYYYMMDD-HHMMSS.json (Stand VOR jeder Aenderung, max 10)
+ *        data/daily/day-YYYYMMDD.json (Stand am Ende jedes Tages, deutsche Zeit, max 30)
  */
 
 // --- CORS ------------------------------------------------------------------
@@ -99,11 +101,15 @@ if (!hash_equals($expected, $given)) {
 // Optional in config.php: 'data_dir' => '/pfad/ausserhalb/des/webroots'
 // Ohne Angabe wie bisher: Unterordner data/ neben api.php.
 $data_dir = rtrim($config['data_dir'] ?? (__DIR__ . '/data'), '/');
-$snap_dir = $data_dir . '/snapshots';
-$current  = $data_dir . '/current.json';
+$snap_dir  = $data_dir . '/snapshots';
+$daily_dir = $data_dir . '/daily';
+$current   = $data_dir . '/current.json';
+define('SNAP_MAX', 10);    // Snapshots vor jeder Aenderung
+define('DAILY_MAX', 30);   // Tagesstaende
 
-if (!is_dir($data_dir)) { @mkdir($data_dir, 0775, true); }
-if (!is_dir($snap_dir)) { @mkdir($snap_dir, 0775, true); }
+if (!is_dir($data_dir))  { @mkdir($data_dir, 0775, true); }
+if (!is_dir($snap_dir))  { @mkdir($snap_dir, 0775, true); }
+if (!is_dir($daily_dir)) { @mkdir($daily_dir, 0775, true); }
 if (!is_dir($data_dir) || !is_writable($data_dir)) {
     fail(500, 'Daten-Verzeichnis nicht beschreibbar.');
 }
@@ -139,6 +145,47 @@ function read_head($current) {
     ];
 }
 
+// Anzahl und Zeitstempel einer gespeicherten Datei billig ablesen, ohne sie
+// ganz zu dekodieren. "count" und "server_ts" stehen am ENDE der Datei (hinter
+// der Mitgliederliste), deshalb Anfang und Ende lesen.
+function peek_meta($f) {
+    $count = null; $ts = null;
+    $size = @filesize($f) ?: 0;
+    $fh = @fopen($f, 'r');
+    if (!$fh) return [null, null];
+    $head = fread($fh, 8192);
+    $tail = '';
+    if ($size > 8192) {
+        fseek($fh, max(0, $size - 8192));
+        $tail = fread($fh, 8192);
+    }
+    fclose($fh);
+    foreach ([$tail, $head] as $chunk) {
+        if ($count === null && preg_match_all('/"count"\s*:\s*(\d+)/', $chunk, $m)) {
+            $count = (int) end($m[1]);
+        }
+        if ($ts === null && preg_match_all('/"server_ts"\s*:\s*"([^"]+)"/', $chunk, $m)) {
+            $ts = end($m[1]);
+        }
+    }
+    return [$count, $ts];
+}
+
+// Gespeicherte Datei nach Typ: Snapshot oder Tagesstand (strikte Namen, kein Path-Traversal)
+function stored_file($name, $snap_dir, $daily_dir) {
+    if (preg_match('/^snap-\d{8}-\d{6}\.json$/', $name)) return $snap_dir . '/' . $name;
+    if (preg_match('/^day-\d{8}\.json$/', $name))        return $daily_dir . '/' . $name;
+    return null;
+}
+
+// Nur die juengsten $max Dateien eines Musters behalten
+function rotate($pattern, $max) {
+    $files = glob($pattern) ?: [];
+    if (count($files) <= $max) return;
+    sort($files); // alphabetisch = chronologisch
+    foreach (array_slice($files, 0, count($files) - $max) as $f) { @unlink($f); }
+}
+
 if ($method === 'GET') {
     // --- Nur Version abfragen (fuer schnellen Abgleich ohne Datenmenge) -----
     if ($action === 'head') {
@@ -160,29 +207,33 @@ if ($method === 'GET') {
             if (preg_match('/^snap-(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})\.json$/', $name, $m)) {
                 $iso = sprintf('%s-%s-%sT%s:%s:%sZ', $m[1], $m[2], $m[3], $m[4], $m[5], $m[6]);
             }
-            // Anzahl Mitglieder lesen (billig: peek auf "count":)
-            $count = null;
-            $fh = @fopen($f, 'r');
-            if ($fh) {
-                $head = fread($fh, 8192);
-                fclose($fh);
-                if (preg_match('/"count"\s*:\s*(\d+)/', $head, $m)) {
-                    $count = (int) $m[1];
-                }
-            }
+            list($count, ) = peek_meta($f);
             $list[] = ['name' => $name, 'ts' => $iso, 'size' => $size, 'count' => $count];
         }
-        echo json_encode(['snapshots' => $list], JSON_UNESCAPED_UNICODE);
+        // Tagesstaende: juengster zuerst; ts = letzte Aenderung an diesem Tag
+        $days = glob($daily_dir . '/day-*.json') ?: [];
+        rsort($days);
+        $daily = [];
+        foreach ($days as $f) {
+            $name = basename($f);
+            list($count, $ts) = peek_meta($f);
+            $day = null;
+            if (preg_match('/^day-(\d{4})(\d{2})(\d{2})\.json$/', $name, $m)) {
+                $day = $m[1] . '-' . $m[2] . '-' . $m[3];
+            }
+            $daily[] = ['name' => $name, 'day' => $day, 'ts' => $ts, 'size' => @filesize($f) ?: 0, 'count' => $count];
+        }
+        echo json_encode(['snapshots' => $list, 'daily' => $daily], JSON_UNESCAPED_UNICODE);
         exit;
     }
     // --- Einzelnen Snapshot laden -------------------------------------------
     if ($action === 'snapshot') {
         $name = $_GET['name'] ?? '';
-        // Strikte Validierung: nur unser Namens-Schema akzeptieren (kein Path-Traversal)
-        if (!preg_match('/^snap-\d{8}-\d{6}\.json$/', $name)) {
+        // Strikte Validierung: nur unsere Namens-Schemata akzeptieren (kein Path-Traversal)
+        $f = stored_file($name, $snap_dir, $daily_dir);
+        if ($f === null) {
             fail(400, 'Ungueltiger Snapshot-Name.');
         }
-        $f = $snap_dir . '/' . $name;
         if (!is_file($f)) {
             fail(404, 'Snapshot nicht gefunden.');
         }
@@ -260,13 +311,7 @@ if ($method === 'POST') {
     if (is_file($current)) {
         $snap_name = 'snap-' . gmdate('Ymd-His') . '.json';
         @copy($current, $snap_dir . '/' . $snap_name);
-        // Rotation: nur die juengsten 10 behalten
-        $snaps = glob($snap_dir . '/snap-*.json') ?: [];
-        if (count($snaps) > 10) {
-            sort($snaps); // alphabetisch = chronologisch
-            $to_delete = array_slice($snaps, 0, count($snaps) - 10);
-            foreach ($to_delete as $f) { @unlink($f); }
-        }
+        rotate($snap_dir . '/snap-*.json', SNAP_MAX);
     }
 
     // Atomar schreiben: erst .tmp, dann rename
@@ -279,6 +324,13 @@ if ($method === 'POST') {
         @unlink($tmp);
         fail(500, 'Umbenennen fehlgeschlagen.');
     }
+
+    // Tagesstand: neuen Stand als day-JJJJMMTT.json ablegen (deutsche Zeit).
+    // Spaetere Aenderungen am selben Tag ueberschreiben ihn -> es bleibt der
+    // Stand vom Tagesende. Die letzten 30 Tage mit Aenderungen bleiben erhalten.
+    $berlin = new DateTime('now', new DateTimeZone('Europe/Berlin'));
+    @copy($current, $daily_dir . '/day-' . $berlin->format('Ymd') . '.json');
+    rotate($daily_dir . '/day-*.json', DAILY_MAX);
 
     echo json_encode([
         'ok'        => true,

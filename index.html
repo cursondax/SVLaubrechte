@@ -153,6 +153,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
 .snap-age{font-size:.74rem;color:var(--grey700)}
 .snap-count{font-size:.74rem;color:var(--navym);font-weight:600}
 .snap-restore{padding:.3rem .8rem!important;font-size:.78rem!important}
+.snap-sub{font-size:.78rem;font-weight:700;color:var(--navy);margin-top:.8rem}
 .snap-empty{font-style:italic;color:var(--grey700);font-size:.85rem;padding:.6rem 0;text-align:center}
 .btn-edit{background:none;border:1px solid var(--navylt);border-radius:5px;padding:2px 8px;font-size:.75rem;color:var(--navy);cursor:pointer;transition:var(--ease)}
 .btn-edit:hover{background:var(--navy);color:#fff}
@@ -668,7 +669,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
             <!-- Server-Snapshots -->
             <div class="opt-section">
               <h4>&#128338; Server-Snapshots wiederherstellen</h4>
-              <p class="opt-desc">Die letzten 10 Versionen, die automatisch auf raw-bert.de gesichert wurden. Funktioniert &uuml;ber alle Ger&auml;te &ndash; auf dem Handy einen Stand wiederherstellen, der vom PC angelegt wurde.</p>
+              <p class="opt-desc">Die letzten 10 Versionen vor jeder &Auml;nderung plus je ein Tagesstand der letzten 30 Tage, automatisch auf raw-bert.de gesichert. Funktioniert &uuml;ber alle Ger&auml;te &ndash; auf dem Handy einen Stand wiederherstellen, der vom PC angelegt wurde.</p>
               <div id="server-snap-list"></div>
               <div style="margin-top:.6rem">
                 <button class="btn btn-clear" style="padding:.35rem .8rem;font-size:.78rem" onclick="syncRenderSnapshotList()">&#8635; Liste aktualisieren</button>
@@ -3429,7 +3430,21 @@ function syncFetchSnapshots(){
   }).then(function(r){
     if(!r.ok) throw new Error('HTTP '+r.status);
     return r.json();
-  }).then(function(d){return d.snapshots||[];});
+  }).then(function(d){
+    // daily: Tagesstaende (neuere api.php), fehlt bei alter api.php
+    return {snaps: d.snapshots||[], daily: d.daily||[]};
+  });
+}
+
+function syncSnapItem(name, label, age, countNum){
+  var count = (countNum!=null) ? countNum+(countNum==1?' Eintrag':' Eintr&auml;ge') : '';
+  return '<li>'
+    +'<div class="snap-meta"><strong>'+escapeHtml(label)+'</strong>'
+    +(age?'<span class="snap-age">'+escapeHtml(age)+'</span>':'')
+    +(count?'<span class="snap-count">'+count+'</span>':'')
+    +'</div>'
+    +'<button class="btn btn-clear snap-restore" onclick="syncRestoreSnapshot('+jsq(name)+', '+jsq(label)+', '+(parseInt(countNum,10)||0)+')">Wiederherstellen</button>'
+    +'</li>';
 }
 
 function syncRenderSnapshotList(){
@@ -3440,24 +3455,28 @@ function syncRenderSnapshotList(){
     return;
   }
   el.innerHTML = '<p class="snap-empty">Lade Snapshots vom Server&hellip;</p>';
-  syncFetchSnapshots().then(function(snaps){
-    if(!snaps.length){
+  syncFetchSnapshots().then(function(res){
+    var snaps = res.snaps, daily = res.daily;
+    if(!snaps.length && !daily.length){
       el.innerHTML = '<p class="snap-empty">Noch keine Server-Snapshots vorhanden. Werden bei jeder &Auml;nderung automatisch angelegt.</p>';
       return;
     }
-    var html = '<ul class="snap-list">'+snaps.map(function(s){
+    var html = '<div class="snap-sub">Vor den letzten &Auml;nderungen</div>';
+    html += snaps.length ? '<ul class="snap-list">'+snaps.map(function(s){
       var d = s.ts ? new Date(s.ts) : null;
-      var label = d ? d.toLocaleString('de-DE') : s.name;
-      var age = d ? syncFormatAge(s.ts) : '';
-      var count = (s.count!=null) ? s.count+' Eintr&auml;ge' : '';
-      return '<li>'
-        +'<div class="snap-meta"><strong>'+escapeHtml(label)+'</strong>'
-        +(age?'<span class="snap-age">'+escapeHtml(age)+'</span>':'')
-        +(count?'<span class="snap-count">'+count+'</span>':'')
-        +'</div>'
-        +'<button class="btn btn-clear snap-restore" onclick="syncRestoreSnapshot('+jsq(s.name)+', '+jsq(label)+', '+(parseInt(s.count,10)||0)+')">Wiederherstellen</button>'
-        +'</li>';
-    }).join('')+'</ul>';
+      return syncSnapItem(s.name, d ? d.toLocaleString('de-DE') : s.name, d ? syncFormatAge(s.ts) : '', s.count);
+    }).join('')+'</ul>' : '<p class="snap-empty">Keine.</p>';
+    if(daily.length){
+      html += '<div class="snap-sub">Tagesst&auml;nde (Stand am Ende des Tages, 30 Tage)</div>';
+      html += '<ul class="snap-list">'+daily.map(function(s){
+        var dayLbl = s.day ? new Date(s.day+'T12:00:00').toLocaleDateString('de-DE') : s.name;
+        var t = s.ts ? new Date(s.ts) : null;
+        var isToday = s.day && s.day === karteDateiStempel().slice(0,10);   // laufender Tag
+        var label = dayLbl + (isToday ? ', heute bisher' : ', Tagesende')
+          + (t ? ' ('+t.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})+' Uhr)' : '');
+        return syncSnapItem(s.name, label, t ? 'letzte Änderung '+syncFormatAge(s.ts) : '', s.count);
+      }).join('')+'</ul>';
+    }
     el.innerHTML = html;
   }).catch(function(err){
     el.innerHTML = '<p class="snap-empty" style="color:var(--orange)">Fehler beim Laden: '+escapeHtml(err.message||'Unbekannt')+'</p>';
