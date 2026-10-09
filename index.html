@@ -201,6 +201,10 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
   .print-tbl td.td-beit{width:30pt;white-space:nowrap}
   .print-tbl td.td-suppe{width:36pt;white-space:nowrap}
   .print-tbl tr:nth-child(even) td{background:#EBF3FA!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  /* Ehrenmitglieder: ganze Zeile orange + dunkler Balken links (bleibt auch im Schwarz-Weiß-Druck sichtbar) */
+  .print-tbl tr.ehren td{background:#FAD7B5!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .print-tbl tr.ehren td.td-nr{border-left:4pt solid #C55A11!important;color:#7a3a0a}
+  .print-legend-ehren{display:inline-block;background:#FAD7B5!important;border-left:4pt solid #C55A11;padding:0 4pt;margin-left:8pt;color:#333;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .print-tbl .nm{font-weight:bold;color:#1F4E79;font-family:Calibri,Arial,sans-serif;font-size:12pt}
 }
 
@@ -1421,7 +1425,10 @@ function renderBezirkePrint(){
       var rows=chunk.map(function(m,i){
         var nm='<span class="nm">'+esc(m.name)+'</span>'+(m.vor?', '+esc(m.vor):'')+' '+(m.ehren?'<b style="color:#2E75B6"> E</b>':'');
         var suppeTd=showSuppe?'<td class="td-suppe"></td>':'';
-        return '<tr'+(( startNr+i)%2?' class="even"':'')+'>'          +'<td class="td-nr">'+(startNr+i+1)+'</td>'
+        var cls=[];
+        if((startNr+i)%2) cls.push('even');
+        if(m.ehren) cls.push('ehren');
+        return '<tr'+(cls.length?' class="'+cls.join(' ')+'"':'')+'>'          +'<td class="td-nr">'+(startNr+i+1)+'</td>'
           +'<td class="td-name">'+nm+'</td>'
           +'<td class="td-verm"></td>'
           +'<td class="td-beit"></td>'
@@ -1433,7 +1440,9 @@ function renderBezirkePrint(){
         +'<div class="page-hd">Bezirk '+b
         +' <span style="font-size:9pt;font-weight:normal;color:#555">'+list.length+' Einträge</span>'
         +pageInfo+'</div>'
-        +'<div class="page-sub">Stand: '+today+'  &nbsp;&nbsp;  SV Lau-Brechte</div>'
+        +'<div class="page-sub">Stand: '+today+'  &nbsp;&nbsp;  SV Lau-Brechte'
+        +(chunk.some(function(m){return m.ehren;})?'<span class="print-legend-ehren">= Ehrenmitglied</span>':'')
+        +'</div>'
         +'<table class="print-tbl">'+thead+'<tbody>'+rows+'</tbody></table></div>';
       firstBlock=false;
     }
