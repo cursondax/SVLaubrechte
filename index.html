@@ -2718,7 +2718,7 @@ function karteExportKML(){
   var groups = karteGroupByAddress(withGeo);
 
   function xe(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-  var today = new Date().toISOString().slice(0,10);
+  var stamp = karteDateiStempel(), today = stamp.slice(0,10);
   var title = 'SV Lau-Brechte – Adressen ' + today;
 
   var L = [];
@@ -2783,8 +2783,16 @@ function karteExportKML(){
   L.push('</kml>');
 
   var blob = new Blob([L.join('\n')], { type: 'application/vnd.google-earth.kml+xml' });
-  karteDateiAusgeben(blob, 'SVLaubrechte_Adressen_'+today+'.kml',
+  karteDateiAusgeben(blob, 'SVLaubrechte_Adressen_'+stamp+'.kml',
     groups.length+' Adressen ('+withGeo.length+' Personen) als KML exportiert');
+}
+
+function karteDateiStempel(){
+  // Ortszeit als JJJJ-MM-TT_HHMM — eindeutiger Dateiname je Export
+  // (toISOString wäre UTC und zeigt nachts das Datum vom Vortag).
+  var d = new Date();
+  function p(n){ return (n < 10 ? '0' : '') + n; }
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'_'+p(d.getHours())+p(d.getMinutes());
 }
 
 function karteDateiAusgeben(blob, filename, okMsg){
@@ -2826,7 +2834,7 @@ function karteExportGPX(){
   if (!karteState.tour || karteState.tour.length < 2) { toast('Erst Route berechnen', true); return; }
   var t = karteState.tour;
   function xe(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-  var today = new Date().toISOString().slice(0,10);
+  var stamp = karteDateiStempel(), today = stamp.slice(0,10);
   var name = 'SV Lau-Brechte Tour ' + today;
   var lines = [];
   lines.push('<?xml version="1.0" encoding="UTF-8"?>');
@@ -2865,7 +2873,7 @@ function karteExportGPX(){
   lines.push('</gpx>');
   // Achtung: ohne MIME-Typ verweigert iOS das Teilen-Menü (getestet 10/2026).
   var blob = new Blob([lines.join('\n')], { type: 'application/gpx+xml' });
-  karteDateiAusgeben(blob, 'SVLaubrechte_Tour_'+today+'.gpx', (t.length-1)+' Stopps als GPX exportiert');
+  karteDateiAusgeben(blob, 'SVLaubrechte_Tour_'+stamp+'.gpx', (t.length-1)+' Stopps als GPX exportiert');
 }
 
 function karteOpenInMaps(){
