@@ -2320,6 +2320,9 @@ function karteInit(){
   karteState.map = L.map('map').setView([52.2057, 7.1898], 12);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
+    // CORS statt "opaque": der Service Worker kann Fehler erkennen, und der
+    // Browser rechnet die Kacheln mit echter Größe auf den Speicher an.
+    crossOrigin: true,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
   }).addTo(karteState.map);
   karteLoadGeocache();
