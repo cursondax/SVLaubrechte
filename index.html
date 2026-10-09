@@ -2781,15 +2781,17 @@ function karteExportGPX(){
       + '<desc>'+xe(desc)+'</desc>'
       + '<sym>Flag, Blue</sym></wpt>');
   }
-  // Route — Reihenfolge der Stopps
-  lines.push('  <rte><name>'+xe(name)+'</name>');
-  lines.push('    <rtept lat="'+t[0].lat+'" lon="'+t[0].lng+'"><name>Start</name></rtept>');
-  for (var j = 1; j < t.length; j++) {
-    lines.push('    <rtept lat="'+t[j].lat+'" lon="'+t[j].lng+'"><name>'+xe(stopLabel(j))+'</name></rtept>');
+  // Strecke als Track (trk) — komoot legt nur aus einem Track eine Tour an,
+  // eine reine Route (rte) ignoriert es. OsmAnd und Garmin lesen Tracks ebenso.
+  lines.push('  <trk><name>'+xe(name)+'</name><trkseg>');
+  for (var j = 0; j < t.length; j++) {
+    lines.push('    <trkpt lat="'+t[j].lat+'" lon="'+t[j].lng+'"></trkpt>');
   }
-  lines.push('  </rte>');
+  lines.push('  </trkseg></trk>');
   lines.push('</gpx>');
-  var blob = new Blob([lines.join('\n')], { type: 'application/gpx+xml' });
+  // Ohne MIME-Typ leitet iOS den Typ aus der Endung .gpx ab, sodass komoot/OsmAnd
+  // direkt im Teilen-Menü erscheinen.
+  var blob = new Blob([lines.join('\n')], { type: '' });
   karteDateiAusgeben(blob, 'SVLaubrechte_Tour_'+today+'.gpx', (t.length-1)+' Stopps als GPX exportiert');
 }
 
