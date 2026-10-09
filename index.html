@@ -2799,21 +2799,25 @@ function karteDateiAusgeben(blob, filename, okMsg){
         toast(okMsg);
       }).catch(function(e){
         if (e && e.name === 'AbortError') return;   // Nutzer hat das Teilen-Menü geschlossen
-        karteDateiDownload(blob, filename, okMsg);
+        // Download-Versuch bleibt, aber Hinweis zeigen: auf iOS scheitert er sonst stumm
+        karteDateiDownload(blob, filename,
+          'Teilen hat nicht geklappt ('+((e && e.name) || 'Fehler')+') – Download versucht', true);
       });
       return;
     }
+    karteDateiDownload(blob, filename, 'Teilen-Menü für diese Datei nicht verfügbar – Download versucht', true);
+    return;
   }
   karteDateiDownload(blob, filename, okMsg);
 }
 
-function karteDateiDownload(blob, filename, okMsg){
+function karteDateiDownload(blob, filename, okMsg, warn){
   var a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = filename;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
-  toast(okMsg);
+  toast(okMsg, warn);
 }
 
 function karteExportGPX(){
@@ -2857,9 +2861,8 @@ function karteExportGPX(){
   }
   lines.push('  </trkseg></trk>');
   lines.push('</gpx>');
-  // Ohne MIME-Typ leitet iOS den Typ aus der Endung .gpx ab, sodass komoot/OsmAnd
-  // direkt im Teilen-Menü erscheinen.
-  var blob = new Blob([lines.join('\n')], { type: '' });
+  // Achtung: ohne MIME-Typ verweigert iOS das Teilen-Menü (getestet 10/2026).
+  var blob = new Blob([lines.join('\n')], { type: 'application/gpx+xml' });
   karteDateiAusgeben(blob, 'SVLaubrechte_Tour_'+today+'.gpx', (t.length-1)+' Stopps als GPX exportiert');
 }
 
