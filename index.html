@@ -1232,6 +1232,12 @@ function init(){
       }
       try{localStorage.setItem('sgO_migratedFrauenOhneBezirk','1');}catch(e){}
     }
+  } else {
+    // Leer gestartet (neues Geraet): alles, was spaeter kommt, stammt vom Server
+    // oder aus einem Import und ist schon bereinigt. Ohne diese Markierung lief
+    // die Migration beim naechsten Start auf den Serverdaten und entfernte
+    // bewusst vergebene Bezirke.
+    try{localStorage.setItem('sgO_migratedFrauenOhneBezirk','1');}catch(e){}
   }
   renderAll();
   updateSaveInfo();
@@ -3130,6 +3136,8 @@ function syncApplyServerData(data, opts){
   }
   members = data.members.map(function(m,i){m.nr=i+1;return m;});
   nextNr = members.length+1;
+  // Serverdaten sind bereits bereinigt -> einmalige Frauen-Migration nie darauf anwenden
+  try{localStorage.setItem('sgO_migratedFrauenOhneBezirk','1');}catch(e){}
   migrateGebdat(); // Serverdaten koennen noch Altformat "01.02.1970" enthalten
   // Optionale Felder mitnehmen
   if(data.geocache){
@@ -3138,11 +3146,13 @@ function syncApplyServerData(data, opts){
   if(data.excluded){
     try{localStorage.setItem('sgO_excluded',JSON.stringify(data.excluded));}catch(e){}
   }
-  if(data.start){
-    try{localStorage.setItem('sgO_start',data.start);}catch(e){}
+  // Startadresse: Feld vorhanden (auch leer) -> uebernehmen; fehlt es (aeltere
+  // Serverdaten), lokalen Wert behalten
+  if('start' in data){
+    try{if(data.start)localStorage.setItem('sgO_start',data.start);else localStorage.removeItem('sgO_start');}catch(e){}
   }
-  if(data.start_coord){
-    try{localStorage.setItem('sgO_start_coord',JSON.stringify(data.start_coord));}catch(e){}
+  if('start_coord' in data){
+    try{if(data.start_coord)localStorage.setItem('sgO_start_coord',JSON.stringify(data.start_coord));else localStorage.removeItem('sgO_start_coord');}catch(e){}
   }
   // Schuetzenkoenige uebernehmen
   if(Array.isArray(data.kings)){
@@ -3173,10 +3183,14 @@ function syncDisconnect(){
 
 function syncCollectPayload(){
   var pl = {members: members};
-  if(Array.isArray(kings) && kings.length) pl.kings = kings;
+  // Koenige und Startadresse IMMER mitschicken, auch leer: sonst fehlt das Feld
+  // nach dem Loeschen, andere Geraete behalten ihren alten Stand und laden ihn
+  // beim naechsten Speichern wieder hoch.
+  pl.kings = Array.isArray(kings) ? kings : [];
   try{var g=localStorage.getItem('sgO_geocache');if(g)pl.geocache=JSON.parse(g);}catch(e){}
   try{var x=localStorage.getItem('sgO_excluded');if(x)pl.excluded=JSON.parse(x);}catch(e){}
-  var s = localStorage.getItem('sgO_start');if(s)pl.start = s;
+  pl.start = localStorage.getItem('sgO_start') || '';
+  pl.start_coord = null;
   try{var sc=localStorage.getItem('sgO_start_coord');if(sc)pl.start_coord=JSON.parse(sc);}catch(e){}
   pl.client_ts = localStorage.getItem('sgO_saved') || new Date().toISOString();
   // Konfliktschutz: auf welchem Server-Stand beruhen diese Daten?
