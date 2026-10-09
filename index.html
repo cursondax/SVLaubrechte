@@ -2719,12 +2719,37 @@ function karteExportKML(){
   L.push('</kml>');
 
   var blob = new Blob([L.join('\n')], { type: 'application/vnd.google-earth.kml+xml' });
+  karteDateiAusgeben(blob, 'SVLaubrechte_Adressen_'+today+'.kml',
+    groups.length+' Adressen ('+withGeo.length+' Personen) als KML exportiert');
+}
+
+function karteDateiAusgeben(blob, filename, okMsg){
+  // Auf Handy/Tablet über das Teilen-Menü: iOS ignoriert Blob-Downloads in der
+  // Home-Bildschirm-App stillschweigend. Über "Teilen" geht die Datei direkt an
+  // komoot/OsmAnd oder "In Dateien sichern". Am PC normaler Download.
+  var touch = window.matchMedia && window.matchMedia('(pointer:coarse)').matches;
+  if (touch && navigator.share && navigator.canShare && typeof File === 'function') {
+    var file = new File([blob], filename, { type: blob.type });
+    if (navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file], title: filename }).then(function(){
+        toast(okMsg);
+      }).catch(function(e){
+        if (e && e.name === 'AbortError') return;   // Nutzer hat das Teilen-Menü geschlossen
+        karteDateiDownload(blob, filename, okMsg);
+      });
+      return;
+    }
+  }
+  karteDateiDownload(blob, filename, okMsg);
+}
+
+function karteDateiDownload(blob, filename, okMsg){
   var a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'SVLaubrechte_Adressen_'+today+'.kml';
+  a.download = filename;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
-  toast(groups.length+' Adressen ('+withGeo.length+' Personen) als KML exportiert');
+  toast(okMsg);
 }
 
 function karteExportGPX(){
@@ -2765,12 +2790,7 @@ function karteExportGPX(){
   lines.push('  </rte>');
   lines.push('</gpx>');
   var blob = new Blob([lines.join('\n')], { type: 'application/gpx+xml' });
-  var a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'SVLaubrechte_Tour_'+today+'.gpx';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
-  toast((t.length-1)+' Stopps als GPX exportiert');
+  karteDateiAusgeben(blob, 'SVLaubrechte_Tour_'+today+'.gpx', (t.length-1)+' Stopps als GPX exportiert');
 }
 
 function karteOpenInMaps(){
