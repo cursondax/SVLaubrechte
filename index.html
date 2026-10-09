@@ -1192,6 +1192,7 @@ function init(){
   members = [];
   nextNr = 1;
   kings = [];
+  slimSnapshots();
   try{
     var raw=localStorage.getItem('sgO_members');
     if(raw){var s=JSON.parse(raw);if(Array.isArray(s)){members=s;nextNr=members.length+1;}}
@@ -1685,8 +1686,27 @@ function deleteMember(){
 // persist() ist die ZENTRALE Speicherfunktion. Jede Mutation an `members`
 // MUSS sie aufrufen. Schreibt sofort in localStorage und legt – throttled –
 // einen Snapshot in sgO_snapshots an, damit nichts verloren geht.
-var SNAP_KEY='sgO_snapshots', SNAP_MAX=20, SNAP_THROTTLE_MS=30000;
+// Lokale Snapshots OHNE Fotos und hoechstens 10: Fotos lagen sonst 21-fach im
+// Browserspeicher (~5 MB Limit), dann scheiterte sogar das Speichern der Liste.
+// Die Fotos stehen in der aktuellen Liste und auf dem Server.
+var SNAP_KEY='sgO_snapshots', SNAP_MAX=10, SNAP_THROTTLE_MS=30000;
 var lastSnapTs=0;
+
+function snapMembers(list){
+  return list.map(function(m){ var c=Object.assign({},m); delete c.foto; return c; });
+}
+
+// Einmalig beim Start: alte Snapshots (mit Fotos, bis zu 20) verkleinern
+function slimSnapshots(){
+  try{
+    var raw=localStorage.getItem(SNAP_KEY); if(!raw) return;
+    var snaps=JSON.parse(raw);
+    var fat = snaps.length>SNAP_MAX || snaps.some(function(s){ return (s.members||[]).some(function(m){ return m.foto; }); });
+    if(!fat) return;
+    snaps=snaps.slice(-SNAP_MAX).map(function(s){ s.members=snapMembers(s.members||[]); return s; });
+    localStorage.setItem(SNAP_KEY,JSON.stringify(snaps));
+  }catch(e){ try{localStorage.removeItem(SNAP_KEY);}catch(e2){} }
+}
 
 function persist(opts){
   // opts.snapshot: 'auto' (default, throttle), 'force' (immer Snapshot), 'skip' (nur speichern)
@@ -1694,13 +1714,29 @@ function persist(opts){
   try{
     localStorage.setItem('sgO_members',JSON.stringify(members));
     localStorage.setItem('sgO_saved',new Date().toISOString());
-  }catch(e){toast('Speicher voll: '+e.message,true);updateSaveInfo();return;}
+  }catch(e){
+    // Speicher voll: lokale Snapshots opfern und nochmal versuchen. Der Upload
+    // zum Server laeuft in jedem Fall, damit die Aenderung nicht verloren geht.
+    var ok=false;
+    try{
+      localStorage.removeItem(SNAP_KEY);
+      localStorage.setItem('sgO_members',JSON.stringify(members));
+      localStorage.setItem('sgO_saved',new Date().toISOString());
+      ok=true;
+    }catch(e2){}
+    if(!ok){
+      toast('Speicher auf diesem Gerät voll – Änderung wird nur auf den Server gesichert',true);
+      updateSaveInfo();
+      if(typeof syncTriggerPush==='function')syncTriggerPush();
+      return;
+    }
+  }
   var mode=opts.snapshot||'auto';
   var now=Date.now();
   if(mode!=='skip' && (mode==='force' || (now-lastSnapTs)>=SNAP_THROTTLE_MS)){
     try{
       var snaps=JSON.parse(localStorage.getItem(SNAP_KEY)||'[]');
-      snaps.push({ts:new Date().toISOString(),count:members.length,members:JSON.parse(JSON.stringify(members))});
+      snaps.push({ts:new Date().toISOString(),count:members.length,members:snapMembers(members)});
       if(snaps.length>SNAP_MAX)snaps=snaps.slice(-SNAP_MAX);
       localStorage.setItem(SNAP_KEY,JSON.stringify(snaps));
       lastSnapTs=now;
@@ -1772,8 +1808,20 @@ function restoreSnapshot(idx){
   var s=snaps[idx];if(!s)return;
   if(!confirm('Snapshot vom '+new Date(s.ts).toLocaleString('de-DE')+' ('+s.count+' Einträge) wiederherstellen?\n\nDer aktuelle Stand wird vorher als neuer Snapshot gesichert.'))return;
   persist({snapshot:'force'});
+  // Snapshots enthalten keine Fotos -> aktuelle Fotos per Name/Vorname/Strasse uebernehmen
+  // (zweiter Versuch ueber Vorname/Strasse/PLZ, falls der Nachname seitdem geaendert wurde)
+  var fotoOf={}, fotoAlt={};
+  members.forEach(function(m){
+    if(!m.foto) return;
+    fotoOf[(m.name||'')+'|'+(m.vor||'')+'|'+(m.str||'')]=m.foto;
+    fotoAlt[(m.vor||'')+'|'+(m.str||'')+'|'+(m.plz||'')]=m.foto;
+  });
   members=JSON.parse(JSON.stringify(s.members));
-  members.forEach(function(m,i){m.nr=i+1;});
+  members.forEach(function(m,i){
+    m.nr=i+1;
+    var f=fotoOf[(m.name||'')+'|'+(m.vor||'')+'|'+(m.str||'')] || fotoAlt[(m.vor||'')+'|'+(m.str||'')+'|'+(m.plz||'')];
+    if(f && !m.foto) m.foto=f;
+  });
   nextNr=members.length+1;renderAll();
   persist({snapshot:'skip'});
   toast('Snapshot wiederhergestellt: '+s.count+' Einträge');
