@@ -1723,6 +1723,11 @@ function zuruecksetzen(){
   msg += 'Ein letzter Sicherungs-Snapshot wird vorher angelegt.';
   if(!confirm(msg)) return;
   persist({snapshot:'force'});
+  // persist() hat einen Upload angestossen, der erst NACH dem Leeren laufen
+  // wuerde und dann eine leere Liste auf den Server schriebe. Abbrechen und
+  // Versionsstand vergessen, damit der naechste Abgleich vom Server laedt.
+  if(typeof syncPushTimer!=='undefined' && syncPushTimer){clearTimeout(syncPushTimer);syncPushTimer=null;}
+  if(typeof syncSetDirty==='function'){ syncSetDirty(false); syncSetRev(null); }
   localStorage.removeItem('sgO_members');
   localStorage.removeItem('sgO_saved');
   members = [];
@@ -2926,10 +2931,25 @@ var syncInFlight   = null;     // Promise des laufenden Uploads (null = kein Upl
 var syncFollowUp   = null;     // Promise eines nachgelagerten Uploads, der nach dem laufenden startet
 var syncChangeSeq  = 0;        // Zaehler: wird bei JEDER Aenderung erhoeht
 var syncLastError  = '';
+// Konfliktschutz zwischen Geraeten: rev = Versionsnummer des Server-Stands, auf
+// dem die lokalen Daten beruhen. dirty = lokale Aenderungen, die noch nicht auf
+// dem Server sind (ueberlebt Neustart der App).
+var SYNC_REV_KEY   = 'sgO_syncRev';
+var SYNC_DIRTY_KEY = 'sgO_syncDirty';
+var SYNC_CHECK_MS  = 15000;    // Abgleich beim Zurueckkehren in die App hoechstens alle 15 s
+var syncConflictOpen = false;  // Konflikt-Dialog laeuft gerade -> keine weiteren Uploads
+var syncLastCheck  = 0;
 
 function syncGetUrl(){return localStorage.getItem(SYNC_URL_KEY)||'';}
 function syncGetToken(){return localStorage.getItem(SYNC_TOKEN_KEY)||'';}
 function syncIsConfigured(){return syncGetUrl()&&syncGetToken();}
+function syncGetRev(){var r=localStorage.getItem(SYNC_REV_KEY);return (r===null||r==='')?null:parseInt(r,10);}
+function syncSetRev(r){try{if(r===null||r===undefined)localStorage.removeItem(SYNC_REV_KEY);else localStorage.setItem(SYNC_REV_KEY,String(r));}catch(e){}}
+function syncSetDirty(on){
+  syncPendingDirty = !!on;
+  try{if(on)localStorage.setItem(SYNC_DIRTY_KEY,'1');else localStorage.removeItem(SYNC_DIRTY_KEY);}catch(e){}
+}
+try{ if(localStorage.getItem(SYNC_DIRTY_KEY)) syncPendingDirty = true; }catch(e){}
 
 function syncSetStatus(state, msg){
   // state: '', 'ok', 'busy', 'warn', 'err'
@@ -3073,12 +3093,14 @@ function syncSaveSetup(){
             syncShowSetupStatus('✔ '+serverCount+' Einträge vom Server geladen.','ok');
           } else {
             syncShowSetupStatus('⏳ Lokale Daten werden hochgeladen…','info');
-            return syncPush().then(function(){
+            syncSetRev(data.rev||0);   // bewusste Entscheidung: Server-Stand ersetzen
+            return syncPush({force:true}).then(function(){
               syncShowSetupStatus('✔ Lokale Daten ('+members.length+') auf Server gesichert.','ok');
             });
           }
         } else {
           syncShowSetupStatus('⏳ Lokale Daten sind neuer, werden hochgeladen…','info');
+          syncSetRev(data.rev||0);
           return syncPush().then(function(){
             syncShowSetupStatus('✔ Verbunden und gesichert ('+members.length+' Einträge).','ok');
           });
@@ -3093,8 +3115,15 @@ function syncSaveSetup(){
     });
 }
 
-function syncApplyServerData(data){
+function syncApplyServerData(data, opts){
+  // opts.keepRev: Versionsnummer NICHT uebernehmen (Snapshot-Wiederherstellung:
+  // der Snapshot traegt eine alte rev, der Stand wird danach ohnehin hochgeladen)
+  opts = opts || {};
   if(!data || !Array.isArray(data.members))return;
+  if(!opts.keepRev){
+    syncSetRev(data.rev||0);
+    syncSetDirty(false);
+  }
   members = data.members.map(function(m,i){m.nr=i+1;return m;});
   nextNr = members.length+1;
   migrateGebdat(); // Serverdaten koennen noch Altformat "01.02.1970" enthalten
@@ -3131,6 +3160,8 @@ function syncDisconnect(){
   localStorage.removeItem(SYNC_URL_KEY);
   localStorage.removeItem(SYNC_TOKEN_KEY);
   localStorage.removeItem(SYNC_LASTOK);
+  syncSetRev(null);
+  syncSetDirty(false);
   syncLastError = '';
   syncSetStatus('','Sync aus');
   toast('Cloud-Sync getrennt');
@@ -3144,6 +3175,9 @@ function syncCollectPayload(){
   var s = localStorage.getItem('sgO_start');if(s)pl.start = s;
   try{var sc=localStorage.getItem('sgO_start_coord');if(sc)pl.start_coord=JSON.parse(sc);}catch(e){}
   pl.client_ts = localStorage.getItem('sgO_saved') || new Date().toISOString();
+  // Konfliktschutz: auf welchem Server-Stand beruhen diese Daten?
+  var rev = syncGetRev();
+  if(rev !== null) pl.base_rev = rev;
   return pl;
 }
 
@@ -3155,6 +3189,7 @@ function syncCollectPayload(){
 function syncPush(opts){
   opts = opts || {};
   if(!syncIsConfigured())return Promise.resolve();
+  if(syncConflictOpen)return Promise.resolve();   // erst Konflikt klaeren
   if(syncInFlight && !opts.keepalive){
     if(!syncFollowUp){
       syncFollowUp = syncInFlight.then(function(){
@@ -3167,6 +3202,7 @@ function syncPush(opts){
   if(!opts.keepalive) syncSetStatus('busy','Sichere…');
   var sentSeq = syncChangeSeq;   // welcher Aenderungsstand steckt in diesem Upload?
   var payload = syncCollectPayload();
+  if(opts.force) payload.force = true;
   var fetchOpts = {
     method:'POST',
     headers:{
@@ -3179,25 +3215,33 @@ function syncPush(opts){
   if(opts.keepalive) fetchOpts.keepalive = true;
   var p = fetch(syncGetUrl(), fetchOpts).then(function(res){
     if(res.status===401)throw new Error('Token ungültig');
+    if(res.status===409){var c=new Error('Konflikt');c.conflict=true;throw c;}
     if(!res.ok)throw new Error('HTTP '+res.status);
     return res.json();
   }).then(function(data){
     syncLastError = '';
     localStorage.setItem(SYNC_LASTOK, new Date().toISOString());
+    if(data && data.rev!=null) syncSetRev(data.rev);
     // Falls Retry-Timer lief: stoppen
     if(syncRetryTimer){clearTimeout(syncRetryTimer);syncRetryTimer=null;}
     // Nur "synchron", wenn waehrend des Uploads KEINE weitere Aenderung kam
     if(syncChangeSeq === sentSeq){
-      syncPendingDirty = false;
+      syncSetDirty(false);
       syncSetStatus('ok','✔ Synchron');
     } else {
-      syncPendingDirty = true;
+      syncSetDirty(true);
       syncSetStatus('busy','⏳ Weitere Änderung wird gesichert…');
     }
     renderSyncCard();
   }).catch(function(err){
+    if(err && err.conflict){
+      // Anderes Geraet hat inzwischen gespeichert. Beim Schliessen der App
+      // (keepalive) nicht fragen – dirty bleibt gemerkt, Klaerung beim naechsten Start.
+      if(!opts.keepalive) syncHandleConflict();
+      return;
+    }
     syncLastError = err.message || 'Sync fehlgeschlagen';
-    syncPendingDirty = true;
+    syncSetDirty(true);
     syncSetStatus('warn','⚠ Offline – Retry in '+Math.round(SYNC_RETRY_MS/1000)+'s');
     renderSyncCard();
     // Retry planen
@@ -3212,7 +3256,7 @@ function syncPush(opts){
     syncInFlight = null;
     // Sicherheitsnetz: Aenderung kam waehrend des Uploads, aber weder Timer
     // noch Folge-Upload sind geplant -> jetzt nachschieben.
-    if(syncPendingDirty && !syncLastError && !syncPushTimer && !syncFollowUp){
+    if(syncPendingDirty && !syncLastError && !syncPushTimer && !syncFollowUp && !syncConflictOpen){
       syncPushTimer = setTimeout(function(){syncPushTimer=null;syncPush();}, SYNC_DEBOUNCE);
     }
   });
@@ -3222,7 +3266,7 @@ function syncPush(opts){
 function syncTriggerPush(){
   if(!syncIsConfigured())return;
   syncChangeSeq++;
-  syncPendingDirty = true;
+  syncSetDirty(true);
   // Sofort sichtbares Feedback dass eine Aenderung registriert wurde
   syncSetStatus('busy','⏳ Aenderung wird gesichert…');
   if(syncPushTimer)clearTimeout(syncPushTimer);
@@ -3247,41 +3291,117 @@ function syncManualPush(){
   });
 }
 
-function syncBootstrap(){
-  if(!syncIsConfigured()){syncSetStatus('','Sync aus');return;}
-  syncSetStatus('busy','Verbinde…');
-  fetch(syncGetUrl(),{method:'GET',headers:{'Authorization':'Bearer '+syncGetToken()}})
+function syncFetchJson(query){
+  return fetch(syncGetUrl()+(query||''),{method:'GET',headers:{'Authorization':'Bearer '+syncGetToken()}})
     .then(function(res){
       if(res.status===401)throw new Error('Token ungültig');
       if(!res.ok)throw new Error('HTTP '+res.status);
       return res.json();
-    })
+    });
+}
+
+function syncBootstrap(){
+  if(!syncIsConfigured()){syncSetStatus('','Sync aus');return;}
+  syncSetStatus('busy','Verbinde…');
+  syncCheckServer(false);
+}
+
+// Abgleich mit dem Server. headOnly: erst nur die Versionsnummer holen
+// (beim Zurueckkehren in die App), volle Daten nur wenn noetig.
+function syncCheckServer(headOnly){
+  syncLastCheck = Date.now();
+  return syncFetchJson(headOnly ? '?action=head' : '')
     .then(function(data){
       syncLastError = '';
       if(data && data.empty){
         // Server leer -> lokale Daten pushen
-        return syncPush();
+        return members.length ? syncPush() : null;
       }
-      if(data && data.members){
-        var serverTs = data.server_ts;
-        var localTs = localStorage.getItem('sgO_saved');
-        var serverNewer = (!localTs) || (serverTs && new Date(serverTs).getTime() > new Date(localTs).getTime());
-        if(serverNewer){
-          syncApplyServerData(data);
-          toast('✔ Daten vom Server geladen ('+data.members.length+' Einträge)');
-        } else {
-          // Lokal ist neuer -> pushen
-          return syncPush();
-        }
+      var localRev = syncGetRev();
+      // Server ohne Versionsnummer (alte api.php) oder erster Start nach dem
+      // Update: wie frueher nach Zeitstempel entscheiden.
+      if(localRev === null || data.rev == null){
+        return syncLegacyDecide(data);
       }
-      syncSetStatus('ok','✔ Synchron');
-      renderSyncCard();
+      if(data.rev === localRev){
+        if(syncPendingDirty) return syncPush();   // nur wir haben Neues
+        syncSetStatus('ok','✔ Synchron');
+        renderSyncCard();
+        return null;
+      }
+      // Server hat einen neueren Stand von einem anderen Geraet
+      if(syncPendingDirty) return syncHandleConflict();
+      var full = data.members ? Promise.resolve(data) : syncFetchJson('');
+      return full.then(function(d){
+        syncApplyServerData(d);
+        toast('✔ Neuer Stand vom Server geladen ('+d.members.length+' Einträge)');
+        syncSetStatus('ok','✔ Synchron');
+        renderSyncCard();
+      });
     })
     .catch(function(err){
       syncLastError = err.message || 'Verbindung fehlgeschlagen';
       syncSetStatus('warn','⚠ Offline');
       renderSyncCard();
     });
+}
+
+function syncLegacyDecide(data){
+  var full = data.members ? Promise.resolve(data) : syncFetchJson('');
+  return full.then(function(d){
+    if(!d || !d.members){ return members.length ? syncPush() : null; }
+    var serverTs = d.server_ts;
+    var localTs = localStorage.getItem('sgO_saved');
+    var serverNewer = (!localTs) || (serverTs && new Date(serverTs).getTime() > new Date(localTs).getTime());
+    if(serverNewer){
+      syncApplyServerData(d);
+      toast('✔ Daten vom Server geladen ('+d.members.length+' Einträge)');
+      syncSetStatus('ok','✔ Synchron');
+      renderSyncCard();
+      return null;
+    }
+    // Lokal ist neuer -> auf den aktuellen Server-Stand aufsetzen und pushen
+    syncSetRev(d.rev != null ? d.rev : null);
+    return syncPush();
+  });
+}
+
+// Beide Seiten haben Aenderungen: Bert entscheidet, welcher Stand gilt.
+function syncHandleConflict(){
+  if(syncConflictOpen) return Promise.resolve();
+  syncConflictOpen = true;
+  if(syncPushTimer){clearTimeout(syncPushTimer);syncPushTimer=null;}
+  if(syncRetryTimer){clearTimeout(syncRetryTimer);syncRetryTimer=null;}
+  syncSetStatus('warn','⚠ Konflikt');
+  return syncFetchJson('').then(function(d){
+    var when = d.server_ts ? new Date(d.server_ts).toLocaleString('de-DE') : 'unbekannt';
+    var takeServer = confirm(
+      'Auf einem anderen Gerät wurde inzwischen gespeichert\n'+
+      '(Stand vom '+when+', '+(d.members?d.members.length:'?')+' Einträge).\n'+
+      'Auf diesem Gerät gibt es Änderungen, die noch nicht auf dem Server sind ('+members.length+' Einträge).\n\n'+
+      '[OK] = Stand vom Server übernehmen\n'+
+      '         (die Änderungen auf DIESEM Gerät gehen verloren)\n'+
+      '[Abbrechen] = Stand von diesem Gerät hochladen\n'+
+      '         (der Server-Stand bleibt als Snapshot erhalten)'
+    );
+    syncConflictOpen = false;
+    if(takeServer){
+      syncApplyServerData(d);
+      toast('✔ Stand vom Server übernommen ('+d.members.length+' Einträge)');
+      syncSetStatus('ok','✔ Synchron');
+      renderSyncCard();
+      return null;
+    }
+    syncSetRev(d.rev||0);
+    return syncPush({force:true}).then(function(){
+      if(!syncLastError) toast('✔ Stand von diesem Gerät hochgeladen');
+    });
+  }).catch(function(err){
+    syncConflictOpen = false;
+    syncLastError = err.message || 'Verbindung fehlgeschlagen';
+    syncSetStatus('warn','⚠ Offline');
+    renderSyncCard();
+  });
 }
 
 // Periodisch Status-Anzeige refreshen (Zeitstempel altert)
@@ -3293,7 +3413,12 @@ setInterval(function(){if(syncIsConfigured())renderSyncCard();}, 30000);
 window.addEventListener('pagehide', function(){syncFlushNow();});
 window.addEventListener('beforeunload', function(){syncFlushNow();});
 document.addEventListener('visibilitychange', function(){
-  if(document.visibilityState === 'hidden') syncFlushNow();
+  if(document.visibilityState === 'hidden'){ syncFlushNow(); return; }
+  // Zurueck in der App: hat ein anderes Geraet inzwischen gespeichert?
+  if(syncIsConfigured() && !syncInFlight && !syncPushTimer && !syncConflictOpen
+     && Date.now()-syncLastCheck > SYNC_CHECK_MS){
+    syncCheckServer(true);
+  }
 });
 
 // === Server-Snapshots =====================================================
@@ -3355,8 +3480,8 @@ function syncRestoreSnapshot(name, label, count){
     return r.json();
   }).then(function(data){
     if(!data || !Array.isArray(data.members)) throw new Error('Snapshot enthält keine Mitgliederliste');
-    // 3. Snapshot-Daten anwenden
-    syncApplyServerData(data);
+    // 3. Snapshot-Daten anwenden (dessen alte rev nicht uebernehmen, sonst 409)
+    syncApplyServerData(data, {keepRev:true});
     // 4. Diesen Stand als neuen current.json pushen, damit andere Geräte ihn ebenfalls bekommen
     return syncPush();
   }).then(function(){

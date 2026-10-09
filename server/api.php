@@ -4,8 +4,15 @@
  *
  * Endpoints:
  *   GET  /api.php          -> aktuelle Daten laden
+ *   GET  /api.php?action=head -> nur Version (rev, server_ts, count), ohne Daten
  *   POST /api.php          -> Daten speichern (+ Snapshot)
  *   OPTIONS /api.php       -> CORS-Preflight
+ *
+ * Konfliktschutz: Jeder gespeicherte Stand bekommt eine laufende Nummer "rev".
+ * Schickt die App "base_rev" mit und passt das nicht zum aktuellen Stand
+ * (ein anderes Geraet hat inzwischen gespeichert), antwortet der Server mit
+ * 409 statt zu ueberschreiben. "force": true ueberschreibt bewusst.
+ * Ohne base_rev (aeltere App-Versionen) wird wie frueher gespeichert.
  *
  * Auth: Bearer-Token im Authorization-Header.
  * Daten: data/current.json + data/snapshots/snap-YYYYMMDD-HHMMSS.json (max 10)
@@ -118,7 +125,27 @@ if (!is_file($guard)) {
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $action = $_GET['action'] ?? '';
 
+// Kopfdaten des aktuellen Stands (rev, server_ts, count) oder null
+function read_head($current) {
+    if (!is_file($current)) return null;
+    $raw = @file_get_contents($current);
+    if ($raw === false) return null;
+    $d = json_decode($raw, true);
+    if (!is_array($d)) return null;
+    return [
+        'rev'       => isset($d['rev']) ? (int) $d['rev'] : 0,
+        'server_ts' => $d['server_ts'] ?? null,
+        'count'     => isset($d['members']) && is_array($d['members']) ? count($d['members']) : ($d['count'] ?? null),
+    ];
+}
+
 if ($method === 'GET') {
+    // --- Nur Version abfragen (fuer schnellen Abgleich ohne Datenmenge) -----
+    if ($action === 'head') {
+        $head = read_head($current);
+        echo json_encode($head ? $head : ['empty' => true, 'rev' => 0], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
     // --- Snapshot-Liste -----------------------------------------------------
     if ($action === 'list_snapshots') {
         $snaps = glob($snap_dir . '/snap-*.json') ?: [];
@@ -197,7 +224,31 @@ if ($method === 'POST') {
         fail(400, 'Feld "members" fehlt oder ist kein Array.');
     }
 
+    // Sperre: Pruefen und Schreiben duerfen sich zwischen zwei Geraeten nicht
+    // ueberschneiden. Wird beim Skriptende automatisch freigegeben.
+    $lock = @fopen($data_dir . '/.lock', 'c');
+    if ($lock) { flock($lock, LOCK_EX); }
+
+    $head     = read_head($current);
+    $cur_rev  = $head ? $head['rev'] : 0;
+    $force    = !empty($payload['force']);
+    $has_base = array_key_exists('base_rev', $payload) && $payload['base_rev'] !== null;
+    if ($head && $has_base && !$force && (int) $payload['base_rev'] !== $cur_rev) {
+        http_response_code(409);
+        echo json_encode([
+            'error'     => 'Auf dem Server liegt inzwischen ein neuerer Stand.',
+            'conflict'  => true,
+            'rev'       => $cur_rev,
+            'server_ts' => $head['server_ts'],
+            'count'     => $head['count'],
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    // Steuerfelder nicht mit abspeichern
+    unset($payload['base_rev'], $payload['force']);
+
     // Server-Zeitstempel einsetzen (UTC ISO-8601)
+    $payload['rev']       = $cur_rev + 1;
     $payload['server_ts'] = gmdate('Y-m-d\TH:i:s\Z');
     $payload['count']     = count($payload['members']);
     $serialized = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -231,6 +282,7 @@ if ($method === 'POST') {
 
     echo json_encode([
         'ok'        => true,
+        'rev'       => $payload['rev'],
         'server_ts' => $payload['server_ts'],
         'count'     => $payload['count'],
         'bytes'     => $written,
