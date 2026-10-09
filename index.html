@@ -2795,7 +2795,9 @@ function karteDateiAusgeben(blob, filename, okMsg){
   if (touch && navigator.share && navigator.canShare && typeof File === 'function') {
     var file = new File([blob], filename, { type: blob.type });
     if (navigator.canShare({ files: [file] })) {
-      navigator.share({ files: [file], title: filename }).then(function(){
+      // Nur die Datei teilen, kein title/text: iOS macht sonst "2 Objekte" daraus,
+      // und Apps wie komoot erscheinen dann nicht im Teilen-Menü.
+      navigator.share({ files: [file] }).then(function(){
         toast(okMsg);
       }).catch(function(e){
         if (e && e.name === 'AbortError') return;   // Nutzer hat das Teilen-Menü geschlossen
