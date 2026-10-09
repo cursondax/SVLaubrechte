@@ -880,7 +880,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
           <span>&middot;</span>
           <span><strong id="k-stat-tour">&ndash;</strong> Stopps in Tour</span>
           <span>&middot;</span>
-          <span>Gesamt: <strong id="k-stat-km">&ndash;</strong> km Luftlinie</span>
+          <span>Gesamt: <strong id="k-stat-km">&ndash;</strong> km <span id="k-stat-km-art">Luftlinie</span></span>
         </div>
         <div class="map-progress" id="k-progress" style="display:none"><span style="width:0%"></span></div>
 
@@ -2394,6 +2394,7 @@ function karteApplyFilter(){
   karteState.markers.forEach(function(mk){ karteState.map.removeLayer(mk); });
   karteState.markers = [];
   if (karteState.routeLayer) { karteState.map.removeLayer(karteState.routeLayer); karteState.routeLayer = null; }
+  karteResetRoadRoute();
   // Tour-Liste nur verstecken wenn nicht aktiv UND keine Excluded
   if (!karteState.tour && !Object.keys(karteState.excluded).length) {
     document.getElementById('tour-list').style.display = 'none';
@@ -2644,6 +2645,66 @@ function karteCalcRoute(){
   karteState.tour = tour;
   karteRenderExcludedBox();
   toast('Route berechnet: '+order.length+' Stopps · '+totalPersons+' Personen · '+totalKm.toFixed(1)+' km Luftlinie');
+  karteFetchRoadRoute(tour);
+}
+
+// ── Fahrradstrecke über echte Wege (OSRM, routing.openstreetmap.de) ──
+// Die Reihenfolge der Stopps rechnet weiter die App selbst (Luftlinie, offline).
+// Danach holen wir für genau diese Reihenfolge die Strecke über Straßen/Radwege.
+// Es gehen nur Koordinaten raus, keine Namen/Adressen. Ohne Netz bleibt's bei Luftlinie.
+var KARTE_ROUTING_URL = 'https://routing.openstreetmap.de/routed-bike/route/v1/bike/';
+var KARTE_ROUTING_CHUNK = 50;   // Punkte pro Anfrage; längere Touren in Teilstücken
+
+function karteResetRoadRoute(){
+  karteState.roadRoute = null;
+  karteState.roadReq = (karteState.roadReq || 0) + 1;   // laufende Anfragen verwerfen
+  var art = document.getElementById('k-stat-km-art');
+  if (art) art.textContent = 'Luftlinie';
+}
+
+function karteFetchRoadRoute(tour){
+  karteResetRoadRoute();
+  var reqId = karteState.roadReq;
+  // Teilstücke mit einem Punkt Überlappung, damit die Strecke durchgehend ist
+  var chunks = [];
+  for (var s = 0; s < tour.length - 1; s += KARTE_ROUTING_CHUNK - 1) {
+    chunks.push(tour.slice(s, s + KARTE_ROUTING_CHUNK));
+  }
+  var art = document.getElementById('k-stat-km-art');
+  if (art) art.textContent = 'Luftlinie (Fahrradstrecke wird geladen …)';
+  var coords = [], legs = [];
+  var p = Promise.resolve();
+  chunks.forEach(function(chunk){
+    p = p.then(function(){
+      if (reqId !== karteState.roadReq) throw { stale: true };
+      var path = chunk.map(function(q){ return (+q.lng).toFixed(6)+','+(+q.lat).toFixed(6); }).join(';');
+      return fetch(KARTE_ROUTING_URL + path + '?overview=full&geometries=geojson&steps=false')
+        .then(function(r){ if (!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+        .then(function(d){
+          if (d.code !== 'Ok' || !d.routes || !d.routes[0]) throw new Error(d.code || 'keine Route');
+          var line = d.routes[0].geometry.coordinates.map(function(c){ return [c[1], c[0]]; });
+          if (coords.length) line.shift();   // Überlappungspunkt nicht doppelt
+          coords = coords.concat(line);
+          d.routes[0].legs.forEach(function(l){ legs.push(l.distance / 1000); });
+        });
+    });
+  });
+  p.then(function(){
+    if (reqId !== karteState.roadReq) return;
+    var km = legs.reduce(function(a, b){ return a + b; }, 0);
+    karteState.roadRoute = { coords: coords, legs: legs, km: km };
+    if (karteState.routeLayer) karteState.map.removeLayer(karteState.routeLayer);
+    karteState.routeLayer = L.polyline(coords, { color: '#1F4E79', weight: 4, opacity: 0.75 }).addTo(karteState.map);
+    document.getElementById('k-stat-km').textContent = km.toFixed(1);
+    if (art) art.textContent = 'mit dem Fahrrad';
+    var legEls = document.querySelectorAll('#tour-list-items .leg');
+    for (var i = 0; i < legEls.length && i < legs.length; i++) legEls[i].textContent = legs[i].toFixed(2)+' km';
+    toast('Fahrradstrecke geladen: '+km.toFixed(1)+' km');
+  }).catch(function(e){
+    if ((e && e.stale) || reqId !== karteState.roadReq) return;
+    if (art) art.textContent = 'Luftlinie';
+    toast('Fahrradstrecke nicht verfügbar (kein Netz?) – Tour bleibt in Luftlinie', true);
+  });
 }
 
 function karteExportKML(){
@@ -2707,7 +2768,10 @@ function karteExportKML(){
 
   // Wenn eine Tour berechnet ist, zusätzlich die Verbindungslinie
   if (karteState.tour && karteState.tour.length > 1) {
-    var coords = karteState.tour.map(function(p){ return p.lng+','+p.lat+',0'; }).join(' ');
+    var linePts = karteState.roadRoute
+      ? karteState.roadRoute.coords.map(function(c){ return { lat: c[0], lng: c[1] }; })
+      : karteState.tour;
+    var coords = linePts.map(function(p){ return p.lng+','+p.lat+',0'; }).join(' ');
     L.push('  <Placemark>');
     L.push('    <name>Tour-Route ('+(karteState.tour.length-1)+' Stopps)</name>');
     L.push('    <styleUrl>#route-line</styleUrl>');
@@ -2783,9 +2847,13 @@ function karteExportGPX(){
   }
   // Strecke als Track (trk) — komoot legt nur aus einem Track eine Tour an,
   // eine reine Route (rte) ignoriert es. OsmAnd und Garmin lesen Tracks ebenso.
+  // Mit geladener Fahrradstrecke über echte Wege, sonst Luftlinie von Stopp zu Stopp.
+  var trackPts = karteState.roadRoute
+    ? karteState.roadRoute.coords.map(function(c){ return { lat: c[0], lng: c[1] }; })
+    : t;
   lines.push('  <trk><name>'+xe(name)+'</name><trkseg>');
-  for (var j = 0; j < t.length; j++) {
-    lines.push('    <trkpt lat="'+t[j].lat+'" lon="'+t[j].lng+'"></trkpt>');
+  for (var j = 0; j < trackPts.length; j++) {
+    lines.push('    <trkpt lat="'+trackPts[j].lat+'" lon="'+trackPts[j].lng+'"></trkpt>');
   }
   lines.push('  </trkseg></trk>');
   lines.push('</gpx>');

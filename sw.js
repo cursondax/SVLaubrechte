@@ -1,6 +1,6 @@
 // SV Lau-Brechte Service Worker
 // Versions-String bei jedem Release erhöhen, damit Clients neu laden
-const CACHE_VERSION = 'svlb-v23';
+const CACHE_VERSION = 'svlb-v24';
 const PRECACHE = [
   './',
   './index.html',
@@ -41,6 +41,9 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin && url.pathname.endsWith('.php')) {
     return; // an Browser-Default fetch durchreichen, kein Cache-Touch
   }
+  // Fahrrad-Routing ebenfalls nie cachen: enthält Koordinaten der Mitglieder
+  // und ist nach jeder Tour-Änderung anders.
+  if (url.hostname === 'routing.openstreetmap.de') return;
   // Network-first für die index.html (damit Updates schnell beim Nutzer landen),
   // Cache-first für alles andere (Icons, Manifest).
   const isHtml = req.mode === 'navigate' || url.pathname.endsWith('/') || url.pathname.endsWith('.html');
