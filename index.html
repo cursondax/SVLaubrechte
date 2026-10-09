@@ -580,6 +580,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
             <option value="2">Bezirk 2</option>
             <option value="3">Bezirk 3</option>
             <option value="4">Bezirk 4</option>
+            <option value="-1">alle Bezirke</option>
           </select>
         </div>
       </div>
@@ -1409,7 +1410,7 @@ function renderBezirkePrint(){
   var html='';
   var firstBlock=true;
   for(var b=1;b<=4;b++){
-    var showSuppe=(suppeBz===b);
+    var showSuppe=(suppeBz===-1 || suppeBz===b);   // -1 = alle Bezirke
     var suppeTh=showSuppe?'<th>Suppe</th>':'';
     var thead='<thead><tr><th>Nr.</th><th>Name / Vorname</th><th>Vermerke / E-Mail</th><th>Beitrag</th>'+suppeTh+'</tr></thead>';
     var list=members.filter(function(m){return m.bz===b;});
