@@ -71,6 +71,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
 .b3{background:var(--greenbg);color:var(--green)}.b4{background:#f3e6f7;color:#6b2e8a}
 .be{background:var(--orangebg);color:var(--orange);font-size:.68rem}
 .bgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.25rem;margin-bottom:1.5rem}
+.bz-print{display:none}
 @media(max-width:700px){.bgrid{grid-template-columns:1fr}}
 .bcnt{background:rgba(255,255,255,.22);border-radius:20px;padding:2px 10px;font-size:.78rem;font-weight:700}
 .blist{list-style:none;max-height:260px;overflow-y:auto}
@@ -174,6 +175,9 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
      sonst druckt z.B. "Tour-Liste drucken" alle vier Bezirke mit */
   body.print-bezirke .sec{display:none!important}
   body.print-bezirke #sec-bezirke{display:block!important}
+  /* Druckseiten liegen in einem eigenen Container, die Bildschirm-Ansicht bleibt unveraendert */
+  body.print-bezirke #bgrid{display:none!important}
+  body.print-bezirke .bz-print{display:block!important}
   .card{box-shadow:none;border:none}
   .card-hd{background:var(--navy)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .blist{max-height:none!important;overflow:visible!important}
@@ -609,6 +613,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
       <button class="btn btn-pdf" onclick="exportPDF()">&#128438; Drucken / Als PDF speichern</button>
     </div>
     <div class="bgrid" id="bgrid"></div>
+    <div class="bz-print" id="bz-print"></div>
   </div>
 
   <!-- KÖNIGE -->
@@ -1376,6 +1381,7 @@ function renderRecent(){
 }
 
 function showTab(id,btn,bnId){
+  document.body.classList.remove('print-bezirke');
   document.querySelectorAll('.sec').forEach(function(s){s.classList.remove('on');});
   document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('on');});
   document.querySelectorAll('.bnav-btn').forEach(function(b){b.classList.remove('on');});
@@ -1422,19 +1428,19 @@ function clearForm(){
 function exportPDF(){
   renderBezirkePrint();
   document.body.classList.add('print-bezirke');
-  setTimeout(function(){window.print();},120);
+  // window.print() MUSS synchron im Klick-Handler laufen: iOS Safari blockiert
+  // Druckaufrufe aus setTimeout (keine Nutzeraktion mehr) ohne Fehlermeldung.
+  window.print();
 }
-// Nach dem Bezirks-Druck: Druckmodus beenden und normale Bezirks-Ansicht zurueck
-window.addEventListener('afterprint', function(){
-  if(!document.body.classList.contains('print-bezirke')) return;
-  document.body.classList.remove('print-bezirke');
-  renderBezirke();
-});
+// Die Klasse "print-bezirke" wird bewusst NICHT per afterprint entfernt: iOS Safari
+// feuert afterprint teils schon, bevor die Druckvorschau aufgebaut ist, und die
+// Vorschau zeigte dann die falschen Inhalte. Entfernt wird sie beim Tab-Wechsel
+// und vor anderen Druckfunktionen (karteDrucken).
 
 function renderBezirkePrint(){
   var suppeBz=parseInt(document.getElementById('suppe-bezirk').value)||0;
   var ROWS=30;
-  var grid=document.getElementById('bgrid');
+  var grid=document.getElementById('bz-print');
   var today=new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});
   var html='';
   var firstBlock=true;
