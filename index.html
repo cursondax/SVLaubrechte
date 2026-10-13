@@ -454,6 +454,16 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
 .excluded-box .ex-list{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.4rem}
 .excluded-box .ex-item{background:#fff;border:1px solid var(--grey300);border-radius:14px;padding:.15rem .5rem;display:inline-flex;align-items:center;gap:.3rem;font-size:.78rem}
 .excluded-box .ex-item button{background:none;border:none;color:var(--green);cursor:pointer;font-size:.95rem;padding:0;line-height:1}
+.k-gebiet-row{display:flex;flex-wrap:wrap;gap:.45rem;align-items:center}
+.k-gebiet-row select{flex:1 1 180px;min-width:0}
+.k-gebiet-row .btn{padding:.4rem .8rem;font-size:.82rem}
+.k-draw-bar{display:none;background:var(--orangebg);border:1.5px solid var(--orange);border-radius:var(--r);padding:.55rem .8rem;margin-top:.9rem;font-size:.85rem;gap:.45rem;align-items:center;flex-wrap:wrap}
+.k-draw-bar.on{display:flex}
+.k-draw-bar .txt{flex:1 1 220px}
+.k-draw-bar .btn{padding:.35rem .8rem;font-size:.82rem}
+#map.drawing{cursor:crosshair}
+#map.drawing .leaflet-marker-icon,#map.drawing .leaflet-marker-shadow{pointer-events:none;opacity:.55}
+.draw-pt-icon{background:var(--orange);border:2px solid #fff;border-radius:50%;width:14px;height:14px;box-shadow:0 1px 3px rgba(0,0,0,.4)}
 .tour-num-icon{background:var(--navy);color:#fff;border:2px solid #fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.78rem;box-shadow:0 1px 3px rgba(0,0,0,.3)}
 .tour-num-icon.start{background:var(--green)}
 .tour-num-icon.multi{background:var(--orange);outline:2px solid #fff}
@@ -889,6 +899,15 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
               <div id="k-orte" class="k-orte-box"></div>
             </div>
             <div class="fg" style="grid-column:1 / -1">
+              <label>Gebiet auf der Karte (nur Mitglieder darin kommen in die Route)</label>
+              <div class="k-gebiet-row">
+                <select id="k-gebiet" onchange="karteGebietWaehlen(this.value)"></select>
+                <button type="button" class="btn btn-navy" onclick="karteGebietZeichnen()">&#9999;&#65039; Gebiet zeichnen</button>
+                <button type="button" class="btn btn-clear" id="k-gebiet-save" onclick="karteGebietSpeichern()" title="Aktuelles Gebiet unter einem Namen speichern">&#128190; Speichern</button>
+                <button type="button" class="btn btn-clear" id="k-gebiet-del" onclick="karteGebietLoeschen()" title="Gespeichertes Gebiet l&ouml;schen">&#128465; L&ouml;schen</button>
+              </div>
+            </div>
+            <div class="fg" style="grid-column:1 / -1">
               <label>Startadresse (deine eigene Adresse)</label>
               <input type="text" id="k-start" placeholder="Mustermannstr. 12, 48607 Ochtrup">
             </div>
@@ -913,6 +932,12 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
         </div>
         <div class="map-progress" id="k-progress" style="display:none"><span style="width:0%"></span></div>
 
+        <div class="k-draw-bar" id="k-draw-bar">
+          <span class="txt" id="k-draw-txt">Tippe nacheinander die Eckpunkte des Gebiets auf die Karte.</span>
+          <button type="button" class="btn btn-clear" onclick="karteZeichnenZurueck()">&#8630; Punkt zur&uuml;ck</button>
+          <button type="button" class="btn btn-clear" onclick="karteZeichnenAbbrechen()">Abbrechen</button>
+          <button type="button" class="btn btn-save" onclick="karteZeichnenFertig()">&#10004; Fertig</button>
+        </div>
         <div id="map" style="margin-top:.9rem"></div>
 
         <div class="tour-list" id="tour-list" style="display:none">
@@ -926,6 +951,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
         <p style="margin-top:.9rem;font-size:.78rem;color:var(--grey700);line-height:1.55">
           <strong>So funktioniert's:</strong> Beim ersten Aufruf ruft die App f&uuml;r jede Adresse die OpenStreetMap-Geocoding-API auf (rund 1 Sekunde pro Adresse, einmaliger Vorgang &ndash; danach wird alles lokal gespeichert).
           Mit „Route berechnen" wird eine optimierte Reise-Reihenfolge ab deiner Startadresse berechnet (Nearest-Neighbor + 2-opt, Distanz per Luftlinie).<br><br>
+          <strong>Gebiet markieren:</strong> Statt Adressen einzeln aus der Tour zu l&ouml;schen, tippe auf „Gebiet zeichnen“ und setze auf der Karte die Eckpunkte um das Verteilgebiet (mindestens 3). Mit „Fertig“ werden nur noch Mitglieder innerhalb dieser Fl&auml;che angezeigt und f&uuml;r die Route verwendet; die anderen Filter gelten zus&auml;tzlich. Mit „Speichern“ legst du das Gebiet unter einem Namen ab (z.&nbsp;B. „Brechte Nord“) und kannst es n&auml;chstes Jahr wieder ausw&auml;hlen. Hinweis: Nur geocodierte Adressen lassen sich einem Gebiet zuordnen.<br><br>
           <strong>Unterwegs am Handy:</strong> Tippe in der <strong>Tour-Liste</strong> einen Eintrag an &ndash; Google Maps &ouml;ffnet sich mit Fahrrad-Navigation zu genau diesem Stopp. Wenn du da bist, zur&uuml;ck zur App, n&auml;chsten Eintrag tippen. Das ist der zuverl&auml;ssigste Weg, weil Name und Adresse direkt aus der App kommen.<br><br>
           <strong>Alternative – Komoot/OsmAnd</strong>: „GPX exportieren" l&auml;dt eine Datei runter, die du in eine Fahrrad-App importieren kannst &ndash; alle Stopps in einer Route. <strong>Komoot</strong> zeigt allerdings die Stopp-Namen nur unzuverl&auml;ssig; wenn du jeden Pin mit Namen auf der Karte sehen willst, ist <strong>OsmAnd</strong> (kostenlos, Open Source) die bessere Wahl.<br><br>
           <strong>Eigene Karte in Google MyMaps</strong>: „KML f&uuml;r MyMaps" l&auml;dt eine .kml-Datei runter. &Ouml;ffne <a href="https://www.google.com/maps/d/" target="_blank">google.com/maps/d</a> &rarr; <em>Neue Karte erstellen</em> &rarr; im Layer <em>Importieren</em> &rarr; KML-Datei w&auml;hlen. MyMaps zeigt alle Adressen als Pins mit Namen und Telefonnummer, beliebig viele (kein Limit). Karte speichern &rarr; in der Google-Maps-App unter <em>Gespeichert &rarr; Karten</em> abrufbar. Wenn du vorher „Route berechnen" gedr&uuml;ckt hast, ist auch die Tour-Linie in der KML enthalten.<br><br>
@@ -2288,7 +2314,8 @@ if ('serviceWorker' in navigator) {
 var karteState = {
   map: null, markers: [], routeLayer: null, tour: null,
   filtered: [], geocache: {}, startCoord: null, geocoding: false,
-  excluded: {}, orteChecked: null
+  excluded: {}, orteChecked: null,
+  gebiete: [], gebiet: null, gebietLayer: null, draw: null
 };
 
 function karteCacheKey(m){
@@ -2306,6 +2333,7 @@ function karteLoadGeocache(){
   if (savedCoord) { try { karteState.startCoord = JSON.parse(savedCoord); } catch(e){} }
   try { karteState.excluded = JSON.parse(localStorage.getItem('sgO_excluded')||'{}'); }
   catch(e){ karteState.excluded = {}; }
+  karteGebieteLaden();
 }
 
 // Koordinaten aus dem Adress-Cache auf die Mitglieder uebertragen. Der Cache ist
@@ -2399,6 +2427,9 @@ function karteFiltered(){
     if (hg==='nein' && m.helga) return false;
     if (ortsChecked[karteOrtKey(m)] === false) return false;
     if (karteState.excluded[karteMemberKey(m)]) return false;
+    // Gebiet: Mitglieder ohne Koordinaten bleiben drin, damit "Adressen geocoden"
+    // sie noch findet. Auf Karte und Route erscheinen sie ohnehin nicht.
+    if (karteState.gebiet && m.lat && m.lng && !kartePunktImGebiet(m.lat, m.lng, karteState.gebiet.pts)) return false;
     if (q) {
       var hay = [m.name,m.vor,m.str,m.ort,m.plz].join(' ').toLowerCase();
       if (hay.indexOf(q) === -1) return false;
@@ -2540,7 +2571,11 @@ function karteApplyFilter(){
   document.getElementById('k-stat-tour').textContent = '–';
   document.getElementById('k-stat-km').textContent = '–';
   karteRenderExcludedBox();
-  if (!withGeo.length) return;
+  karteGebietZeigen();
+  if (!withGeo.length) {
+    if (karteState.gebietLayer && !karteState.draw) karteState.map.fitBounds(karteState.gebietLayer.getBounds().pad(0.1));
+    return;
+  }
   var groups = karteGroupByAddress(withGeo);
   groups.forEach(function(g){
     var mk;
@@ -2560,6 +2595,190 @@ function karteApplyFilter(){
     var grp = L.featureGroup(karteState.markers);
     karteState.map.fitBounds(grp.getBounds().pad(0.15));
   }
+}
+
+// ── Gebiet auf der Karte markieren ─────────────────────────────────────────
+// Ein Gebiet ist ein Vieleck aus [lat,lng]-Punkten. Ist eins aktiv, kommen nur
+// Mitglieder darin in Karte und Route. Gespeicherte Gebiete werden mit dem
+// Server abgeglichen (Feld "gebiete"), das aktive Gebiet merkt sich jedes
+// Geraet selbst.
+function kartePunktImGebiet(lat, lng, pts){
+  var inside = false;
+  for (var i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    var yi = pts[i][0], xi = pts[i][1], yj = pts[j][0], xj = pts[j][1];
+    if (((yi > lat) !== (yj > lat)) && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi)) inside = !inside;
+  }
+  return inside;
+}
+
+function karteGebieteLaden(){
+  try { karteState.gebiete = JSON.parse(localStorage.getItem('sgO_gebiete')||'[]'); }
+  catch(e){ karteState.gebiete = []; }
+  if (!Array.isArray(karteState.gebiete)) karteState.gebiete = [];
+  karteState.gebiet = null;
+  try {
+    var a = JSON.parse(localStorage.getItem('sgO_gebiet_aktiv')||'null');
+    if (a && Array.isArray(a.pts) && a.pts.length >= 3) {
+      // Gespeichertes Gebiet inzwischen geloescht oder umbenannt -> als ungespeichert weiterfuehren
+      if (a.name && !karteState.gebiete.some(function(g){ return g.name === a.name; })) a.name = '';
+      karteState.gebiet = a;
+    }
+  } catch(e){}
+  karteGebietSelectRender();
+}
+
+function karteGebieteSichern(){
+  try { localStorage.setItem('sgO_gebiete', JSON.stringify(karteState.gebiete)); } catch(e){}
+  if (typeof syncTriggerPush === 'function') syncTriggerPush();
+}
+
+function karteGebietAktivSichern(){
+  try {
+    if (karteState.gebiet) localStorage.setItem('sgO_gebiet_aktiv', JSON.stringify(karteState.gebiet));
+    else localStorage.removeItem('sgO_gebiet_aktiv');
+  } catch(e){}
+}
+
+function karteGebietSelectRender(){
+  var sel = document.getElementById('k-gebiet');
+  if (!sel) return;
+  var akt = karteState.gebiet;
+  var html = '<option value="">Kein Gebiet (alle Adressen)</option>';
+  if (akt && !akt.name) html += '<option value="__neu">Gezeichnetes Gebiet (nicht gespeichert)</option>';
+  karteState.gebiete.forEach(function(g, i){
+    html += '<option value="'+i+'">'+esc(g.name)+'</option>';
+  });
+  sel.innerHTML = html;
+  if (!akt) sel.value = '';
+  else if (!akt.name) sel.value = '__neu';
+  else {
+    var idx = karteState.gebiete.findIndex(function(g){ return g.name === akt.name; });
+    sel.value = idx >= 0 ? String(idx) : '';
+  }
+  document.getElementById('k-gebiet-save').disabled = !akt;
+  document.getElementById('k-gebiet-del').disabled = !(akt && akt.name);
+}
+
+function karteGebietZeigen(){
+  if (karteState.gebietLayer) { karteState.map.removeLayer(karteState.gebietLayer); karteState.gebietLayer = null; }
+  if (!karteState.gebiet || karteState.draw) return;
+  karteState.gebietLayer = L.polygon(karteState.gebiet.pts, {
+    color: '#C55A11', weight: 2, dashArray: '6 5', fillColor: '#C55A11', fillOpacity: 0.07, interactive: false
+  }).addTo(karteState.map);
+}
+
+function karteGebietSetzen(g){
+  karteState.gebiet = g;
+  karteGebietAktivSichern();
+  karteGebietSelectRender();
+  karteRecalc();
+}
+
+function karteGebietWaehlen(v){
+  if (v === '__neu') return;
+  if (v === '') { karteGebietSetzen(null); return; }
+  var g = karteState.gebiete[+v];
+  if (g) karteGebietSetzen({ name: g.name, pts: g.pts.slice() });
+}
+
+function karteGebietSpeichern(){
+  var akt = karteState.gebiet;
+  if (!akt) { toast('Erst ein Gebiet zeichnen', true); return; }
+  var name = prompt('Name für dieses Gebiet (z.B. "Brechte Nord"):', akt.name || '');
+  if (name === null) return;
+  name = name.trim();
+  if (!name) { toast('Bitte einen Namen eingeben', true); return; }
+  var idx = karteState.gebiete.findIndex(function(g){ return g.name === name; });
+  if (idx >= 0 && name !== akt.name && !confirm('Ein Gebiet "'+name+'" gibt es schon. Überschreiben?')) return;
+  var neu = { name: name, pts: akt.pts.slice() };
+  if (idx >= 0) karteState.gebiete[idx] = neu; else karteState.gebiete.push(neu);
+  karteState.gebiete.sort(function(a,b){ return a.name.localeCompare(b.name, 'de'); });
+  karteGebieteSichern();
+  karteState.gebiet = { name: name, pts: neu.pts.slice() };
+  karteGebietAktivSichern();
+  karteGebietSelectRender();
+  toast('Gebiet "'+name+'" gespeichert');
+}
+
+function karteGebietLoeschen(){
+  var akt = karteState.gebiet;
+  if (!akt || !akt.name) return;
+  if (!confirm('Gespeichertes Gebiet "'+akt.name+'" löschen?')) return;
+  karteState.gebiete = karteState.gebiete.filter(function(g){ return g.name !== akt.name; });
+  karteGebieteSichern();
+  karteGebietSetzen(null);
+  toast('Gebiet gelöscht');
+}
+
+function karteGebietZeichnen(){
+  if (!karteState.map) { toast('Karte noch nicht geladen', true); return; }
+  if (karteState.draw) return;
+  karteState.draw = { pts: [], layer: L.layerGroup().addTo(karteState.map) };
+  karteState.map.closePopup();
+  karteState.map.doubleClickZoom.disable();
+  karteState.map.on('click', karteZeichnenKlick);
+  document.getElementById('map').classList.add('drawing');
+  document.getElementById('k-draw-bar').classList.add('on');
+  karteGebietZeigen();
+  karteZeichnenUpdate();
+  document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function karteZeichnenKlick(e){
+  karteState.draw.pts.push([e.latlng.lat, e.latlng.lng]);
+  karteZeichnenUpdate();
+}
+
+function karteZeichnenUpdate(){
+  var d = karteState.draw;
+  d.layer.clearLayers();
+  if (d.pts.length >= 2) {
+    L.polygon(d.pts, { color: '#C55A11', weight: 2, fillColor: '#C55A11', fillOpacity: 0.12, interactive: false }).addTo(d.layer);
+  }
+  d.pts.forEach(function(p){
+    L.marker(p, { interactive: false, icon: L.divIcon({ className: '', html: '<div class="draw-pt-icon"></div>', iconSize: [14,14], iconAnchor: [7,7] }) }).addTo(d.layer);
+  });
+  var n = d.pts.length;
+  var txt = n === 0 ? 'Tippe nacheinander die Eckpunkte des Gebiets auf die Karte.'
+    : n < 3 ? n + ' Punkt' + (n === 1 ? '' : 'e') + ' gesetzt, mindestens 3 nötig.'
+    : n + ' Punkte gesetzt. Weitere Punkte setzen oder „Fertig“ tippen.';
+  if (n >= 3) {
+    var drin = members.filter(function(m){ return m.lat && m.lng && kartePunktImGebiet(m.lat, m.lng, d.pts); }).length;
+    txt += ' (' + drin + ' Mitglieder im Gebiet)';
+  }
+  document.getElementById('k-draw-txt').textContent = txt;
+}
+
+function karteZeichnenZurueck(){
+  if (!karteState.draw) return;
+  karteState.draw.pts.pop();
+  karteZeichnenUpdate();
+}
+
+function karteZeichnenEnde(){
+  var d = karteState.draw;
+  if (!d) return;
+  karteState.map.removeLayer(d.layer);
+  karteState.map.off('click', karteZeichnenKlick);
+  karteState.map.doubleClickZoom.enable();
+  karteState.draw = null;
+  document.getElementById('map').classList.remove('drawing');
+  document.getElementById('k-draw-bar').classList.remove('on');
+}
+
+function karteZeichnenAbbrechen(){
+  karteZeichnenEnde();
+  karteGebietZeigen();
+}
+
+function karteZeichnenFertig(){
+  var d = karteState.draw;
+  if (!d) return;
+  if (d.pts.length < 3) { toast('Mindestens 3 Punkte setzen', true); return; }
+  var pts = d.pts.slice();
+  karteZeichnenEnde();
+  karteGebietSetzen({ name: '', pts: pts });
+  toast('Gebiet aktiv: ' + karteState.filtered.filter(function(m){ return m.lat && m.lng; }).length + ' Adressen. Mit „Speichern“ für später ablegen.');
 }
 
 function karteSleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
@@ -3296,6 +3515,9 @@ function syncApplyServerData(data, opts){
   if(data.excluded){
     try{localStorage.setItem('sgO_excluded',JSON.stringify(data.excluded));}catch(e){}
   }
+  if(Array.isArray(data.gebiete)){
+    try{localStorage.setItem('sgO_gebiete',JSON.stringify(data.gebiete));}catch(e){}
+  }
   // Startadresse: Feld vorhanden (auch leer) -> uebernehmen; fehlt es (aeltere
   // Serverdaten), lokalen Wert behalten
   if('start' in data){
@@ -3348,6 +3570,10 @@ function syncCollectPayload(){
   pl.kings = Array.isArray(kings) ? kings : [];
   try{var g=localStorage.getItem('sgO_geocache');if(g)pl.geocache=JSON.parse(g);}catch(e){}
   try{var x=localStorage.getItem('sgO_excluded');if(x)pl.excluded=JSON.parse(x);}catch(e){}
+  // Gespeicherte Gebiete immer mitschicken (auch leer), sonst kommt ein
+  // geloeschtes Gebiet von anderen Geraeten zurueck
+  pl.gebiete = [];
+  try{var gb=JSON.parse(localStorage.getItem('sgO_gebiete')||'[]');if(Array.isArray(gb))pl.gebiete=gb;}catch(e){}
   pl.start = localStorage.getItem('sgO_start') || '';
   pl.start_coord = null;
   try{var sc=localStorage.getItem('sgO_start_coord');if(sc)pl.start_coord=JSON.parse(sc);}catch(e){}
