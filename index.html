@@ -72,6 +72,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
 .be{background:var(--orangebg);color:var(--orange);font-size:.68rem}
 .bgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.25rem;margin-bottom:1.5rem}
 .bz-print{display:none}
+.tour-print{display:none}
 @media(max-width:700px){.bgrid{grid-template-columns:1fr}}
 .bcnt{background:rgba(255,255,255,.22);border-radius:20px;padding:2px 10px;font-size:.78rem;font-weight:700}
 .blist{list-style:none;max-height:260px;overflow-y:auto}
@@ -178,6 +179,15 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
   /* Druckseiten liegen in einem eigenen Container, die Bildschirm-Ansicht bleibt unveraendert */
   body.print-bezirke #bgrid{display:none!important}
   body.print-bezirke .bz-print{display:block!important}
+  /* Tour-Druck: nur der eigene Druckbereich, Karte und Bedienelemente bleiben
+     ganz aus dem Druck (Leaflet-Kacheln bringen die iOS-Druckvorschau aus dem Tritt) */
+  body.print-tour .sec{display:none!important}
+  body.print-tour .tour-print{display:block!important}
+  .tour-print .td-hk{width:24pt;text-align:center}
+  .tour-print .box{display:inline-block;width:10pt;height:10pt;border:.8pt solid #333}
+  .tour-print .td-km{white-space:nowrap;text-align:right;width:36pt;font-size:9pt;color:#555}
+  .tour-print .td-tel{white-space:nowrap;font-size:9pt}
+  .tour-print .adr{font-size:9pt;color:#444}
   .card{box-shadow:none;border:none}
   .card-hd{background:var(--navy)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .blist{max-height:none!important;overflow:visible!important}
@@ -961,6 +971,9 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
     </div>
   </div>
 
+<!-- Druckbereich Tour-Liste (ausserhalb der .sec, die beim Tour-Druck alle ausgeblendet werden) -->
+<div class="tour-print" id="tour-print"></div>
+
 <!-- BOTTOM NAVIGATION (mobile) -->
 <nav class="bottom-nav">
   <div class="bottom-nav-inner">
@@ -1408,6 +1421,7 @@ function renderRecent(){
 
 function showTab(id,btn,bnId){
   document.body.classList.remove('print-bezirke');
+  document.body.classList.remove('print-tour');
   document.querySelectorAll('.sec').forEach(function(s){s.classList.remove('on');});
   document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('on');});
   document.querySelectorAll('.bnav-btn').forEach(function(b){b.classList.remove('on');});
@@ -1453,6 +1467,7 @@ function clearForm(){
 
 function exportPDF(){
   renderBezirkePrint();
+  document.body.classList.remove('print-tour');
   document.body.classList.add('print-bezirke');
   // window.print() MUSS synchron im Klick-Handler laufen: iOS Safari blockiert
   // Druckaufrufe aus setTimeout (keine Nutzeraktion mehr) ohne Fehlermeldung.
@@ -3145,9 +3160,54 @@ function karteExportKML(){
 }
 
 function karteDrucken(){
+  if (!karteState.tour || karteState.tour.length < 2) { toast('Erst Route berechnen', true); return; }
+  karteRenderTourPrint();
   // Falls ein Bezirks-Druck ohne "afterprint" endete (iOS), Klasse sicher entfernen
   document.body.classList.remove('print-bezirke');
+  document.body.classList.add('print-tour');
+  // Wie beim Bezirks-Druck: window.print() synchron im Klick-Handler, sonst
+  // blockiert iOS Safari den Druckdialog. Die Klasse "print-tour" bleibt bis
+  // zum Tab-Wechsel oder naechsten Druck stehen (afterprint feuert auf iOS zu frueh).
   window.print();
+}
+
+// Eigener Druckbereich fuer die Tour: schlichte Tabelle ohne Karte, Buttons und
+// Hilfetexte, mit Abhakkaestchen fuer unterwegs.
+function karteRenderTourPrint(){
+  var t = karteState.tour;
+  var today = new Date().toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric' });
+  var road = karteState.roadRoute;
+  var personen = 0;
+  for (var i = 1; i < t.length; i++) personen += t[i].g.members.length;
+  var kmGesamt = road ? road.km : tourTotalKm(t);
+  function km(v){ return v.toLocaleString('de-DE', { minimumFractionDigits:1, maximumFractionDigits:1 }); }
+  var sub = (t.length-1) + ' Stopps · ' + personen + ' Personen · ' + km(kmGesamt) + ' km ' + (road ? 'Fahrradstrecke' : 'Luftlinie')
+    + (karteState.gebiet ? ' · Gebiet: ' + (karteState.gebiet.name || 'eingezeichnet') : '')
+    + ' · Stand ' + today;
+  var rows = '';
+  for (var j = 1; j < t.length; j++) {
+    var g = t[j].g;
+    var leg = road && road.legs && road.legs[j-1] != null ? road.legs[j-1] : haversine(t[j-1], t[j]);
+    var namen = g.members.map(function(m){
+      return '<span class="nm">'+esc(m.name)+'</span>'+(m.vor?', '+esc(m.vor):'');
+    }).join('<br>');
+    var tels = g.members.filter(function(m){ return m.tel; }).map(function(m){
+      return (g.members.length > 1 ? esc(m.vor||m.name)+': ' : '') + esc(m.tel);
+    }).join('<br>');
+    var ehren = g.members.some(function(m){ return m.ehren; });
+    rows += '<tr'+(ehren?' class="ehren"':'')+'>'
+      + '<td class="td-nr">'+j+'</td>'
+      + '<td>'+namen+'<br><span class="adr">'+esc(g.str||'')+', '+esc(((g.plz||'')+' '+(g.ort||'')).trim())+'</span></td>'
+      + '<td class="td-tel">'+tels+'</td>'
+      + '<td class="td-km">'+km(leg)+' km</td>'
+      + '<td class="td-hk"><span class="box"></span></td>'
+      + '</tr>';
+  }
+  document.getElementById('tour-print').innerHTML =
+    '<div class="page-hd">SV Lau-Brechte · Tour-Liste</div>'
+    + '<div class="page-sub">'+esc(sub)+'</div>'
+    + '<table class="print-tbl"><thead><tr><th>Nr</th><th>Name / Adresse</th><th>Telefon</th><th>Weg</th><th>&#10003;</th></tr></thead>'
+    + '<tbody>'+rows+'</tbody></table>';
 }
 
 function karteDateiStempel(){
