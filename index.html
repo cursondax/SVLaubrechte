@@ -3015,6 +3015,10 @@ function karteCalcRoute(){
   document.getElementById('k-stat-tour').textContent = stopsTxt;
   document.getElementById('k-stat-km').textContent = totalKm.toFixed(1);
   karteState.tour = tour;
+  kartePdfBereit = null;
+  // Auf dem iPhone die PDF-Bibliothek schon jetzt laden: dann entsteht die PDF
+  // beim Tipp auf "Drucken" sofort und das Teilen-Menue darf sich oeffnen.
+  if (karteIstIOS()) karteLadePdfLib().catch(function(){});
   karteRenderExcludedBox();
   toast('Route berechnet: '+order.length+' Stopps · '+totalPersons+' Personen · '+totalKm.toFixed(1)+' km Luftlinie');
   karteFetchRoadRoute(tour);
@@ -3065,6 +3069,7 @@ function karteFetchRoadRoute(tour){
     if (reqId !== karteState.roadReq) return;
     var km = legs.reduce(function(a, b){ return a + b; }, 0);
     karteState.roadRoute = { coords: coords, legs: legs, km: km };
+    kartePdfBereit = null;   // gemerkte PDF hatte noch Luftlinie
     if (karteState.routeLayer) karteState.map.removeLayer(karteState.routeLayer);
     karteState.routeLayer = L.polyline(coords, { color: '#1F4E79', weight: 4, opacity: 0.75 }).addTo(karteState.map);
     document.getElementById('k-stat-km').textContent = km.toFixed(1);
@@ -3159,8 +3164,133 @@ function karteExportKML(){
     groups.length+' Adressen ('+withGeo.length+' Personen) als KML exportiert');
 }
 
+// iPhone/iPad: window.print() tut in der Home-Bildschirm-App nichts (kein
+// Dialog, keine Fehlermeldung). Dort wird die Tour als PDF erzeugt und ueber
+// das Teilen-Menue ausgegeben, das "Drucken" und "In Dateien sichern" anbietet.
+function karteIstIOS(){
+  return /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+var kartePdfLib = null;   // Promise auf jsPDF, wird nur bei Bedarf geladen
+function karteLadePdfLib(){
+  if (window.jspdf) return Promise.resolve(window.jspdf);
+  if (kartePdfLib) return kartePdfLib;
+  kartePdfLib = new Promise(function(resolve, reject){
+    var s = document.createElement('script');
+    s.src = './vendor/jspdf/jspdf.umd.min.js';
+    s.onload = function(){ window.jspdf ? resolve(window.jspdf) : reject(new Error('jsPDF fehlt')); };
+    s.onerror = function(){ kartePdfLib = null; reject(new Error('jsPDF nicht ladbar')); };
+    document.head.appendChild(s);
+  });
+  return kartePdfLib;
+}
+
+var kartePdfBereit = null;   // fertige PDF, falls das Teilen beim ersten Tipp nicht durfte
+
+function karteTourPdfTeilen(){
+  var name = 'SVLaubrechte_Tour_' + karteDateiStempel() + '.pdf';
+  function teilen(blob){
+    var file = new File([blob], name, { type: 'application/pdf' });
+    if (!(navigator.share && navigator.canShare && navigator.canShare({ files: [file] }))) {
+      karteDateiDownload(blob, name, 'PDF erstellt');
+      return;
+    }
+    navigator.share({ files: [file] }).then(function(){
+      kartePdfBereit = null;
+    }).catch(function(e){
+      if (e && e.name === 'AbortError') { kartePdfBereit = null; return; }
+      // Teilen braucht einen frischen Fingertipp. Kam die PDF erst nach dem
+      // Laden der Bibliothek, ist der verbraucht: PDF merken, erneut tippen lassen.
+      kartePdfBereit = blob;
+      toast('PDF ist fertig – bitte noch einmal auf „Drucken“ tippen', true);
+    });
+  }
+  if (kartePdfBereit) { teilen(kartePdfBereit); return; }
+  if (window.jspdf) { teilen(karteTourPdf(window.jspdf)); return; }
+  toast('PDF wird erstellt …');
+  karteLadePdfLib().then(function(lib){ teilen(karteTourPdf(lib)); })
+    .catch(function(e){ console.warn(e); toast('PDF konnte nicht erstellt werden', true); });
+}
+
+// Tour-Liste als A4-PDF, gleiche Spalten wie der Browser-Druck
+function karteTourPdf(lib){
+  var t = karteState.tour, road = karteState.roadRoute;
+  var doc = new lib.jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+  var L = 12, R = 198, TOP = 12, BOTTOM = 285;
+  var cols = [ { t: 'Nr', w: 10 }, { t: 'Name / Adresse', w: 96 }, { t: 'Telefon', w: 42 }, { t: 'Weg', w: 20 }, { t: 'Erl.', w: 18 } ];
+  var x = [L]; cols.forEach(function(c, i){ x.push(x[i] + c.w); });
+  function km(v){ return v.toLocaleString('de-DE', { minimumFractionDigits:1, maximumFractionDigits:1 }); }
+  var personen = 0;
+  for (var i = 1; i < t.length; i++) personen += t[i].g.members.length;
+  var today = new Date().toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric' });
+  var sub = (t.length-1) + ' Stopps · ' + personen + ' Personen · ' + km(road ? road.km : tourTotalKm(t)) + ' km '
+    + (road ? 'Fahrradstrecke' : 'Luftlinie')
+    + (karteState.gebiet ? ' · Gebiet: ' + (karteState.gebiet.name || 'eingezeichnet') : '')
+    + ' · Stand ' + today;
+  var y, seite = 0;
+  function kopf(){
+    if (seite > 0) doc.addPage();
+    seite++;
+    y = TOP;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(31, 78, 121);
+    doc.text('SV Lau-Brechte · Tour-Liste' + (seite > 1 ? ' (Seite ' + seite + ')' : ''), L, y + 5);
+    doc.setDrawColor(31, 78, 121); doc.setLineWidth(0.6); doc.line(L, y + 7, R, y + 7);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(100);
+    doc.text(sub, L, y + 11);
+    y += 14;
+    doc.setFillColor(46, 117, 182); doc.rect(L, y, R - L, 7, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(255);
+    cols.forEach(function(c, i){ doc.text(c.t, x[i] + 1.5, y + 4.8); });
+    y += 7;
+  }
+  kopf();
+  for (var j = 1; j < t.length; j++) {
+    var g = t[j].g;
+    var leg = road && road.legs && road.legs[j-1] != null ? road.legs[j-1] : haversine(t[j-1], t[j]);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+    var namen = [];
+    g.members.forEach(function(m){
+      namen = namen.concat(doc.splitTextToSize((m.name||'') + (m.vor ? ', ' + m.vor : ''), cols[1].w - 3));
+    });
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+    var adr = doc.splitTextToSize((g.str||'') + ', ' + ((g.plz||'') + ' ' + (g.ort||'')).trim(), cols[1].w - 3);
+    var tels = g.members.filter(function(m){ return m.tel; }).map(function(m){
+      return (g.members.length > 1 ? (m.vor || m.name) + ': ' : '') + m.tel;
+    });
+    var h = Math.max(namen.length * 4.6 + adr.length * 3.6, tels.length * 4) + 3.5;
+    if (y + h > BOTTOM) kopf();
+    // Ehrenmitglieder wie in den Bezirkslisten: Zeile orange, dunkler Balken links
+    if (g.members.some(function(m){ return m.ehren; })) {
+      doc.setFillColor(250, 215, 181); doc.rect(L, y, R - L, h, 'F');
+      doc.setFillColor(197, 90, 17); doc.rect(L, y, 1.4, h, 'F');
+    } else if (j % 2 === 0) {
+      doc.setFillColor(235, 243, 250); doc.rect(L, y, R - L, h, 'F');
+    }
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(120);
+    doc.text(String(j), x[0] + cols[0].w / 2, y + 5, { align: 'center' });
+    var ty = y + 5;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(31, 78, 121);
+    namen.forEach(function(n){ doc.text(n, x[1] + 1.5, ty); ty += 4.6; });
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(70);
+    adr.forEach(function(a){ doc.text(a, x[1] + 1.5, ty - 0.6); ty += 3.6; });
+    doc.setFontSize(9); doc.setTextColor(30);
+    tels.forEach(function(tl, k){ doc.text(doc.splitTextToSize(tl, cols[2].w - 3)[0], x[2] + 1.5, y + 5 + k * 4); });
+    doc.setTextColor(90);
+    doc.text(km(leg) + ' km', x[4] - 1.5, y + 5, { align: 'right' });
+    doc.setDrawColor(60); doc.setLineWidth(0.3);
+    doc.rect(x[4] + cols[4].w / 2 - 2.2, y + 2, 4.4, 4.4);
+    doc.setDrawColor(190); doc.setLineWidth(0.2);
+    doc.line(L, y + h, R, y + h);
+    x.forEach(function(xx){ doc.line(xx, y, xx, y + h); });
+    y += h;
+  }
+  return doc.output('blob');
+}
+
 function karteDrucken(){
   if (!karteState.tour || karteState.tour.length < 2) { toast('Erst Route berechnen', true); return; }
+  if (karteIstIOS()) { karteTourPdfTeilen(); return; }
   karteRenderTourPrint();
   // Falls ein Bezirks-Druck ohne "afterprint" endete (iOS), Klasse sicher entfernen
   document.body.classList.remove('print-bezirke');
