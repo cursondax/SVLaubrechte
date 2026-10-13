@@ -474,6 +474,10 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
 #map.drawing{cursor:crosshair}
 #map.drawing .leaflet-marker-icon,#map.drawing .leaflet-marker-shadow{pointer-events:none;opacity:.55}
 .draw-pt-icon{background:var(--orange);border:2px solid #fff;border-radius:50%;width:14px;height:14px;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.leaflet-tooltip.tour-label{background:rgba(255,255,255,.93);border:1px solid var(--navym);color:var(--navy);font-weight:700;font-size:.74rem;padding:1px 6px;border-radius:5px;box-shadow:0 1px 2px rgba(0,0,0,.25);white-space:nowrap}
+.leaflet-tooltip.tour-label::before{display:none}
+.leaflet-tooltip.tour-label.ehren{border-color:var(--orange);color:#7a3a0a}
+#map.labels-off .leaflet-tooltip.tour-label{display:none}
 .tour-num-icon{background:var(--navy);color:#fff;border:2px solid #fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.78rem;box-shadow:0 1px 3px rgba(0,0,0,.3)}
 .tour-num-icon.start{background:var(--green)}
 .tour-num-icon.multi{background:var(--orange);outline:2px solid #fff}
@@ -962,6 +966,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
           <strong>So funktioniert's:</strong> Beim ersten Aufruf ruft die App f&uuml;r jede Adresse die OpenStreetMap-Geocoding-API auf (rund 1 Sekunde pro Adresse, einmaliger Vorgang &ndash; danach wird alles lokal gespeichert).
           Mit „Route berechnen" wird eine optimierte Reise-Reihenfolge ab deiner Startadresse berechnet (Nearest-Neighbor + 2-opt, Distanz per Luftlinie).<br><br>
           <strong>Gebiet markieren:</strong> Statt Adressen einzeln aus der Tour zu l&ouml;schen, tippe auf „Gebiet zeichnen“ und setze auf der Karte die Eckpunkte um das Verteilgebiet (mindestens 3). Mit „Fertig“ werden nur noch Mitglieder innerhalb dieser Fl&auml;che angezeigt und f&uuml;r die Route verwendet; die anderen Filter gelten zus&auml;tzlich. Mit „Speichern“ legst du das Gebiet unter einem Namen ab (z.&nbsp;B. „Brechte Nord“) und kannst es n&auml;chstes Jahr wieder ausw&auml;hlen. Hinweis: Nur geocodierte Adressen lassen sich einem Gebiet zuordnen.<br><br>
+          <strong>Namen auf der Karte:</strong> Nach „Route berechnen“ steht neben jedem Stopp die Nummer und der Name. Die Namen erscheinen, sobald du nah genug heranzoomst (Stra&szlig;enebene), damit sie sich beim Herauszoomen nicht gegenseitig verdecken.<br><br>
           <strong>Unterwegs am Handy:</strong> Tippe in der <strong>Tour-Liste</strong> einen Eintrag an &ndash; Google Maps &ouml;ffnet sich mit Fahrrad-Navigation zu genau diesem Stopp. Wenn du da bist, zur&uuml;ck zur App, n&auml;chsten Eintrag tippen. Das ist der zuverl&auml;ssigste Weg, weil Name und Adresse direkt aus der App kommen.<br><br>
           <strong>Alternative – Komoot/OsmAnd</strong>: „GPX exportieren" l&auml;dt eine Datei runter, die du in eine Fahrrad-App importieren kannst &ndash; alle Stopps in einer Route. <strong>Komoot</strong> zeigt allerdings die Stopp-Namen nur unzuverl&auml;ssig; wenn du jeden Pin mit Namen auf der Karte sehen willst, ist <strong>OsmAnd</strong> (kostenlos, Open Source) die bessere Wahl.<br><br>
           <strong>Eigene Karte in Google MyMaps</strong>: „KML f&uuml;r MyMaps" l&auml;dt eine .kml-Datei runter. &Ouml;ffne <a href="https://www.google.com/maps/d/" target="_blank">google.com/maps/d</a> &rarr; <em>Neue Karte erstellen</em> &rarr; im Layer <em>Importieren</em> &rarr; KML-Datei w&auml;hlen. MyMaps zeigt alle Adressen als Pins mit Namen und Telefonnummer, beliebig viele (kein Limit). Karte speichern &rarr; in der Google-Maps-App unter <em>Gespeichert &rarr; Karten</em> abrufbar. Wenn du vorher „Route berechnen" gedr&uuml;ckt hast, ist auch die Tour-Linie in der KML enthalten.<br><br>
@@ -2625,6 +2630,13 @@ function karteInit(){
   if (karteState.map) return;
   if (typeof L === 'undefined') { setTimeout(karteInit, 200); return; }
   karteState.map = L.map('map').setView([52.2057, 7.1898], 12);
+  // Namen an den Tour-Stopps erst bei Strassen-Zoom zeigen, sonst ueberdecken
+  // sie sich gegenseitig
+  var labelsZoom = function(){
+    document.getElementById('map').classList.toggle('labels-off', karteState.map.getZoom() < KARTE_LABEL_ZOOM);
+  };
+  karteState.map.on('zoomend', labelsZoom);
+  labelsZoom();
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     // CORS statt "opaque": der Service Worker kann Fehler erkennen, und der
@@ -3115,6 +3127,20 @@ function karteCalcRoute(){
     var mk = L.marker([p.lat, p.lng], {
       icon: L.divIcon({ className: '', html: iconHtml, iconSize: [28,28], iconAnchor: [14,14] })
     }).addTo(karteState.map).bindPopup(stopHead + maps + personRows);
+    // Namen dauerhaft neben dem Stopp (ab Zoomstufe KARTE_LABEL_ZOOM sichtbar)
+    // Gleiche Nachnamen an einer Adresse zusammenfassen: "Albers H., M."
+    var byName = {}, namen = [];
+    g.members.forEach(function(m){
+      var nm = m.name || '';
+      if (!(nm in byName)) { byName[nm] = []; namen.push(nm); }
+      if (m.vor) byName[nm].push(m.vor.charAt(0) + '.');
+    });
+    var label = namen.map(function(nm){ return esc(nm) + (byName[nm].length ? ' ' + esc(byName[nm].join(', ')) : ''); });
+    if (label.length > 2) label = [label[0], label[1], '+' + (label.length - 2)];
+    mk.bindTooltip((n+1) + '. ' + label.join(' · '), {
+      permanent: true, direction: 'auto', offset: [12, 0],
+      className: 'tour-label' + (g.members.some(function(m){ return m.ehren; }) ? ' ehren' : '')
+    });
     karteState.markers.push(mk);
   });
   karteState.map.fitBounds(L.polyline(latlngs).getBounds().pad(0.1));
@@ -3161,6 +3187,7 @@ function karteCalcRoute(){
 // Die Reihenfolge der Stopps rechnet weiter die App selbst (Luftlinie, offline).
 // Danach holen wir für genau diese Reihenfolge die Strecke über Straßen/Radwege.
 // Es gehen nur Koordinaten raus, keine Namen/Adressen. Ohne Netz bleibt's bei Luftlinie.
+var KARTE_LABEL_ZOOM = 15;   // ab dieser Zoomstufe Namen an den Tour-Stopps
 var KARTE_ROUTING_URL = 'https://routing.openstreetmap.de/routed-bike/route/v1/bike/';
 var KARTE_ROUTING_CHUNK = 50;   // Punkte pro Anfrage; längere Touren in Teilstücken
 
