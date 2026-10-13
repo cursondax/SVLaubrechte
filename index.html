@@ -1434,6 +1434,7 @@ function showTab(id,btn,bnId){
     if(b.getAttribute('onclick') && b.getAttribute('onclick').indexOf("'"+id+"'")!==-1) b.classList.add('on');
   });
   if(id==='export') exPreview();
+  if(id==='bezirke' && istIOS()) pdfLibLaden().catch(function(){});  // siehe pdfTeilen
   if(id==='karte'){
     if(!karteState.map) karteInit();
     else { setTimeout(function(){ karteState.map.invalidateSize(); }, 50); karteApplyFilter(); }
@@ -1465,7 +1466,141 @@ function clearForm(){
     .forEach(function(id){document.getElementById(id).value='';});
 }
 
+// ── Drucken auf iPhone/iPad ──────────────────────────────────────────────
+// window.print() tut in der Home-Bildschirm-App auf iOS nichts (kein Dialog,
+// keine Fehlermeldung). Dort erzeugt die App ein PDF (jsPDF, vendor/jspdf) und
+// gibt es ueber das Teilen-Menue aus, das "Drucken" und "In Dateien sichern"
+// anbietet.
+function istIOS(){
+  return /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+var pdfLibPromise = null;
+function pdfLibLaden(){
+  if (window.jspdf) return Promise.resolve(window.jspdf);
+  if (pdfLibPromise) return pdfLibPromise;
+  pdfLibPromise = new Promise(function(resolve, reject){
+    var sc = document.createElement('script');
+    sc.src = './vendor/jspdf/jspdf.umd.min.js';
+    sc.onload = function(){ window.jspdf ? resolve(window.jspdf) : reject(new Error('jsPDF fehlt')); };
+    sc.onerror = function(){ pdfLibPromise = null; reject(new Error('jsPDF nicht ladbar')); };
+    document.head.appendChild(sc);
+  });
+  return pdfLibPromise;
+}
+
+// erzeugen(lib) liefert den PDF-Blob. Das Teilen-Menue oeffnet Safari nur im
+// selben Fingertipp. Deshalb wird jsPDF beim Oeffnen von Bezirke bzw. beim
+// Berechnen der Route vorgeladen; ist es beim Tipp noch nicht da, laedt es jetzt
+// und der naechste Tipp klappt sofort.
+function pdfTeilen(erzeugen, dateiname){
+  if (!window.jspdf) {
+    toast('PDF wird vorbereitet …');
+    pdfLibLaden().then(function(){
+      toast('PDF ist bereit – bitte noch einmal auf „Drucken“ tippen');
+    }).catch(function(e){ console.warn(e); toast('PDF konnte nicht erstellt werden', true); });
+    return;
+  }
+  var blob;
+  try { blob = erzeugen(window.jspdf); }
+  catch(e){ console.warn(e); toast('PDF konnte nicht erstellt werden', true); return; }
+  var file = new File([blob], dateiname, { type: 'application/pdf' });
+  if (!(navigator.share && navigator.canShare && navigator.canShare({ files: [file] }))) {
+    karteDateiDownload(blob, dateiname, 'PDF erstellt');
+    return;
+  }
+  navigator.share({ files: [file] }).catch(function(e){
+    if (e && e.name === 'AbortError') return;   // Teilen-Menue geschlossen
+    toast('Teilen nicht möglich – bitte noch einmal auf „Drucken“ tippen', true);
+  });
+}
+
+function bezirkeDateiname(){
+  var d = new Date();
+  function p(n){ return (n < 10 ? '0' : '') + n; }
+  return 'SVLaubrechte_Bezirke_' + d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate()) + '.pdf';
+}
+
+// Bezirkslisten als A4-PDF, gleicher Aufbau wie renderBezirkePrint():
+// je Bezirk eigene Seiten mit 30 Zeilen, leere Spalten zum Ausfuellen.
+function bezirkePdf(lib){
+  var suppeBz = parseInt(document.getElementById('suppe-bezirk').value) || 0;
+  var ROWS = 30;
+  var doc = new lib.jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+  var L = 12, R = 194, TOP = 12, RH = 8;
+  var today = new Date().toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric' });
+  var ersteSeite = true;
+  for (var b = 1; b <= 4; b++) {
+    var showSuppe = (suppeBz === -1 || suppeBz === b);
+    var cols = [ { t: 'Nr.', w: 11 }, { t: 'Name / Vorname', w: 0 }, { t: 'Vermerke / E-Mail', w: 52 }, { t: 'Beitrag', w: 18 } ];
+    if (showSuppe) cols.push({ t: 'Suppe', w: 18 });
+    var rest = R - L; cols.forEach(function(c){ rest -= c.w; }); cols[1].w = rest;
+    var x = [L]; cols.forEach(function(c, i){ x.push(x[i] + c.w); });
+    var list = members.filter(function(m){ return m.bz === b; });
+    var pages = Math.max(1, Math.ceil(list.length / ROWS));
+    for (var p = 0; p < pages; p++) {
+      if (!ersteSeite) doc.addPage();
+      ersteSeite = false;
+      var chunk = list.slice(p * ROWS, (p + 1) * ROWS);
+      var y = TOP;
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(31, 78, 121);
+      doc.text('Bezirk ' + b, L, y + 5);
+      var hw = doc.getTextWidth('Bezirk ' + b);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(85);
+      doc.text(list.length + ' Einträge' + (pages > 1 ? '   (Seite ' + (p + 1) + '/' + pages + ')' : ''), L + hw + 3, y + 5);
+      doc.setDrawColor(31, 78, 121); doc.setLineWidth(0.7); doc.line(L, y + 7, R, y + 7);
+      doc.setFontSize(8); doc.setTextColor(100);
+      doc.text('Stand: ' + today + '    SV Lau-Brechte', L, y + 11);
+      if (chunk.some(function(m){ return m.ehren; })) {
+        var lx = L + doc.getTextWidth('Stand: ' + today + '    SV Lau-Brechte') + 6;
+        doc.setFillColor(250, 215, 181); doc.rect(lx, y + 8.6, 26, 3.4, 'F');
+        doc.setFillColor(197, 90, 17); doc.rect(lx, y + 8.6, 1.2, 3.4, 'F');
+        doc.setTextColor(50); doc.text('= Ehrenmitglied', lx + 2.2, y + 11);
+      }
+      y += 14;
+      doc.setFillColor(46, 117, 182); doc.rect(L, y, R - L, 7, 'F');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(255);
+      cols.forEach(function(c, i){ doc.text(c.t, x[i] + 1.5, y + 4.8); });
+      y += 7;
+      var tabTop = y;
+      chunk.forEach(function(m, i){
+        var nr = p * ROWS + i + 1;
+        if (m.ehren) {
+          doc.setFillColor(250, 215, 181); doc.rect(L, y, R - L, RH, 'F');
+          doc.setFillColor(197, 90, 17); doc.rect(L, y, 1.4, RH, 'F');
+        } else if ((nr - 1) % 2) {
+          doc.setFillColor(235, 243, 250); doc.rect(L, y, R - L, RH, 'F');
+        }
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(m.ehren ? 122 : 136, m.ehren ? 58 : 136, m.ehren ? 10 : 136);
+        doc.text(String(nr), x[0] + cols[0].w / 2, y + 5.3, { align: 'center' });
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(31, 78, 121);
+        var name = m.name || '';
+        var nx = x[1] + 1.5, maxW = cols[1].w - 3;
+        doc.text(doc.splitTextToSize(name, maxW)[0], nx, y + 5.5);
+        var used = doc.getTextWidth(name);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(12); doc.setTextColor(30);
+        var tail = (m.vor ? ', ' + m.vor : '');
+        if (tail && used < maxW) doc.text(doc.splitTextToSize(tail, maxW - used)[0] || '', nx + used, y + 5.5);
+        if (m.ehren) {
+          var ew = used + (tail ? doc.getTextWidth(tail) : 0) + 1.5;
+          if (ew < maxW - 3) { doc.setFont('helvetica', 'bold'); doc.setTextColor(46, 117, 182); doc.text('E', nx + ew, y + 5.5); }
+        }
+        doc.setDrawColor(204); doc.setLineWidth(0.15); doc.line(L, y + RH, R, y + RH);
+        y += RH;
+      });
+      if (chunk.length) {
+        doc.setDrawColor(187); doc.setLineWidth(0.2);
+        x.slice(1, -1).forEach(function(xx){ doc.line(xx, tabTop, xx, y); });
+        doc.setDrawColor(102); doc.setLineWidth(0.25); doc.rect(L, tabTop - 7, R - L, y - tabTop + 7);
+      }
+    }
+  }
+  return doc.output('blob');
+}
+
 function exportPDF(){
+  if (istIOS()) { pdfTeilen(bezirkePdf, bezirkeDateiname()); return; }
   renderBezirkePrint();
   document.body.classList.remove('print-tour');
   document.body.classList.add('print-bezirke');
@@ -3015,10 +3150,8 @@ function karteCalcRoute(){
   document.getElementById('k-stat-tour').textContent = stopsTxt;
   document.getElementById('k-stat-km').textContent = totalKm.toFixed(1);
   karteState.tour = tour;
-  kartePdfBereit = null;
-  // Auf dem iPhone die PDF-Bibliothek schon jetzt laden: dann entsteht die PDF
-  // beim Tipp auf "Drucken" sofort und das Teilen-Menue darf sich oeffnen.
-  if (karteIstIOS()) karteLadePdfLib().catch(function(){});
+  // Auf dem iPhone die PDF-Bibliothek schon jetzt laden (siehe pdfTeilen)
+  if (istIOS()) pdfLibLaden().catch(function(){});
   karteRenderExcludedBox();
   toast('Route berechnet: '+order.length+' Stopps · '+totalPersons+' Personen · '+totalKm.toFixed(1)+' km Luftlinie');
   karteFetchRoadRoute(tour);
@@ -3069,7 +3202,6 @@ function karteFetchRoadRoute(tour){
     if (reqId !== karteState.roadReq) return;
     var km = legs.reduce(function(a, b){ return a + b; }, 0);
     karteState.roadRoute = { coords: coords, legs: legs, km: km };
-    kartePdfBereit = null;   // gemerkte PDF hatte noch Luftlinie
     if (karteState.routeLayer) karteState.map.removeLayer(karteState.routeLayer);
     karteState.routeLayer = L.polyline(coords, { color: '#1F4E79', weight: 4, opacity: 0.75 }).addTo(karteState.map);
     document.getElementById('k-stat-km').textContent = km.toFixed(1);
@@ -3164,55 +3296,6 @@ function karteExportKML(){
     groups.length+' Adressen ('+withGeo.length+' Personen) als KML exportiert');
 }
 
-// iPhone/iPad: window.print() tut in der Home-Bildschirm-App nichts (kein
-// Dialog, keine Fehlermeldung). Dort wird die Tour als PDF erzeugt und ueber
-// das Teilen-Menue ausgegeben, das "Drucken" und "In Dateien sichern" anbietet.
-function karteIstIOS(){
-  return /iPad|iPhone|iPod/.test(navigator.userAgent)
-    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-}
-
-var kartePdfLib = null;   // Promise auf jsPDF, wird nur bei Bedarf geladen
-function karteLadePdfLib(){
-  if (window.jspdf) return Promise.resolve(window.jspdf);
-  if (kartePdfLib) return kartePdfLib;
-  kartePdfLib = new Promise(function(resolve, reject){
-    var s = document.createElement('script');
-    s.src = './vendor/jspdf/jspdf.umd.min.js';
-    s.onload = function(){ window.jspdf ? resolve(window.jspdf) : reject(new Error('jsPDF fehlt')); };
-    s.onerror = function(){ kartePdfLib = null; reject(new Error('jsPDF nicht ladbar')); };
-    document.head.appendChild(s);
-  });
-  return kartePdfLib;
-}
-
-var kartePdfBereit = null;   // fertige PDF, falls das Teilen beim ersten Tipp nicht durfte
-
-function karteTourPdfTeilen(){
-  var name = 'SVLaubrechte_Tour_' + karteDateiStempel() + '.pdf';
-  function teilen(blob){
-    var file = new File([blob], name, { type: 'application/pdf' });
-    if (!(navigator.share && navigator.canShare && navigator.canShare({ files: [file] }))) {
-      karteDateiDownload(blob, name, 'PDF erstellt');
-      return;
-    }
-    navigator.share({ files: [file] }).then(function(){
-      kartePdfBereit = null;
-    }).catch(function(e){
-      if (e && e.name === 'AbortError') { kartePdfBereit = null; return; }
-      // Teilen braucht einen frischen Fingertipp. Kam die PDF erst nach dem
-      // Laden der Bibliothek, ist der verbraucht: PDF merken, erneut tippen lassen.
-      kartePdfBereit = blob;
-      toast('PDF ist fertig – bitte noch einmal auf „Drucken“ tippen', true);
-    });
-  }
-  if (kartePdfBereit) { teilen(kartePdfBereit); return; }
-  if (window.jspdf) { teilen(karteTourPdf(window.jspdf)); return; }
-  toast('PDF wird erstellt …');
-  karteLadePdfLib().then(function(lib){ teilen(karteTourPdf(lib)); })
-    .catch(function(e){ console.warn(e); toast('PDF konnte nicht erstellt werden', true); });
-}
-
 // Tour-Liste als A4-PDF, gleiche Spalten wie der Browser-Druck
 function karteTourPdf(lib){
   var t = karteState.tour, road = karteState.roadRoute;
@@ -3290,7 +3373,10 @@ function karteTourPdf(lib){
 
 function karteDrucken(){
   if (!karteState.tour || karteState.tour.length < 2) { toast('Erst Route berechnen', true); return; }
-  if (karteIstIOS()) { karteTourPdfTeilen(); return; }
+  if (istIOS()) {
+    pdfTeilen(karteTourPdf, 'SVLaubrechte_Tour_' + karteDateiStempel() + '.pdf');
+    return;
+  }
   karteRenderTourPrint();
   // Falls ein Bezirks-Druck ohne "afterprint" endete (iOS), Klasse sicher entfernen
   document.body.classList.remove('print-bezirke');
