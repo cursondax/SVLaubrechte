@@ -75,6 +75,9 @@
     "font-family:var(--lc);font-weight:600;font-size:12px;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}",
     ".back:hover{filter:brightness(1.15)}.back:focus-visible{outline:2px solid #fff;outline-offset:2px}",
     ".back.full{background:var(--g)}.back[hidden]{display:none}",
+    ".note{position:absolute;left:50%;top:58px;transform:translateX(-50%);z-index:5;max-width:90%;padding:6px 14px;border-radius:14px;",
+    "background:var(--g);color:#000;font-family:var(--lc);font-size:13px;letter-spacing:.06em;text-align:center;box-shadow:0 4px 18px rgba(0,0,0,.6)}",
+    ".note[hidden]{display:none}",
     /* App-Rahmen */
     ".app{flex:1;min-height:0;position:relative;background:#fff}",
     ".app iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#fff}",
@@ -112,12 +115,13 @@
     '<span class="seg" style="width:14px"></span>' +
     '<button class="back full" id="paddFull" type="button" hidden>Vollbild</button>' +
     '<button class="back" id="paddBack" type="button">◂ Enterprise</button></div>' +
+    '<div class="note" id="paddNote" role="status" hidden></div>' +
     '<div class="app"><iframe id="paddFrame" title="' + esc(appName) + '" ' +
     'allow="geolocation; camera; microphone; clipboard-read; clipboard-write; fullscreen; screen-wake-lock; web-share; autoplay; display-capture" ' +
     'allowfullscreen src="' + esc(inner) + '"></iframe></div>' +
     '<div class="foot"><span class="seg first"></span><span class="seg g grow"></span><span class="seg l" style="width:60px"></span><span class="seg" style="width:24px"></span></div>' +
     "</div>" +
-    '<div class="hw"><em class="lft">Sternenflotte</em><span></span><span class="r"></span><span></span><em class="rgt">PADD 1701-D</em></div>' +
+    '<div class="hw"><em class="lft">Sternenflotte</em><span></span><span class="r"></span><span></span><em class="rgt">PADD 1701-D · V2</em></div>' +
     "</div></body>";
 
   function build() {
@@ -131,26 +135,42 @@
         if (t) { t = t.replace(/\s+[–—|-]\s+.*$/, ""); titleEl.textContent = t; document.title = t + " · PADD"; }
       } catch (e) {}
     });
-    // Vollbild: blendet Adressleiste und Tabs aus (iPad-Safari, Computer). iPhone-Safari
-    // erlaubt das nur fuer Videos, dort bleibt der Knopf verborgen.
+    // Vollbild: blendet Adressleiste und Tabs aus (iPad-Safari, Computer).
+    // Der Knopf erscheint, sobald der Browser die Funktion kennt. Ob er sie in
+    // dieser Ansicht auch erlaubt, zeigt sich erst beim Antippen; klappt es
+    // nicht, sagt ein Hinweis warum, statt dass einfach nichts passiert.
+    // iPhone-Safari kennt die Funktion fuer Seiten gar nicht, dort bleibt er verborgen.
     var root = document.documentElement, fullBtn = document.getElementById("paddFull");
-    var canFull = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled) &&
-                  !!(root.requestFullscreen || root.webkitRequestFullscreen);
+    var note = document.getElementById("paddNote"), noteTimer;
+    var req = root.requestFullscreen || root.webkitRequestFullscreen;
+    var exit = document.exitFullscreen || document.webkitExitFullscreen;
     function isFull() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
     function paintFull() { fullBtn.textContent = isFull() ? "Fenster" : "Vollbild"; }
-    if (canFull) {
+    function say(t) {
+      note.textContent = t; note.hidden = false;
+      clearTimeout(noteTimer); noteTimer = setTimeout(function () { note.hidden = true; }, 5000);
+    }
+    function failed() {
+      if (isFull()) return;
+      say("Vollbild wird in dieser Ansicht nicht erlaubt. Bitte die Seite direkt in Safari öffnen.");
+    }
+    if (req) {
       fullBtn.hidden = false;
       fullBtn.addEventListener("click", function () {
         try {
-          if (isFull()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
-          else { var p = (root.requestFullscreen || root.webkitRequestFullscreen).call(root); if (p && p.catch) p.catch(function () {}); }
-        } catch (e) {}
+          if (isFull()) { if (exit) exit.call(document); return; }
+          var p = req.call(root);
+          if (p && p.then) p.then(null, failed);
+          else setTimeout(failed, 700);
+        } catch (e) { failed(); }
       });
       document.addEventListener("fullscreenchange", paintFull);
       document.addEventListener("webkitfullscreenchange", paintFull);
+      document.addEventListener("fullscreenerror", failed);
+      document.addEventListener("webkitfullscreenerror", failed);
     }
     document.getElementById("paddBack").addEventListener("click", function () {
-      try { if (isFull()) (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch (e) {}
+      try { if (isFull() && exit) exit.call(document); } catch (e) {}
       // In einem eigenen Tab geoeffnet: Tab schliessen; sonst zur Enterprise wechseln
       try { window.close(); } catch (e) {}
       setTimeout(function () { location.href = ENTERPRISE; }, 250);
