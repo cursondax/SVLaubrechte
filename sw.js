@@ -1,10 +1,16 @@
 // SV Lau-Brechte Service Worker
 // Versions-String bei jedem Release erhöhen, damit Clients neu laden
-const CACHE_VERSION = 'svlb-v46';
+const CACHE_VERSION = 'svlb-v47';
 // Kartenkacheln in eigenem Cache: überlebt App-Updates (Karte bleibt offline
 // nutzbar), ist aber auf TILE_MAX Kacheln begrenzt (~14 KB je Kachel).
-const TILE_CACHE = 'svlb-tiles-v1';
+// v2: Kacheln jetzt ohne a./b./c.-Subdomain -> alte Eintraege waren nutzlos
+const TILE_CACHE = 'svlb-tiles-v2';
 const TILE_MAX = 1000;
+// Vorab geladene Offline-Karte (Knopf "Karte offline speichern" in index.html,
+// gleicher Name dort). Wird nie gekuerzt und ueberlebt App-Updates.
+const OFFLINE_TILES = 'svlb-offline-tiles-v1';
+// Laenger als das wartet die App beim Start nicht aufs Netz (Funkloch auf dem Land)
+const HTML_TIMEOUT_MS = 4000;
 const PRECACHE = [
   './',
   './index.html',
@@ -31,7 +37,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => Promise.all(
-      keys.filter((k) => k !== CACHE_VERSION && k !== TILE_CACHE).map((k) => caches.delete(k))
+      keys.filter((k) => k !== CACHE_VERSION && k !== TILE_CACHE && k !== OFFLINE_TILES).map((k) => caches.delete(k))
     )).then(() => self.clients.claim())
   );
 });
@@ -50,9 +56,9 @@ function trimTiles() {
 
 // Cache-first mit Speichern nur erfolgreicher Antworten.
 // Fehlerseiten (404, 429 "Too many requests" usw.) werden nie gespeichert.
-function cacheFirst(event, req, cacheName, onStore) {
+function cacheFirst(event, req, cacheName, onStore, matchOpts) {
   event.respondWith(
-    caches.match(req).then((cached) => cached || fetch(req).then((res) => {
+    caches.match(req, matchOpts).then((cached) => cached || fetch(req).then((res) => {
       if (res.ok) {
         const copy = res.clone();
         event.waitUntil(caches.open(cacheName).then((c) => c.put(req, copy)).then(onStore));
@@ -80,24 +86,38 @@ self.addEventListener('fetch', (event) => {
   if (url.hostname === 'nominatim.openstreetmap.org') return;
   // Kartenkacheln: eigener, begrenzter Cache
   if (url.hostname.endsWith('tile.openstreetmap.org')) {
+    // Download fuer die Offline-Karte (cache:'no-store'): durchreichen, die
+    // Seite speichert die Kachel selbst im Offline-Speicher
+    if (req.cache === 'no-store') return;
+    // Sucht in allen Speichern, also auch in der Offline-Karte.
+    // ignoreVary: gespeicherte Kachel passt unabhaengig von Anfrage-Kopfzeilen.
     cacheFirst(event, req, TILE_CACHE, () => {
       if (++tilePuts % 50 === 0) return trimTiles();
-    });
+    }, { ignoreVary: true });
     return;
   }
   // Network-first für die index.html (damit Updates schnell beim Nutzer landen),
   // Cache-first für alles andere (Icons, Manifest).
   const isHtml = req.mode === 'navigate' || url.pathname.endsWith('/') || url.pathname.endsWith('.html');
   if (isHtml) {
-    event.respondWith(
-      fetch(req).then((res) => {
-        if (res.ok) {
-          const copy = res.clone();
-          caches.open(CACHE_VERSION).then((c) => c.put(req, copy));
-        }
-        return res;
-      }).catch(() => caches.match(req).then((r) => r || caches.match('./index.html')))
-    );
+    // Network-first, aber bei schlechtem Netz nach HTML_TIMEOUT_MS die
+    // gespeicherte Seite nehmen (die neue landet trotzdem im Speicher)
+    const ausSpeicher = () => caches.match(req).then((r) => r || caches.match('./index.html'));
+    const netz = fetch(req).then((res) => {
+      if (res.ok) {
+        const copy = res.clone();
+        caches.open(CACHE_VERSION).then((c) => c.put(req, copy));
+      }
+      return res;
+    });
+    event.respondWith(new Promise((resolve) => {
+      let fertig = false;
+      const ende = (r) => { if (!fertig && r) { fertig = true; resolve(r); } };
+      const timer = setTimeout(() => ausSpeicher().then((r) => { if (r) ende(r); }), HTML_TIMEOUT_MS);
+      netz.then((r) => { clearTimeout(timer); ende(r); })
+        .catch(() => { clearTimeout(timer); ausSpeicher().then((r) => ende(r || Response.error())); });
+    }));
+    event.waitUntil(netz.catch(() => {}));
   } else {
     cacheFirst(event, req, CACHE_VERSION);
   }

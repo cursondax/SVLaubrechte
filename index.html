@@ -962,6 +962,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
             <button class="btn btn-import" onclick="karteOpenInMaps()">&#128205; In Google Maps</button>
             <button class="btn btn-clear" onclick="karteExportGPX()" title="Für Komoot, OsmAnd, Garmin">&#128190; GPX exportieren</button>
             <button class="btn btn-clear" onclick="karteExportKML()" title="Für Google MyMaps – eigene Karte mit allen Pins anlegen">&#128507; KML f&uuml;r MyMaps</button>
+            <button class="btn btn-clear k-route-btn" onclick="karteOfflineLaden()" id="btn-offline" title="Kartenausschnitt aller Mitglieder für unterwegs ohne Netz speichern">&#128229; Karte offline speichern</button>
           </div>
         </div>
 
@@ -975,6 +976,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
           <span>Gesamt: <strong id="k-stat-km">&ndash;</strong> km <span id="k-stat-km-art">Luftlinie</span></span>
         </div>
         <div class="map-progress" id="k-progress" style="display:none"><span style="width:0%"></span></div>
+        <div id="k-offline-info" style="font-size:.78rem;color:var(--grey700);margin-top:.4rem"></div>
 
         <div class="k-draw-bar" id="k-draw-bar">
           <span class="txt" id="k-draw-txt">Tippe nacheinander die Eckpunkte des Gebiets auf die Karte.</span>
@@ -2635,7 +2637,7 @@ function karteInit(){
   };
   karteState.map.on('zoomend', labelsZoom);
   labelsZoom();
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  L.tileLayer(KARTE_TILE_URL, {
     maxZoom: 19,
     // CORS statt "opaque": der Service Worker kann Fehler erkennen, und der
     // Browser rechnet die Kacheln mit echter Größe auf den Speicher an.
@@ -2645,6 +2647,7 @@ function karteInit(){
   karteLoadGeocache();
   karteUpdateGeoInfo();
   karteRenderOrte();
+  karteOfflineInfo();
   // Handy: Filter einklappen, damit Karte und Tour ohne langes Scrollen sichtbar sind.
   // Ohne Startadresse offen lassen, die braucht man zuerst.
   if (window.matchMedia('(max-width:700px)').matches && localStorage.getItem('sgO_start')) {
@@ -3133,7 +3136,8 @@ function karteCalcRoute(){
         +'<br><a style="color:#c0392b;cursor:pointer;font-size:.85rem" onclick="karteExcludeFromTour('+jsq(karteMemberKey(m))+');karteState.map.closePopup()">✕ Aus Tour entfernen</a>'
         +'</div>';
     }).join('');
-    var maps = '<br><a href="https://www.google.com/maps/dir/?api=1&travelmode=bicycling&destination='+encodeURIComponent(karteMapsZiel(p))+'" target="_blank">🚴 Navigation zu diesem Stopp</a>';
+    var popupNav = 'https://www.google.com/maps/dir/?api=1&travelmode=bicycling&destination='+encodeURIComponent(karteMapsZiel(p));
+    var maps = '<br><a href="#" onclick="karteOeffneMaps('+jsq(popupNav)+');return false">🚴 Navigation zu diesem Stopp</a>';
     var mk = L.marker([p.lat, p.lng], { icon: karteStopIcon(n, g) })
       .addTo(karteState.map).bindPopup(stopHead + maps + personRows);
     karteState.stopMarkers.push({ mk: mk, n: n, g: g });
@@ -3170,7 +3174,7 @@ function karteCalcRoute(){
     var telBtn = firstTel
       ? '<button class="btn-tel" title="Anrufen: '+esc(firstTel.tel)+' ('+esc(firstTel.name)+')" onclick="event.stopPropagation();location.href='+jsq('tel:'+firstTel.tel)+'">📞</button>'
       : '<span></span>';   // Platzhalter: sonst rutscht der ▶-Pfeil in eine eigene Zeile
-    html += '<li data-key="'+esc(g.key)+'" title="Antippen für Navigation zu diesem Stopp" onclick="window.open('+jsq(navUrl)+',\'_blank\')">'
+    html += '<li data-key="'+esc(g.key)+'" title="Antippen für Navigation zu diesem Stopp" onclick="karteOeffneMaps('+jsq(navUrl)+')">'
       +'<span>'+nameLine+multiBadge
       +'<br><span style="font-size:.78rem;color:var(--grey700)">'+esc(g.str||'')+', '+esc(g.plz||'')+' '+esc(g.ort||'')+'</span></span>'
       +'<span class="leg">'+leg+' km</span>'
@@ -3209,9 +3213,32 @@ function karteResetRoadRoute(){
   if (art) art.textContent = 'Luftlinie';
 }
 
+// Gleiche Tour (gleiche Punkte in gleicher Reihenfolge) = gleiche Strecke
+function karteRoadSig(tour){
+  return tour.map(function(q){ return (+q.lat).toFixed(5)+','+(+q.lng).toFixed(5); }).join(';');
+}
+
+function karteRoadAnwenden(rr, gespeichert){
+  karteState.roadRoute = rr;
+  if (karteState.routeLayer) karteState.map.removeLayer(karteState.routeLayer);
+  karteState.routeLayer = L.polyline(rr.coords, { color: '#1F4E79', weight: 4, opacity: 0.75 }).addTo(karteState.map);
+  document.getElementById('k-stat-km').textContent = rr.km.toFixed(1);
+  var art = document.getElementById('k-stat-km-art');
+  if (art) art.textContent = 'mit dem Fahrrad' + (gespeichert ? ' (gespeichert)' : '');
+  var legEls = document.querySelectorAll('#tour-list-items .leg');
+  for (var i = 0; i < legEls.length && i < rr.legs.length; i++) legEls[i].textContent = rr.legs[i].toFixed(2)+' km';
+}
+
 function karteFetchRoadRoute(tour){
   karteResetRoadRoute();
   var reqId = karteState.roadReq;
+  // Dieselbe Tour wurde schon einmal geladen: gespeicherte Strecke nehmen
+  // (klappt auch ohne Netz, spart Anfragen an den Routing-Server)
+  var sig = karteRoadSig(tour);
+  try {
+    var gesp = JSON.parse(localStorage.getItem('sgO_roadroute') || 'null');
+    if (gesp && gesp.sig === sig && Array.isArray(gesp.coords)) { karteRoadAnwenden(gesp, true); return; }
+  } catch(e){}
   // Teilstücke mit einem Punkt Überlappung, damit die Strecke durchgehend ist
   var chunks = [];
   for (var s = 0; s < tour.length - 1; s += KARTE_ROUTING_CHUNK - 1) {
@@ -3239,18 +3266,18 @@ function karteFetchRoadRoute(tour){
   p.then(function(){
     if (reqId !== karteState.roadReq) return;
     var km = legs.reduce(function(a, b){ return a + b; }, 0);
-    karteState.roadRoute = { coords: coords, legs: legs, km: km };
-    if (karteState.routeLayer) karteState.map.removeLayer(karteState.routeLayer);
-    karteState.routeLayer = L.polyline(coords, { color: '#1F4E79', weight: 4, opacity: 0.75 }).addTo(karteState.map);
-    document.getElementById('k-stat-km').textContent = km.toFixed(1);
-    if (art) art.textContent = 'mit dem Fahrrad';
-    var legEls = document.querySelectorAll('#tour-list-items .leg');
-    for (var i = 0; i < legEls.length && i < legs.length; i++) legEls[i].textContent = legs[i].toFixed(2)+' km';
+    // Koordinaten auf 5 Stellen (~1 m) kuerzen, das haelt den Speicher klein
+    coords = coords.map(function(c){ return [+c[0].toFixed(5), +c[1].toFixed(5)]; });
+    var rr = { sig: sig, coords: coords, legs: legs, km: km };
+    karteRoadAnwenden(rr, false);
+    try { localStorage.setItem('sgO_roadroute', JSON.stringify(rr)); } catch(e){}
     toast('Fahrradstrecke geladen: '+km.toFixed(1)+' km');
   }).catch(function(e){
     if ((e && e.stale) || reqId !== karteState.roadReq) return;
     if (art) art.textContent = 'Luftlinie';
-    toast('Fahrradstrecke nicht verfügbar (kein Netz?) – Tour bleibt in Luftlinie', true);
+    // Offline ist kein Fehler: Reihenfolge, Liste und Navigation gehen trotzdem
+    if (navigator.onLine === false) toast('Offline – Strecke als Luftlinie, Tour-Liste funktioniert normal');
+    else toast('Fahrradstrecke nicht verfügbar – Tour bleibt in Luftlinie', true);
   });
 }
 
@@ -3607,6 +3634,112 @@ function karteErledigtRender(scroll){
   if (scroll && naechster) naechster.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
+// Google Maps navigiert ohne Netz nur mit dem Auto (Fahrrad geht offline nicht).
+// Ist das Handy offline, wird deshalb auf Auto umgestellt.
+function karteOeffneMaps(url){
+  if (navigator.onLine === false) {
+    url = url.replace('travelmode=bicycling', 'travelmode=driving');
+    toast('Offline: Google Maps navigiert ohne Netz nur im Auto-Modus');
+  }
+  window.open(url, '_blank');
+}
+
+// ── Karte offline speichern ─────────────────────────────────────────────
+// Laedt die Kartenkacheln fuer das Gebiet aller Mitglieder in einen eigenen
+// Speicher (sw.js liefert sie von dort, auch ohne Netz). Zoomstufen 12-16 fuer
+// die Flaeche, Stufe 17 nur fuer die Kachel jeder Adresse: Die Nutzungsregeln
+// von OpenStreetMap verbieten das flaechige Vorladen ab Stufe 17.
+var KARTE_TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+var KARTE_OFFLINE_CACHE = 'svlb-offline-tiles-v1';   // gleicher Name wie in sw.js
+var karteOfflineLaeuft = false;
+
+function karteTileXY(lat, lng, z){
+  var n = Math.pow(2, z), r = lat * Math.PI / 180;
+  return {
+    x: Math.min(n - 1, Math.max(0, Math.floor((lng + 180) / 360 * n))),
+    y: Math.min(n - 1, Math.max(0, Math.floor((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n)))
+  };
+}
+
+function karteOfflineKacheln(){
+  var pts = members.filter(function(m){ return m.lat && m.lng; }).map(function(m){ return { lat: m.lat, lng: m.lng }; });
+  if (karteState.startCoord) pts.push(karteState.startCoord);
+  if (!pts.length) return [];
+  var la = pts.map(function(p){ return p.lat; }), ln = pts.map(function(p){ return p.lng; });
+  // ca. 1 km Rand rundherum
+  var n = Math.max.apply(null, la) + 0.01, s = Math.min.apply(null, la) - 0.01;
+  var e = Math.max.apply(null, ln) + 0.015, w = Math.min.apply(null, ln) - 0.015;
+  var urls = {}, z, x, y;
+  for (z = 12; z <= 16; z++) {
+    var a = karteTileXY(n, w, z), b = karteTileXY(s, e, z);
+    for (x = a.x; x <= b.x; x++) for (y = a.y; y <= b.y; y++) urls[z+'/'+x+'/'+y] = 1;
+  }
+  pts.forEach(function(p){ var t = karteTileXY(p.lat, p.lng, 17); urls['17/'+t.x+'/'+t.y] = 1; });
+  return Object.keys(urls).map(function(k){ return 'https://tile.openstreetmap.org/' + k + '.png'; });
+}
+
+function karteOfflineInfo(){
+  var el = document.getElementById('k-offline-info');
+  if (!el) return;
+  var info = null;
+  try { info = JSON.parse(localStorage.getItem('sgO_offlineKarte') || 'null'); } catch(e){}
+  el.textContent = info
+    ? '📥 Offline-Karte gespeichert am ' + new Date(info.ts).toLocaleDateString('de-DE') + ' (' + info.anzahl + ' Kacheln, ca. ' + Math.round(info.bytes / 1048576) + ' MB)'
+      + (info.fehler ? ', ' + info.fehler + ' fehlten' : '')
+    : '📥 Noch keine Offline-Karte gespeichert – ohne Netz zeigt die Karte nur bereits angesehene Stellen.';
+}
+
+async function karteOfflineLaden(){
+  if (karteOfflineLaeuft) { toast('Offline-Karte wird bereits geladen', true); return; }
+  if (!('caches' in window)) { toast('Dieser Browser kann keine Offline-Karte speichern', true); return; }
+  var urls = karteOfflineKacheln();
+  if (!urls.length) { toast('Erst Adressen geocoden', true); return; }
+  if (!confirm('Karte für unterwegs ohne Netz speichern?\n\n' + urls.length + ' Kartenteile, ungefähr ' + Math.round(urls.length * 18 / 1024) + ' MB.\nAm besten im WLAN, dauert 1–3 Minuten.\n\nGespeichert wird das Gebiet aller Mitglieder (Zoom bis Straßenebene).')) return;
+  karteOfflineLaeuft = true;
+  var btn = document.getElementById('btn-offline');
+  btn.disabled = true;
+  var prog = document.getElementById('k-progress'), bar = prog.querySelector('span');
+  prog.style.display = 'block';
+  var cache = await caches.open(KARTE_OFFLINE_CACHE);
+  var fertig = 0, fehler = 0, bytes = 0, i = 0;
+  // Hoechstens 2 Downloads gleichzeitig (Nutzungsregeln der OSM-Kartenserver)
+  async function arbeiter(){
+    while (i < urls.length) {
+      var url = urls[i++];
+      try {
+        var alt = await cache.match(url);
+        if (alt) { bytes += +(alt.headers.get('content-length') || 15000); }
+        else {
+          // cache:'no-store' -> sw.js reicht die Anfrage durch, die Kachel landet
+          // nur hier und nicht zusaetzlich im kleinen Durchlauf-Speicher
+          var res = await fetch(url, { mode: 'cors', cache: 'no-store' });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          var blob = await res.clone().blob();
+          bytes += blob.size;
+          await cache.put(url, res);
+        }
+      } catch(e){ fehler++; }
+      fertig++;
+      bar.style.width = Math.round(fertig / urls.length * 100) + '%';
+      btn.textContent = '📥 ' + fertig + ' / ' + urls.length;
+    }
+  }
+  try {
+    await Promise.all([arbeiter(), arbeiter()]);
+    // Bei iOS/Chrome um dauerhaften Speicher bitten, damit nichts geloescht wird
+    if (navigator.storage && navigator.storage.persist) { try { await navigator.storage.persist(); } catch(e){} }
+    localStorage.setItem('sgO_offlineKarte', JSON.stringify({ ts: new Date().toISOString(), anzahl: urls.length - fehler, bytes: bytes, fehler: fehler }));
+    toast(fehler ? ('Offline-Karte gespeichert, ' + fehler + ' Teile fehlen – später noch einmal tippen') : '✔ Offline-Karte gespeichert', !!fehler);
+  } finally {
+    karteOfflineLaeuft = false;
+    btn.disabled = false;
+    btn.innerHTML = '&#128229; Karte offline speichern';
+    prog.style.display = 'none';
+    bar.style.width = '0%';
+    karteOfflineInfo();
+  }
+}
+
 function karteOpenInMaps(){
   if (!karteState.tour || karteState.tour.length < 2) { toast('Erst Route berechnen', true); return; }
   var offen = karteState.tour.slice(1).filter(function(p){ return !karteState.erledigt[p.g.key]; });
@@ -3626,7 +3759,7 @@ function karteOpenInMaps(){
     links.push(url);
   }
   if (!links.length) { toast('Keine gültige Route', true); return; }
-  window.open(links[0], '_blank');
+  karteOeffneMaps(links[0]);
   var tlist = document.getElementById('tour-list');
   var old = tlist.querySelector('.tour-extra-links');
   if (old) old.remove();
