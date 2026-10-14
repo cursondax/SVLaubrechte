@@ -85,7 +85,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
 .pdf-bar p{font-size:.84rem;line-height:1.5}
 .stats{display:grid;grid-template-columns:repeat(6,1fr);gap:.75rem;margin-bottom:1.5rem}
 @media(max-width:900px){.stats{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:500px){.stats{grid-template-columns:repeat(2,1fr)}}
+.vor-mob{display:none}
 .sc{background:#fff;border-radius:var(--r);padding:.85rem 1rem;box-shadow:0 1px 3px rgba(0,0,0,.08);text-align:center;border:1px solid var(--grey100)}
 .sc .n{font-size:1.85rem;font-weight:800;color:var(--navy);line-height:1}
 .sc .l{font-size:.72rem;font-weight:700;color:var(--grey700);margin-top:4px;text-transform:uppercase;letter-spacing:.04em}
@@ -131,7 +131,8 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
 .sync-card.connected h3{color:var(--green)}
 .sync-state-line{font-size:.82rem;color:var(--grey700);margin-top:.4rem}
 .sync-state-line strong{color:var(--navy)}
-@media(max-width:500px){.sync-badge{font-size:.66rem;padding:2px 7px}.sync-badge .lbl{display:none}}
+/* Handy: Text weg, dafuer Wolke + Ampelpunkt in fingergerechter Groesse */
+@media(max-width:500px){.sync-badge{font-size:1rem;padding:4px 10px;min-height:34px;min-width:46px;justify-content:center}.sync-badge::before{content:'\2601';line-height:1}.sync-badge .dot{width:9px;height:9px}.sync-badge .lbl{display:none}.sync-badge.ok .dot{background:#7CFC9A}.sync-badge.warn .dot,.sync-badge.err .dot{background:#FFD27A}}
 /* Akkordeon "Mehr Optionen" */
 .more-opts{margin-top:1.25rem;border:1px solid var(--grey300);border-radius:var(--r);background:#fff}
 .more-opts>summary{padding:.7rem 1rem;cursor:pointer;font-weight:700;font-size:.92rem;color:var(--navy);list-style:none;display:flex;align-items:center;gap:.5rem;user-select:none}
@@ -291,10 +292,12 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
   }
 
   /* Stats: 2 columns on mobile */
-  .stats { grid-template-columns: repeat(2, 1fr); gap: .5rem; margin-bottom: 1rem; }
-  .sc { padding: .65rem .75rem; }
-  .sc .n { font-size: 1.5rem; }
-  .sc .l { font-size: .65rem; }
+  .stats { grid-template-columns: repeat(3, minmax(0,1fr)); gap: .4rem; margin-bottom: .85rem; }
+  .sc { padding: .45rem .35rem; }
+  .sc .n { font-size: 1.25rem; }
+  .sc .l { font-size: .56rem; letter-spacing: 0; line-height: 1.2; }
+  /* Vorname steht auf dem Handy mit in der Namensspalte */
+  .vor-mob { display: inline; }
 
   /* Toolbar stacked */
   .toolbar { flex-direction: column; gap: .5rem; align-items: stretch; }
@@ -585,8 +588,8 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
     <div class="card">
       <div class="tbl-wrap">
         <table><thead><tr>
-          <th class="col-hide-mob">Nr.</th><th>Bz.</th><th class="col-hide-mob">Anrede</th><th>Nachname</th><th>Vorname</th>
-          <th>Stra&#223;e</th><th class="col-hide-mob">PLZ</th><th>Ort</th><th>Tel./Handy</th><th class="col-hide-mob">E-Mail</th><th class="col-hide-mob">E</th><th class="col-hide-mob">H</th><th></th>
+          <th class="col-hide-mob">Nr.</th><th>Bz.</th><th class="col-hide-mob">Anrede</th><th>Nachname</th><th class="col-hide-mob">Vorname</th>
+          <th>Stra&#223;e</th><th class="col-hide-mob">PLZ</th><th>Ort</th><th>Tel./Handy</th><th class="col-hide-mob">E-Mail</th><th class="col-hide-mob">E</th><th class="col-hide-mob">H</th><th class="col-hide-mob"></th>
         </tr></thead><tbody id="tbody"></tbody></table>
       </div>
     </div>
@@ -881,7 +884,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
           <div style="font-size:.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.5rem">Vorschau (max. 10)</div>
           <div class="tbl-wrap card">
             <table><thead><tr>
-              <th>Nr.</th><th>Bz.</th><th>Anrede</th><th>Name</th><th>Vorname</th><th>Stra&#223;e</th><th>PLZ</th><th>Ort</th><th>Tel.</th><th>E-Mail</th>
+              <th class="col-hide-mob">Nr.</th><th class="col-hide-mob">Bz.</th><th>Anrede</th><th>Name</th><th>Vorname</th><th class="col-hide-mob">Stra&#223;e</th><th class="col-hide-mob">PLZ</th><th>Ort</th><th class="col-hide-mob">Tel.</th><th class="col-hide-mob">E-Mail</th>
             </tr></thead><tbody id="ex-preview-tbody"></tbody></table>
           </div>
         </div>
@@ -1255,7 +1258,8 @@ function mkM(r,i){
       var v=lookup[normH(arguments[j])];
       if(v!==undefined && v!==null){
         // Excel-Textschreibweise ="0171…" aus dem eigenen CSV-Export zuruecknehmen
-        var mx=/^="(.*)"$/.exec(String(v).trim());
+        // auch =0171… (Anfuehrungszeichen hat der CSV-Leser schon entfernt)
+        var mx=/^="?([0-9+][^"]*)"?$/.exec(String(v).trim());
         return mx ? mx[1] : v;
       }
     }
@@ -1400,8 +1404,8 @@ function renderTable(){
       +'<td class="col-hide-mob">'+m.nr+'</td>'
       +'<td><span class="badge b'+(m.bz||0)+'">'+(m.bz?'B'+m.bz:'—')+'</span></td>'
       +'<td class="col-hide-mob">'+esc(m.a1)+'</td>'
-      +'<td><strong>'+esc(m.name)+'</strong></td>'
-      +'<td>'+esc(m.vor)+'</td>'
+      +'<td><strong>'+esc(m.name)+'</strong>'+(m.vor?'<span class="vor-mob">, '+esc(m.vor)+'</span>':'')+'</td>'
+      +'<td class="col-hide-mob">'+esc(m.vor)+'</td>'
       +'<td>'+esc(m.str)+'</td>'
       +'<td class="col-hide-mob">'+esc(m.plz)+'</td>'
       +'<td>'+esc(m.ort)+'</td>'
@@ -1409,7 +1413,7 @@ function renderTable(){
       +'<td class="col-hide-mob">'+(m.email?'<a href="mailto:'+esc(m.email)+'" onclick="event.stopPropagation()">'+esc(m.email)+'</a>':'')+'</td>'
       +'<td class="col-hide-mob">'+(m.ehren?'<span class="badge be">E</span>':'')+'</td>'
       +'<td class="col-hide-mob">'+(m.helga?'&#10003;':'')+'</td>'
-      +'<td><button class="btn-edit" onclick="event.stopPropagation();openEdit('+idx+')">&#9998;</button></td>'
+      +'<td class="col-hide-mob"><button class="btn-edit" onclick="event.stopPropagation();openEdit('+idx+')">&#9998;</button></td>'
       +'</tr>';
   });
   document.getElementById('tbody').innerHTML=rows.join('');
@@ -1458,9 +1462,13 @@ function showTab(id,btn,bnId){
   if(id==='bezirke' && istIOS()) pdfLibLaden().catch(function(){});  // siehe pdfTeilen
   if(id==='karte'){
     if(!karteState.map) karteInit();
-    // karteRecalc statt karteApplyFilter: eine berechnete Route bleibt beim
-    // Zurueckkehren auf die Karte erhalten
-    else { setTimeout(function(){ karteState.map.invalidateSize(); }, 50); karteRecalc(); }
+    // Zurueck auf der Karte: Ausschnitt und Zoom bleiben, wie sie waren. Nur wenn
+    // sich inzwischen Mitgliederdaten geaendert haben, still neu rechnen.
+    else {
+      setTimeout(function(){ karteState.map.invalidateSize(); }, 50);
+      if (karteState.datenGeaendert) karteRecalc({ still: true });
+    }
+    karteState.datenGeaendert = false;
   }
 }
 
@@ -1949,6 +1957,7 @@ function slimSnapshots(){
 function persist(opts){
   // opts.snapshot: 'auto' (default, throttle), 'force' (immer Snapshot), 'skip' (nur speichern)
   opts=opts||{};
+  if(typeof karteState!=='undefined') karteState.datenGeaendert=true;
   try{
     localStorage.setItem('sgO_members',JSON.stringify(members));
     localStorage.setItem('sgO_saved',new Date().toISOString());
@@ -2162,7 +2171,7 @@ function importCSV(file){
         var key=function(m){return (m.name+'|'+m.vor+'|'+m.plz).toLowerCase();};
         var byKey={};members.forEach(function(m){byKey[key(m)]=m;});
         var added=0, updated=0, changes=[]; // Liste der konkreten Änderungen für die Anzeige
-        var labels={bz:'Bezirk',a1:'Anrede 1',a2:'Anrede 2',name:'Nachname',vor:'Vorname',str:'Straße',plz:'PLZ',ort:'Ort',ehren:'Ehrenmitglied',helga:'Helga',foto:'Foto',tel:'Telefon',email:'E-Mail'};
+        var labels={bz:'Bezirk',a1:'Anrede 1',a2:'Anrede 2',name:'Nachname',vor:'Vorname',str:'Straße',plz:'PLZ',ort:'Ort',ehren:'Ehrenmitglied',helga:'Helga',foto:'Foto',gebdat:'Geburtsdatum',tel:'Telefon',email:'E-Mail'};
         imported.forEach(function(m){
           var k=key(m), existing=byKey[k];
           if(existing){
@@ -2313,16 +2322,16 @@ function exPreview(){
   var rows = filtered.slice(0,10).map(function(m){
     var an = exAnreden(m);
     return '<tr>'
-      +'<td>'+m.nr+'</td>'
-      +'<td><span class="badge b'+(m.bz||0)+'">'+(m.bz?'B'+m.bz:'—')+'</span></td>'
+      +'<td class="col-hide-mob">'+m.nr+'</td>'
+      +'<td class="col-hide-mob"><span class="badge b'+(m.bz||0)+'">'+(m.bz?'B'+m.bz:'—')+'</span></td>'
       +'<td>'+esc(an[1]||an[0])+'</td>'
       +'<td><strong>'+esc(m.name)+'</strong></td>'
       +'<td>'+esc(m.vor)+'</td>'
-      +'<td>'+esc(m.str)+'</td>'
-      +'<td>'+esc(m.plz)+'</td>'
+      +'<td class="col-hide-mob">'+esc(m.str)+'</td>'
+      +'<td class="col-hide-mob">'+esc(m.plz)+'</td>'
       +'<td>'+esc(m.ort)+'</td>'
-      +'<td>'+esc(m.tel||'')+'</td>'
-      +'<td>'+esc(m.email||'')+'</td>'
+      +'<td class="col-hide-mob">'+esc(m.tel||'')+'</td>'
+      +'<td class="col-hide-mob">'+esc(m.email||'')+'</td>'
       +'</tr>';
   });
   if(filtered.length>10) rows.push('<tr><td colspan="10"style="text-align:center;color:var(--grey700);font-style:italic">... und '+(filtered.length-10)+' weitere</td></tr>');
@@ -2663,32 +2672,40 @@ function karteInit(){
   karteApplyFilter();
 }
 
-function karteRecalc(){
-  // re-filter, dann ggf. Tour neu rechnen
-  if (karteState.tour) {
-    karteApplyFilter();
-    karteCalcRoute();
-  } else {
-    karteApplyFilter();
-  }
+function karteRecalc(opts){
+  // re-filter, dann ggf. Tour neu rechnen.
+  // opts.still: Kartenausschnitt nicht veraendern, keine Meldung
+  karteApplyFilter(opts);
+  if (karteState.tour) karteCalcRoute(opts);
 }
 
 function karteExcludeFromTour(key){
   karteState.excluded[key] = true;
   karteSaveExcluded();
-  karteRecalc();
+  karteRecalc({ still: true });
+}
+
+// ✕ in der Tour-Liste: alle Personen dieser Adresse aus der Tour nehmen
+// (vorher nur die erste -> der Stopp blieb stehen, als haette der Tipp nichts bewirkt)
+function karteStoppAusschliessen(adrKey){
+  var stopp = (karteState.tour || []).find(function(p){ return p.g && p.g.key === adrKey; });
+  if (!stopp) return;
+  stopp.g.members.forEach(function(m){ karteState.excluded[karteMemberKey(m)] = true; });
+  karteSaveExcluded();
+  karteRecalc({ still: true });
+  toast(stopp.g.members.length > 1 ? stopp.g.members.length + ' Personen dieser Adresse aus der Tour genommen' : 'Aus der Tour genommen');
 }
 
 function karteIncludeAgain(key){
   delete karteState.excluded[key];
   karteSaveExcluded();
-  karteRecalc();
+  karteRecalc({ still: true });
 }
 
 function karteClearExcluded(){
   karteState.excluded = {};
   karteSaveExcluded();
-  karteRecalc();
+  karteRecalc({ still: true });
 }
 
 function karteRenderExcludedBox(){
@@ -2720,7 +2737,8 @@ function karteUpdateGeoInfo(){
   if (el) el.textContent = withGeo + ' von ' + members.length + ' Adressen geocodiert';
 }
 
-function karteApplyFilter(){
+function karteApplyFilter(opts){
+  opts = opts || {};
   if (!karteState.map) return;
   karteSyncCoords();
   karteState.filtered = karteFiltered();
@@ -2742,7 +2760,7 @@ function karteApplyFilter(){
   karteRenderExcludedBox();
   karteGebietZeigen();
   if (!withGeo.length) {
-    if (karteState.gebietLayer && !karteState.draw) karteState.map.fitBounds(karteState.gebietLayer.getBounds().pad(0.1));
+    if (karteState.gebietLayer && !karteState.draw && !opts.still) karteState.map.fitBounds(karteState.gebietLayer.getBounds().pad(0.1));
     return;
   }
   var groups = karteGroupByAddress(withGeo);
@@ -2760,7 +2778,7 @@ function karteApplyFilter(){
     mk.bindPopup(karteGroupPopup(g));
     karteState.markers.push(mk);
   });
-  if (karteState.markers.length){
+  if (karteState.markers.length && !opts.still){
     var grp = L.featureGroup(karteState.markers);
     karteState.map.fitBounds(grp.getBounds().pad(0.15));
   }
@@ -3086,7 +3104,9 @@ function twoOpt(start, points, order){
   return order;
 }
 
-function karteCalcRoute(){
+function karteCalcRoute(opts){
+  // Aufruf per Knopf liefert ein Klick-Ereignis statt Optionen
+  opts = (opts && opts.still !== undefined) ? opts : {};
   if (!karteState.map) { toast('Karte noch nicht geladen', true); return; }
   if (!karteState.startCoord) {
     document.getElementById('k-filter').open = true;
@@ -3157,7 +3177,7 @@ function karteCalcRoute(){
     });
     karteState.markers.push(mk);
   });
-  karteState.map.fitBounds(L.polyline(latlngs).getBounds().pad(0.1));
+  if (!opts.still) karteState.map.fitBounds(L.polyline(latlngs).getBounds().pad(0.1));
   var html = '';
   for (var i = 1; i < tour.length; i++) {
     var leg = haversine(tour[i-1], tour[i]).toFixed(2);
@@ -3180,7 +3200,7 @@ function karteCalcRoute(){
       +'<span class="leg">'+leg+' km</span>'
       +'<button class="btn-done" onclick="event.stopPropagation();karteErledigtToggle(this.closest(\'li\').dataset.key)">✓</button>'
       +telBtn
-      +'<button class="btn-excl" title="Erste Person aus Tour entfernen" onclick="event.stopPropagation();karteExcludeFromTour('+jsq(karteMemberKey(firstM))+')">✕</button>'
+      +'<button class="btn-excl" title="Stopp aus der Tour entfernen" onclick="event.stopPropagation();karteStoppAusschliessen(this.closest(\'li\').dataset.key)">✕</button>'
       +'<span class="nav-hint" title="Antippen für Navigation">▶</span>'
       +'</li>';
   }
@@ -3194,8 +3214,9 @@ function karteCalcRoute(){
   // Auf dem iPhone die PDF-Bibliothek schon jetzt laden (siehe pdfTeilen)
   if (istIOS()) pdfLibLaden().catch(function(){});
   karteRenderExcludedBox();
-  toast('Route berechnet: '+order.length+' Stopps · '+totalPersons+' Personen · '+totalKm.toFixed(1)+' km Luftlinie');
-  karteFetchRoadRoute(tour);
+  // km stehen in der Statuszeile (dort nach dem Laden mit Fahrradstrecke)
+  if (!opts.still) toast('Route berechnet: '+order.length+' Stopps · '+totalPersons+' Personen');
+  karteFetchRoadRoute(tour, opts);
 }
 
 // ── Fahrradstrecke über echte Wege (OSRM, routing.openstreetmap.de) ──
@@ -3229,7 +3250,8 @@ function karteRoadAnwenden(rr, gespeichert){
   for (var i = 0; i < legEls.length && i < rr.legs.length; i++) legEls[i].textContent = rr.legs[i].toFixed(2)+' km';
 }
 
-function karteFetchRoadRoute(tour){
+function karteFetchRoadRoute(tour, opts){
+  opts = opts || {};
   karteResetRoadRoute();
   var reqId = karteState.roadReq;
   // Dieselbe Tour wurde schon einmal geladen: gespeicherte Strecke nehmen
@@ -3271,7 +3293,7 @@ function karteFetchRoadRoute(tour){
     var rr = { sig: sig, coords: coords, legs: legs, km: km };
     karteRoadAnwenden(rr, false);
     try { localStorage.setItem('sgO_roadroute', JSON.stringify(rr)); } catch(e){}
-    toast('Fahrradstrecke geladen: '+km.toFixed(1)+' km');
+    if (!opts.still) toast('Fahrradstrecke geladen: '+km.toFixed(1)+' km');
   }).catch(function(e){
     if ((e && e.stale) || reqId !== karteState.roadReq) return;
     if (art) art.textContent = 'Luftlinie';
@@ -3694,6 +3716,9 @@ async function karteOfflineLaden(){
   if (!('caches' in window)) { toast('Dieser Browser kann keine Offline-Karte speichern', true); return; }
   var urls = karteOfflineKacheln();
   if (!urls.length) { toast('Erst Adressen geocoden', true); return; }
+  if (navigator.onLine === false) { toast('Kein Netz – Offline-Karte bitte im WLAN speichern', true); return; }
+  // Liegt eine Adresse weit ausserhalb, wird das Gebiet riesig
+  if (urls.length > 5000) { toast('Gebiet zu groß (' + urls.length + ' Kartenteile) – liegt eine Adresse weit außerhalb? Bitte Adressen prüfen.', true); return; }
   if (!confirm('Karte für unterwegs ohne Netz speichern?\n\n' + urls.length + ' Kartenteile, ungefähr ' + Math.round(urls.length * 18 / 1024) + ' MB.\nAm besten im WLAN, dauert 1–3 Minuten.\n\nGespeichert wird das Gebiet aller Mitglieder (Zoom bis Straßenebene).')) return;
   karteOfflineLaeuft = true;
   var btn = document.getElementById('btn-offline');
@@ -4049,7 +4074,7 @@ function syncApplyServerData(data, opts){
     karteLoadGeocache();
     karteRenderOrte();
     if(!karteState.startCoord) karteState.tour = null;
-    karteRecalc();
+    karteRecalc({ still: true });
   }
 }
 
