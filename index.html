@@ -434,7 +434,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
 .map-progress > span{display:block;height:100%;background:var(--navym);transition:width .2s}
 .tour-list{margin-top:1rem;background:#fff;border:1px solid var(--grey100);border-radius:var(--r);overflow:hidden}
 .tour-list ol{list-style:none;counter-reset:t}
-.tour-list li{counter-increment:t;display:grid;grid-template-columns:34px 1fr auto auto auto;gap:.45rem;padding:.55rem .85rem;border-bottom:1px solid var(--grey100);font-size:.88rem;align-items:center;cursor:pointer;transition:background var(--ease)}
+.tour-list li{counter-increment:t;display:grid;grid-template-columns:34px minmax(0,1fr) auto auto auto auto auto;gap:.45rem;padding:.55rem .85rem;border-bottom:1px solid var(--grey100);font-size:.88rem;align-items:center;cursor:pointer;transition:background var(--ease)}
 .tour-list li:last-child{border-bottom:none}
 .tour-list li:hover{background:var(--navyp)}
 .tour-list li:active{background:var(--navylt)}
@@ -445,11 +445,24 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
 .tour-list .btn-excl:hover{background:#c0392b;color:#fff;border-color:#c0392b}
 .tour-list .btn-tel{color:var(--green);border-color:var(--green)}
 .tour-list .btn-tel:hover{background:var(--green);color:#fff}
+/* Erledigte Stopps abhaken */
+.tour-list .btn-done{background:#fff;border:1.5px solid var(--green);color:var(--green);border-radius:5px;padding:2px 7px;font-size:.95rem;font-weight:700;cursor:pointer;line-height:1.1}
+.tour-list li.done{background:var(--grey50)}
+.tour-list li.done>span:not(.leg){opacity:.5;text-decoration:line-through}
+.tour-list li.done::before{content:'✓';background:var(--green)}
+.tour-list li.done .btn-done{background:var(--green);color:#fff}
+.tour-list li.next{background:var(--orangebg);box-shadow:inset 4px 0 0 var(--orange)}
+.tour-list li.next::before{background:var(--orange)}
+.tour-progress{display:flex;align-items:center;justify-content:space-between;gap:.6rem;flex-wrap:wrap;padding:.6rem .85rem;border-top:1px solid var(--grey100);background:var(--greenbg);font-size:.85rem;color:var(--green)}
+.tour-progress .btn{padding:.35rem .8rem;font-size:.8rem}
+.tour-num-icon.done{background:#9aa0a6;opacity:.75}
 /* Touch (iPhone): Knoepfe in der Tour-Liste gross genug fuer den Finger,
    Anruf und Entfernen mit Abstand, damit man nicht daneben tippt */
 @media (pointer:coarse){
+  /* ▶ entfaellt auf dem Handy (ganze Zeile ist antippbar), dafuer Platz fuer ✓ */
   .tour-list li{grid-template-columns:30px minmax(0,1fr) auto auto auto auto;gap:.4rem;padding:.6rem .7rem}
-  .tour-list .btn-tel,.tour-list .btn-excl{min-width:44px;min-height:40px;font-size:1.1rem;display:inline-flex;align-items:center;justify-content:center}
+  .tour-list .nav-hint{display:none}
+  .tour-list .btn-tel,.tour-list .btn-excl,.tour-list .btn-done{min-width:44px;min-height:40px;font-size:1.1rem;display:inline-flex;align-items:center;justify-content:center}
   .tour-list .btn-excl{margin-left:.4rem}
   .tour-list .leg{font-size:.72rem}
 }
@@ -465,7 +478,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
 #tbody tr{cursor:pointer}
 @media print {
   .tour-list li{cursor:auto}
-  .tour-list .btn-excl,.tour-list .btn-tel,.tour-list .nav-hint{display:none}
+  .tour-list .btn-excl,.tour-list .btn-tel,.tour-list .btn-done,.tour-list .nav-hint,.tour-progress{display:none}
 }
 .k-orte-box{display:flex;flex-wrap:wrap;gap:.45rem;padding:.5rem;border:1.5px solid var(--grey300);border-radius:6px;background:#fff;max-height:140px;overflow-y:auto}
 .k-orte-box label{display:inline-flex;align-items:center;gap:.3rem;padding:.18rem .55rem;background:var(--grey50);border-radius:14px;font-size:.82rem;cursor:pointer;user-select:none;border:1px solid var(--grey100);text-transform:none;letter-spacing:0;font-weight:600;color:var(--grey700)}
@@ -2415,7 +2428,7 @@ if ('serviceWorker' in navigator) {
 var karteState = {
   map: null, markers: [], routeLayer: null, tour: null,
   filtered: [], geocache: {}, startCoord: null, geocoding: false,
-  excluded: {}, orteChecked: null,
+  excluded: {}, orteChecked: null, erledigt: {}, stopMarkers: [],
   gebiete: [], gebiet: null, gebietLayer: null, draw: null
 };
 
@@ -2434,6 +2447,8 @@ function karteLoadGeocache(){
   if (savedCoord) { try { karteState.startCoord = JSON.parse(savedCoord); } catch(e){} }
   try { karteState.excluded = JSON.parse(localStorage.getItem('sgO_excluded')||'{}'); }
   catch(e){ karteState.excluded = {}; }
+  try { karteState.erledigt = JSON.parse(localStorage.getItem('sgO_erledigt')||'{}') || {}; }
+  catch(e){ karteState.erledigt = {}; }
   karteGebieteLaden();
 }
 
@@ -3102,12 +3117,10 @@ function karteCalcRoute(){
     icon: L.divIcon({ className: '', html: '<div class="tour-num-icon start">S</div>', iconSize: [28,28], iconAnchor: [14,14] })
   }).addTo(karteState.map).bindPopup('<strong>Start</strong>');
   karteState.markers.push(startMk);
+  karteState.stopMarkers = [];
   order.forEach(function(pIdx, n){
     var p = points[pIdx], g = p.g;
     var multi = g.members.length > 1;
-    var iconHtml = multi
-      ? '<div class="tour-num-icon multi" title="'+g.members.length+' Personen an dieser Adresse">'+(n+1)+'</div>'
-      : '<div class="tour-num-icon">'+(n+1)+'</div>';
     var stopHead = '<strong>'+(n+1)+'. '+esc(g.str||'')+'</strong>'
       +'<br>'+esc(g.plz||'')+' '+esc(g.ort||'')
       +(multi?'<br><em style="color:var(--orange)">'+g.members.length+' Personen an dieser Adresse:</em>':'');
@@ -3121,9 +3134,9 @@ function karteCalcRoute(){
         +'</div>';
     }).join('');
     var maps = '<br><a href="https://www.google.com/maps/dir/?api=1&travelmode=bicycling&destination='+encodeURIComponent(karteMapsZiel(p))+'" target="_blank">🚴 Navigation zu diesem Stopp</a>';
-    var mk = L.marker([p.lat, p.lng], {
-      icon: L.divIcon({ className: '', html: iconHtml, iconSize: [28,28], iconAnchor: [14,14] })
-    }).addTo(karteState.map).bindPopup(stopHead + maps + personRows);
+    var mk = L.marker([p.lat, p.lng], { icon: karteStopIcon(n, g) })
+      .addTo(karteState.map).bindPopup(stopHead + maps + personRows);
+    karteState.stopMarkers.push({ mk: mk, n: n, g: g });
     // Namen dauerhaft neben dem Stopp (ab Zoomstufe KARTE_LABEL_ZOOM sichtbar)
     // Gleiche Nachnamen an einer Adresse zusammenfassen: "Albers H., M."
     var byName = {}, namen = [];
@@ -3157,10 +3170,11 @@ function karteCalcRoute(){
     var telBtn = firstTel
       ? '<button class="btn-tel" title="Anrufen: '+esc(firstTel.tel)+' ('+esc(firstTel.name)+')" onclick="event.stopPropagation();location.href='+jsq('tel:'+firstTel.tel)+'">📞</button>'
       : '<span></span>';   // Platzhalter: sonst rutscht der ▶-Pfeil in eine eigene Zeile
-    html += '<li title="Antippen für Navigation zu diesem Stopp" onclick="window.open('+jsq(navUrl)+',\'_blank\')">'
+    html += '<li data-key="'+esc(g.key)+'" title="Antippen für Navigation zu diesem Stopp" onclick="window.open('+jsq(navUrl)+',\'_blank\')">'
       +'<span>'+nameLine+multiBadge
       +'<br><span style="font-size:.78rem;color:var(--grey700)">'+esc(g.str||'')+', '+esc(g.plz||'')+' '+esc(g.ort||'')+'</span></span>'
       +'<span class="leg">'+leg+' km</span>'
+      +'<button class="btn-done" onclick="event.stopPropagation();karteErledigtToggle(this.closest(\'li\').dataset.key)">✓</button>'
       +telBtn
       +'<button class="btn-excl" title="Erste Person aus Tour entfernen" onclick="event.stopPropagation();karteExcludeFromTour('+jsq(karteMemberKey(firstM))+')">✕</button>'
       +'<span class="nav-hint" title="Antippen für Navigation">▶</span>'
@@ -3168,6 +3182,7 @@ function karteCalcRoute(){
   }
   document.getElementById('tour-list-items').innerHTML = html;
   document.getElementById('tour-list').style.display = 'block';
+  karteErledigtRender(false);
   var stopsTxt = order.length + (totalPersons !== order.length ? ' Stopps (' + totalPersons + ' Personen)' : ' Stopps');
   document.getElementById('k-stat-tour').textContent = stopsTxt;
   document.getElementById('k-stat-km').textContent = totalKm.toFixed(1);
@@ -3538,19 +3553,75 @@ function karteExportGPX(){
   karteDateiAusgeben(blob, 'SVLaubrechte_Tour_'+stamp+'.gpx', (t.length-1)+' Stopps als GPX exportiert');
 }
 
+// ── Erledigte Stopps abhaken ────────────────────────────────────────────
+// Haken liegen NUR auf diesem Geraet (sgO_erledigt, bewusst kein Cloud-Sync)
+// und haengen an der Adresse, ueberstehen also Neustart und Neuberechnen der
+// Route. Weg nur ueber "Alle Haken entfernen".
+function karteStopIcon(n, g){
+  var cls = 'tour-num-icon' + (g.members.length > 1 ? ' multi' : '') + (karteState.erledigt[g.key] ? ' done' : '');
+  var title = g.members.length > 1 ? ' title="'+g.members.length+' Personen an dieser Adresse"' : '';
+  return L.divIcon({ className: '', html: '<div class="'+cls+'"'+title+'>'+(n+1)+'</div>', iconSize: [28,28], iconAnchor: [14,14] });
+}
+
+function karteErledigtSichern(){
+  try { localStorage.setItem('sgO_erledigt', JSON.stringify(karteState.erledigt)); } catch(e){}
+}
+
+function karteErledigtToggle(key){
+  if (karteState.erledigt[key]) delete karteState.erledigt[key];
+  else karteState.erledigt[key] = new Date().toISOString();
+  karteErledigtSichern();
+  karteErledigtRender(true);
+}
+
+function karteErledigtReset(){
+  if (!confirm('Alle Haken entfernen? Danach sind wieder alle Stopps offen.')) return;
+  karteState.erledigt = {};
+  karteErledigtSichern();
+  karteErledigtRender(false);
+  toast('Alle Haken entfernt');
+}
+
+// Zeilen und Pins einfaerben, naechsten offenen Stopp markieren, Fortschritt zeigen.
+// scroll: nach dem Abhaken zum naechsten offenen Stopp scrollen.
+function karteErledigtRender(scroll){
+  var lis = document.querySelectorAll('#tour-list-items li');
+  var naechster = null, fertig = 0;
+  lis.forEach(function(li){
+    var d = !!karteState.erledigt[li.dataset.key];
+    li.classList.toggle('done', d);
+    li.classList.remove('next');
+    var b = li.querySelector('.btn-done');
+    if (b) b.title = d ? 'Haken entfernen' : 'Als erledigt abhaken';
+    if (d) fertig++; else if (!naechster) naechster = li;
+  });
+  // Naechsten offenen Stopp erst hervorheben, wenn schon etwas erledigt ist
+  if (naechster && fertig) naechster.classList.add('next');
+  (karteState.stopMarkers || []).forEach(function(s){ s.mk.setIcon(karteStopIcon(s.n, s.g)); });
+  var ol = document.getElementById('tour-list-items');
+  var box = document.querySelector('#tour-list .tour-progress');
+  if (!fertig) { if (box) box.remove(); return; }
+  if (!box) { box = document.createElement('div'); box.className = 'tour-progress'; ol.insertAdjacentElement('afterend', box); }
+  box.innerHTML = '<span>✓ <strong>'+fertig+' von '+lis.length+'</strong> Stopps erledigt'+(fertig === lis.length ? ' – Tour fertig!' : '')+'</span>'
+    + '<button class="btn btn-clear" onclick="karteErledigtReset()">Alle Haken entfernen</button>';
+  if (scroll && naechster) naechster.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 function karteOpenInMaps(){
   if (!karteState.tour || karteState.tour.length < 2) { toast('Erst Route berechnen', true); return; }
-  var t = karteState.tour;
+  var offen = karteState.tour.slice(1).filter(function(p){ return !karteState.erledigt[p.g.key]; });
+  if (!offen.length) { toast('Alle Stopps sind erledigt'); return; }
+  var t = offen.length < karteState.tour.length - 1 ? [null].concat(offen) : karteState.tour;
   var STOPS_PER_LINK = 11;
   var links = [];
   for (var i = 0; i < t.length - 1; i += STOPS_PER_LINK - 1) {
     var chunk = t.slice(i, i + STOPS_PER_LINK);
     if (chunk.length < 2) continue;
-    var origin = karteMapsZiel(chunk[0]);
+    var origin = chunk[0] ? karteMapsZiel(chunk[0]) : '';
     var destination = karteMapsZiel(chunk[chunk.length-1]);
     var waypoints = chunk.slice(1, -1).map(karteMapsZiel).join('|');
     var url = 'https://www.google.com/maps/dir/?api=1&travelmode=bicycling'
-      + '&origin=' + encodeURIComponent(origin) + '&destination=' + encodeURIComponent(destination)
+      + (origin ? '&origin=' + encodeURIComponent(origin) : '') + '&destination=' + encodeURIComponent(destination)
       + (waypoints ? '&waypoints=' + encodeURIComponent(waypoints) : '');
     links.push(url);
   }
