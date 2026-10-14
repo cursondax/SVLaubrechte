@@ -1,6 +1,6 @@
 // SV Lau-Brechte Service Worker
 // Versions-String bei jedem Release erhöhen, damit Clients neu laden
-const CACHE_VERSION = 'svlb-v48';
+const CACHE_VERSION = 'svlb-v49';
 // Kartenkacheln in eigenem Cache: überlebt App-Updates (Karte bleibt offline
 // nutzbar), ist aber auf TILE_MAX Kacheln begrenzt (~14 KB je Kachel).
 // v2: Kacheln jetzt ohne a./b./c.-Subdomain -> alte Eintraege waren nutzlos

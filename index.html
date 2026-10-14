@@ -2970,15 +2970,35 @@ function karteZeichnenFertig(){
 
 function karteSleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
 
-function karteGeocodeOne(parts){
-  var q = new URLSearchParams({
-    street: parts.str || '', city: parts.ort || '', postalcode: parts.plz || '',
-    country: 'Deutschland', format: 'json', limit: '1'
-  });
-  var url = 'https://nominatim.openstreetmap.org/search?' + q.toString();
-  return fetch(url, { headers: { 'Accept': 'application/json' } })
-    .then(function(r){ if (!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
-    .then(function(d){ return d.length ? { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) } : null; });
+// Mitte der Mitglieder (Median, unempfindlich gegen einzelne falsche Punkte)
+function karteMitte(){
+  var pts = members.filter(function(m){ return m.lat && m.lng; });
+  if (!pts.length) return null;
+  function median(arr){ var a = arr.slice().sort(function(x, y){ return x - y; }); return a[Math.floor(a.length / 2)]; }
+  return { lat: median(pts.map(function(m){ return m.lat; })), lng: median(pts.map(function(m){ return m.lng; })) };
+}
+
+// nahe: bei mehreren Treffern den nehmen, der der Vereinsmitte am naechsten liegt
+// (gleiche Strassennamen gibt es in vielen Orten). parts.frei: wird nichts
+// gefunden, noch einmal als freier Text suchen (z.B. Startadresse ohne Komma).
+function karteGeocodeOne(parts, nahe){
+  function suche(params){
+    params.format = 'json'; params.limit = nahe ? '5' : '1';
+    var url = 'https://nominatim.openstreetmap.org/search?' + new URLSearchParams(params).toString();
+    return fetch(url, { headers: { 'Accept': 'application/json' } })
+      .then(function(r){ if (!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+      .then(function(d){
+        var treffer = d.map(function(x){ return { lat: parseFloat(x.lat), lng: parseFloat(x.lon) }; });
+        if (!treffer.length) return null;
+        if (nahe) treffer.sort(function(a, b){ return haversine(nahe, a) - haversine(nahe, b); });
+        return treffer[0];
+      });
+  }
+  return suche({ street: parts.str || '', city: parts.ort || '', postalcode: parts.plz || '', country: 'Deutschland' })
+    .then(function(r){
+      if (r || !parts.frei) return r;
+      return karteSleep(1100).then(function(){ return suche({ q: parts.frei, countrycodes: 'de' }); });
+    });
 }
 
 function karteParseStart(s){
@@ -2988,9 +3008,12 @@ function karteParseStart(s){
     var plz='', ort='';
     if (rest[0] && /^\d{4,5}$/.test(rest[0])) { plz = rest[0]; ort = rest.slice(1).join(' '); }
     else { ort = rest.join(' '); }
-    return { str: parts[0], plz: plz, ort: ort };
+    return { str: parts[0], plz: plz, ort: ort, frei: s };
   }
-  return { str: s, plz: '', ort: '' };
+  // Ohne Komma: "Musterweg 12 48607 Ochtrup" -> PLZ und Ort trotzdem erkennen
+  var m = s.match(/^(.*?)\s+(\d{5})\s+(.+)$/);
+  if (m) return { str: m[1].trim(), plz: m[2], ort: m[3].trim(), frei: s };
+  return { str: s, plz: '', ort: '', frei: s };
 }
 
 async function karteGeocodeAll(){
@@ -3000,9 +3023,11 @@ async function karteGeocodeAll(){
   btn.disabled = true;
   try {
     var startInput = document.getElementById('k-start').value.trim();
+    var mitte = karteMitte();
     if (startInput && !karteState.startCoord) {
       var sp = karteParseStart(startInput);
       try {
+        // Ohne "nahe": das Zuhause liegt oft ausserhalb des Verteilgebiets
         var sr = await karteGeocodeOne(sp);
         if (sr) {
           karteState.startCoord = sr;
@@ -3019,7 +3044,8 @@ async function karteGeocodeAll(){
       return (m.str || m.plz) && !(m.lat && m.lng);
     });
     if (!todo.length) {
-      toast('Alle gefilterten Adressen sind bereits geocodiert' + (karteState.startCoord?'':' – Startadresse fehlt noch'));
+      // Meldung zur Startadresse nicht gleich wieder ueberschreiben
+      if (!sp) toast('Alle gefilterten Adressen sind bereits geocodiert' + (karteState.startCoord?'':' – Startadresse fehlt noch'));
       return;
     }
     var prog = document.getElementById('k-progress');
@@ -3029,7 +3055,7 @@ async function karteGeocodeAll(){
     for (var i = 0; i < todo.length; i++) {
       var m = todo[i];
       try {
-        var r = await karteGeocodeOne({ str: m.str, plz: m.plz, ort: m.ort });
+        var r = await karteGeocodeOne({ str: m.str, plz: m.plz, ort: m.ort }, mitte);
         if (r) { m.lat = r.lat; m.lng = r.lng; karteState.geocache[karteCacheKey(m)] = r; ok++; }
         else { fail++; }
       } catch(e){ console.warn('Geocode-Fehler:', m.str, e); fail++; }
@@ -3683,21 +3709,69 @@ function karteTileXY(lat, lng, z){
   };
 }
 
+// Ausreisser: Punkte, die mehr als KARTE_OFFLINE_RADIUS_KM von der Mitte der
+// Mitglieder entfernt liegen. Meist eine falsch geocodierte Adresse (gleicher
+// Strassenname in einer anderen Stadt). Sie wuerden das Gebiet riesig machen
+// und bleiben deshalb aus der Offline-Karte heraus.
+var KARTE_OFFLINE_RADIUS_KM = 15;
+
 function karteOfflineKacheln(){
-  var pts = members.filter(function(m){ return m.lat && m.lng; }).map(function(m){ return { lat: m.lat, lng: m.lng }; });
-  if (karteState.startCoord) pts.push(karteState.startCoord);
-  if (!pts.length) return [];
-  var la = pts.map(function(p){ return p.lat; }), ln = pts.map(function(p){ return p.lng; });
-  // ca. 1 km Rand rundherum
-  var n = Math.max.apply(null, la) + 0.01, s = Math.min.apply(null, la) - 0.01;
-  var e = Math.max.apply(null, ln) + 0.015, w = Math.min.apply(null, ln) - 0.015;
+  var mitte = karteMitte();
+  if (!mitte) return { urls: [], ausreisser: [] };
+  // Mitgliedsadressen; Ausreisser (falsch gefundene Adressen) bleiben draussen.
+  // Die Startadresse gehoert NICHT dazu: sie ist Berts Zuhause und liegt
+  // bewusst ausserhalb des Verteilgebiets.
+  var pts = [], ausreisser = [];
+  members.forEach(function(m){
+    if (!m.lat || !m.lng) return;
+    var km = haversine(mitte, m);
+    if (km > KARTE_OFFLINE_RADIUS_KM) ausreisser.push({ label: (m.name||'') + (m.vor ? ', ' + m.vor : '') + ' – ' + (m.str||'') + ', ' + (m.ort||''), km: km });
+    else pts.push({ lat: m.lat, lng: m.lng });
+  });
+  ausreisser.sort(function(a, b){ return b.km - a.km; });
+  if (!pts.length) return { urls: [], ausreisser: ausreisser };
   var urls = {}, z, x, y;
-  for (z = 12; z <= 16; z++) {
-    var a = karteTileXY(n, w, z), b = karteTileXY(s, e, z);
-    for (x = a.x; x <= b.x; x++) for (y = a.y; y <= b.y; y++) urls[z+'/'+x+'/'+y] = 1;
+  function rechteck(n, s2, e, w, zMin, zMax){
+    for (var zz = zMin; zz <= zMax; zz++) {
+      var a = karteTileXY(n, w, zz), b = karteTileXY(s2, e, zz);
+      for (x = a.x; x <= b.x; x++) for (y = a.y; y <= b.y; y++) urls[zz+'/'+x+'/'+y] = 1;
+    }
   }
+  // 1) Verteilgebiet: Rechteck um alle Mitglieder, ca. 1 km Rand
+  var la = pts.map(function(p){ return p.lat; }), ln = pts.map(function(p){ return p.lng; });
+  rechteck(Math.max.apply(null, la) + 0.01, Math.min.apply(null, la) - 0.01,
+           Math.max.apply(null, ln) + 0.015, Math.min.apply(null, ln) - 0.015, 12, 16);
+  // Strassenebene (Zoom 17) nur je Adresse (OSM-Regeln, siehe oben)
   pts.forEach(function(p){ var t = karteTileXY(p.lat, p.lng, 17); urls['17/'+t.x+'/'+t.y] = 1; });
-  return Object.keys(urls).map(function(k){ return 'https://tile.openstreetmap.org/' + k + '.png'; });
+  // 2) Zuhause: ca. 1 km rundherum, Haustuer auch in Zoom 17
+  var st = karteState.startCoord;
+  if (st) {
+    rechteck(st.lat + 0.009, st.lat - 0.009, st.lng + 0.014, st.lng - 0.014, 12, 16);
+    var ts = karteTileXY(st.lat, st.lng, 17); urls['17/'+ts.x+'/'+ts.y] = 1;
+    // 3) Weg von zu Hause ins Verteilgebiet: schmaler Streifen. Ist die
+    // Fahrradstrecke geladen, entlang der echten Strecke, sonst entlang der
+    // Luftlinie zum naechstgelegenen Mitglied.
+    var weg;
+    if (karteState.roadRoute && karteState.roadRoute.coords.length) {
+      weg = karteState.roadRoute.coords.map(function(c){ return { lat: c[0], lng: c[1] }; });
+    } else {
+      var naechster = pts.reduce(function(best, p){ return haversine(st, p) < haversine(st, best) ? p : best; }, pts[0]);
+      var km = haversine(st, naechster), schritte = Math.max(1, Math.ceil(km / 0.2));
+      weg = [];
+      for (var k = 0; k <= schritte; k++) weg.push({ lat: st.lat + (naechster.lat - st.lat) * k / schritte, lng: st.lng + (naechster.lng - st.lng) * k / schritte });
+    }
+    for (z = 12; z <= 16; z++) {
+      weg.forEach(function(q){
+        var t = karteTileXY(q.lat, q.lng, z);
+        // eine Kachel Rand links/rechts/oben/unten
+        for (var dx = -1; dx <= 1; dx++) for (var dy = -1; dy <= 1; dy++) urls[z+'/'+(t.x+dx)+'/'+(t.y+dy)] = 1;
+      });
+    }
+  }
+  return {
+    urls: Object.keys(urls).map(function(k){ return 'https://tile.openstreetmap.org/' + k + '.png'; }),
+    ausreisser: ausreisser
+  };
 }
 
 function karteOfflineInfo(){
@@ -3714,12 +3788,23 @@ function karteOfflineInfo(){
 async function karteOfflineLaden(){
   if (karteOfflineLaeuft) { toast('Offline-Karte wird bereits geladen', true); return; }
   if (!('caches' in window)) { toast('Dieser Browser kann keine Offline-Karte speichern', true); return; }
-  var urls = karteOfflineKacheln();
+  var gebiet = karteOfflineKacheln(), urls = gebiet.urls;
   if (!urls.length) { toast('Erst Adressen geocoden', true); return; }
   if (navigator.onLine === false) { toast('Kein Netz – Offline-Karte bitte im WLAN speichern', true); return; }
   // Liegt eine Adresse weit ausserhalb, wird das Gebiet riesig
   if (urls.length > 5000) { toast('Gebiet zu groß (' + urls.length + ' Kartenteile) – liegt eine Adresse weit außerhalb? Bitte Adressen prüfen.', true); return; }
-  if (!confirm('Karte für unterwegs ohne Netz speichern?\n\n' + urls.length + ' Kartenteile, ungefähr ' + Math.round(urls.length * 18 / 1024) + ' MB.\nAm besten im WLAN, dauert 1–3 Minuten.\n\nGespeichert wird das Gebiet aller Mitglieder (Zoom bis Straßenebene).')) return;
+  // Ausreisser nennen, damit die Adresse korrigiert werden kann
+  var hinweis = '';
+  if (gebiet.ausreisser.length) {
+    hinweis = '\n\n⚠ ' + gebiet.ausreisser.length + ' Punkt' + (gebiet.ausreisser.length === 1 ? ' liegt' : 'e liegen') + ' weit außerhalb und ' + (gebiet.ausreisser.length === 1 ? 'bleibt' : 'bleiben') + ' draußen – wahrscheinlich falsch gefunden:\n'
+      + gebiet.ausreisser.slice(0, 8).map(function(a){ return '• ' + a.label + ' (' + Math.round(a.km) + ' km entfernt)'; }).join('\n')
+      + (gebiet.ausreisser.length > 8 ? '\n• … und ' + (gebiet.ausreisser.length - 8) + ' weitere' : '')
+      + '\nTipp: Adresse im Bearbeiten-Fenster prüfen (Ort, PLZ), dann „Adressen geocoden“.';
+  }
+  if (karteState.startCoord) {
+    hinweis = '\n\nDein Zuhause (Startadresse) und der Weg ins Verteilgebiet sind mit dabei.' + hinweis;
+  }
+  if (!confirm('Karte für unterwegs ohne Netz speichern?\n\n' + urls.length + ' Kartenteile, ungefähr ' + Math.round(urls.length * 18 / 1024) + ' MB.\nAm besten im WLAN, dauert 1–3 Minuten.\n\nGespeichert wird das Gebiet aller Mitglieder (Zoom bis Straßenebene).' + hinweis)) return;
   karteOfflineLaeuft = true;
   var btn = document.getElementById('btn-offline');
   btn.disabled = true;
