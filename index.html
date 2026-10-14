@@ -410,6 +410,12 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
   font-size: .85rem;
 }
 .install-banner.show { display: flex; }
+.update-bar{display:none;position:fixed;left:.75rem;right:.75rem;bottom:calc(1rem + var(--safe-bottom));z-index:998;background:var(--navy);color:#fff;border-radius:var(--r);padding:.55rem .6rem .55rem .9rem;box-shadow:0 4px 18px rgba(0,0,0,.3);align-items:center;gap:.6rem;font-size:.9rem;font-weight:600;max-width:480px;margin:0 auto}
+.update-bar.on{display:flex}
+.update-bar span{flex:1}
+.update-bar .btn{padding:.5rem .9rem}
+.update-zu{background:none;border:none;color:#fff;font-size:1.1rem;padding:.4rem .5rem;cursor:pointer;opacity:.8}
+@media(max-width:700px){.update-bar{bottom:calc(64px + var(--safe-bottom))}}
 
 /* Koenige-Tab */
 .king-toolbar{display:flex;gap:.6rem;margin-bottom:.85rem;flex-wrap:wrap;align-items:center}
@@ -1041,6 +1047,12 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
 </div>
 
 <div class="toast" id="toast"></div>
+<!-- Neue App-Version im Hintergrund geladen (Nachricht von sw.js) -->
+<div class="update-bar" id="update-bar">
+  <span>&#10024; Neue Version verf&uuml;gbar</span>
+  <button class="btn btn-save" onclick="appNeuLaden()">Neu laden</button>
+  <button class="update-zu" onclick="document.getElementById('update-bar').classList.remove('on')" title="Später">&#10005;</button>
+</div>
 
 <!-- EDIT MODAL -->
 <div class="modal-bg" id="editModal" onclick="if(event.target===this)closeModal()">
@@ -2395,6 +2407,14 @@ window.addEventListener('appinstalled', function(){
   deferredPrompt = null;
   toast('App wurde installiert! ✓');
 });
+// Neu laden erst, wenn kein Bearbeiten-Fenster offen ist; ausstehende Aenderungen
+// gehen vorher an den Server (pagehide sichert zusaetzlich)
+function appNeuLaden(){
+  if (typeof syncEditOpen === 'function' && syncEditOpen()) { toast('Bitte erst das Bearbeiten-Fenster schließen', true); return; }
+  if (typeof syncFlushNow === 'function') syncFlushNow();
+  location.reload();
+}
+
 function installPWA(){
   if(deferredPrompt){
     deferredPrompt.prompt();
@@ -2410,6 +2430,11 @@ function installPWA(){
 
 // ── Service Worker ────────────────────────────────────────────────────────
 if ('serviceWorker' in navigator) {
+  // sw.js meldet: neue Version der Seite liegt bereit (wird erst beim
+  // naechsten Laden aktiv, damit nichts unter den Haenden wechselt)
+  navigator.serviceWorker.addEventListener('message', function(e){
+    if (e.data && e.data.type === 'svlb-update') document.getElementById('update-bar').classList.add('on');
+  });
   window.addEventListener('load', function(){
     navigator.serviceWorker.register('./sw.js').catch(function(err){
       console.warn('SW-Registrierung fehlgeschlagen:', err);

@@ -1,6 +1,6 @@
 // SV Lau-Brechte Service Worker
 // Versions-String bei jedem Release erhöhen, damit Clients neu laden
-const CACHE_VERSION = 'svlb-v49';
+const CACHE_VERSION = 'svlb-v50';
 // Kartenkacheln in eigenem Cache: überlebt App-Updates (Karte bleibt offline
 // nutzbar), ist aber auf TILE_MAX Kacheln begrenzt (~14 KB je Kachel).
 // v2: Kacheln jetzt ohne a./b./c.-Subdomain -> alte Eintraege waren nutzlos
@@ -9,8 +9,6 @@ const TILE_MAX = 1000;
 // Vorab geladene Offline-Karte (Knopf "Karte offline speichern" in index.html,
 // gleicher Name dort). Wird nie gekuerzt und ueberlebt App-Updates.
 const OFFLINE_TILES = 'svlb-offline-tiles-v1';
-// Laenger als das wartet die App beim Start nicht aufs Netz (Funkloch auf dem Land)
-const HTML_TIMEOUT_MS = 4000;
 const PRECACHE = [
   './',
   './index.html',
@@ -100,24 +98,32 @@ self.addEventListener('fetch', (event) => {
   // Cache-first für alles andere (Icons, Manifest).
   const isHtml = req.mode === 'navigate' || url.pathname.endsWith('/') || url.pathname.endsWith('.html');
   if (isHtml) {
-    // Network-first, aber bei schlechtem Netz nach HTML_TIMEOUT_MS die
-    // gespeicherte Seite nehmen (die neue landet trotzdem im Speicher)
-    const ausSpeicher = () => caches.match(req).then((r) => r || caches.match('./index.html'));
-    const netz = fetch(req).then((res) => {
-      if (res.ok) {
-        const copy = res.clone();
-        caches.open(CACHE_VERSION).then((c) => c.put(req, copy));
+    // Gespeicherte Seite SOFORT zeigen, neue Version im Hintergrund holen.
+    // Vorher wartete der Start auf die komplette Seite aus dem Netz: bei
+    // schwachem Empfang 10-30 s weisser Bildschirm.
+    // Ist die neue Seite anders, bekommt die App eine Nachricht und zeigt
+    // "Neue Version verfuegbar".
+    const netz = fetch(req).then(async (res) => {
+      if (!res.ok) return res;
+      const fuerCache = res.clone(), fuerVergleich = res.clone();
+      const cache = await caches.open(CACHE_VERSION);
+      const alt = (await cache.match(req)) || (await caches.match('./index.html'));
+      const altText = alt ? await alt.text() : null;
+      const neuText = await fuerVergleich.text();
+      await cache.put(req, fuerCache);
+      if (altText !== null && altText !== neuText) {
+        const fenster = await self.clients.matchAll({ type: 'window' });
+        fenster.forEach((c) => c.postMessage({ type: 'svlb-update' }));
       }
       return res;
     });
-    event.respondWith(new Promise((resolve) => {
-      let fertig = false;
-      const ende = (r) => { if (!fertig && r) { fertig = true; resolve(r); } };
-      const timer = setTimeout(() => ausSpeicher().then((r) => { if (r) ende(r); }), HTML_TIMEOUT_MS);
-      netz.then((r) => { clearTimeout(timer); ende(r); })
-        .catch(() => { clearTimeout(timer); ausSpeicher().then((r) => ende(r || Response.error())); });
-    }));
     event.waitUntil(netz.catch(() => {}));
+    event.respondWith(
+      caches.match(req)
+        .then((r) => r || caches.match('./index.html'))
+        .then((r) => r || netz)   // allererster Start: noch nichts gespeichert
+        .catch(() => Response.error())
+    );
   } else {
     cacheFirst(event, req, CACHE_VERSION);
   }
