@@ -225,19 +225,6 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
   .print-tbl .nm{font-weight:bold;color:#1F4E79;font-family:Calibri,Arial,sans-serif;font-size:12pt}
 }
 
-.td-foto{width:52px;text-align:center;vertical-align:middle;padding:2px 4px}
-.member-foto{width:46px;height:46px;object-fit:cover;border-radius:50%;border:2px solid var(--navylt);display:block;margin:0 auto}
-.foto-placeholder{width:46px;height:46px;border-radius:50%;border:2px dashed var(--grey300);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--grey300);margin:0 auto;cursor:pointer;background:var(--grey50)}
-.foto-placeholder:hover{border-color:var(--navym);color:var(--navym);background:var(--navyp)}
-.foto-upload-wrap{display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:.5rem 0}
-.foto-preview{width:90px;height:90px;object-fit:cover;border-radius:8px;border:2px solid var(--navylt)}
-.foto-preview-placeholder{width:90px;height:90px;border-radius:8px;border:2px dashed var(--grey300);display:flex;align-items:center;justify-content:center;font-size:2rem;color:var(--grey300);cursor:pointer}
-.foto-preview-placeholder:hover{border-color:var(--navym);color:var(--navym)}
-.foto-actions{display:flex;gap:.4rem;flex-wrap:wrap;justify-content:center}
-.btn-foto-sm{padding:.25rem .6rem;font-size:.75rem;border:1px solid var(--grey300);border-radius:4px;cursor:pointer;background:var(--grey50);font-family:inherit}
-.btn-foto-sm:hover{background:var(--grey100)}
-.btn-foto-del{border-color:#e74c3c;color:#e74c3c}
-.btn-foto-del:hover{background:#fdf0f0}
 
 /* ── PWA / MOBILE ───────────────────────────────────────────────── */
 :root { --safe-bottom: env(safe-area-inset-bottom, 0px); }
@@ -585,7 +572,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
     <div class="card">
       <div class="tbl-wrap">
         <table><thead><tr>
-          <th style="width:52px" class="col-hide-mob">Foto</th><th class="col-hide-mob">Nr.</th><th>Bz.</th><th class="col-hide-mob">Anrede</th><th>Nachname</th><th>Vorname</th>
+          <th class="col-hide-mob">Nr.</th><th>Bz.</th><th class="col-hide-mob">Anrede</th><th>Nachname</th><th>Vorname</th>
           <th>Stra&#223;e</th><th class="col-hide-mob">PLZ</th><th>Ort</th><th>Tel./Handy</th><th class="col-hide-mob">E-Mail</th><th class="col-hide-mob">E</th><th class="col-hide-mob">H</th><th></th>
         </tr></thead><tbody id="tbody"></tbody></table>
       </div>
@@ -1074,21 +1061,6 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
         <div class="fg"><label>E-Mail</label><input type="email" id="e-email" placeholder="name@example.com"></div>
       </div>
     </div>
-    <div style="padding:.75rem 1.2rem;border-top:1px solid var(--grey100);background:var(--grey50)">
-      <div style="font-size:.75rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.6rem">Foto (Porträt)</div>
-      <div class="foto-upload-wrap">
-        <div id="foto-preview-wrap">
-          <div class="foto-preview-placeholder" id="foto-placeholder" onclick="document.getElementById('foto-file-input').click()" title="Foto hochladen">&#128247;</div>
-          <img class="foto-preview" id="foto-preview-img" src="" alt="" style="display:none">
-        </div>
-        <input type="file" id="foto-file-input" accept="image/*" style="display:none" onchange="handleFotoUpload(event)">
-        <div class="foto-actions">
-          <button class="btn-foto-sm" onclick="document.getElementById('foto-file-input').click()">&#128247; Foto wählen</button>
-          <button class="btn-foto-sm btn-foto-del" id="foto-del-btn" onclick="deleteFoto()" style="display:none">&#10005; Löschen</button>
-        </div>
-        <div style="font-size:.75rem;color:var(--grey700);text-align:center">Wird automatisch auf 80×80px verkleinert</div>
-      </div>
-    </div>
     <div class="modal-ft">
       <button class="btn btn-danger" onclick="deleteMember()">&#128465; L&#246;schen</button>
       <button class="btn btn-clear"  onclick="closeModal()">Abbrechen</button>
@@ -1408,10 +1380,8 @@ function renderTable(){
   document.getElementById('rcnt').textContent=f.length+' von '+members.length;
   var rows=f.map(function(m){
     var idx=members.indexOf(m);
-    var fotoCell=safeFoto(m.foto)?'<td class="td-foto col-hide-mob"><img class="member-foto" src="'+esc(m.foto)+'" alt=""></td>':'<td class="td-foto col-hide-mob"><div class="foto-placeholder" onclick="event.stopPropagation();uploadFotoFromTable('+idx+')" title="Foto hinzufügen">&#128247;</div></td>';
     // Ganze Zeile antippen = Bearbeiten (auf dem Handy liegt der ✎-Knopf sonst ausserhalb des Bildschirms)
     return '<tr onclick="openEdit('+idx+')" title="Antippen zum Bearbeiten">'
-      +fotoCell
       +'<td class="col-hide-mob">'+m.nr+'</td>'
       +'<td><span class="badge b'+(m.bz||0)+'">'+(m.bz?'B'+m.bz:'—')+'</span></td>'
       +'<td class="col-hide-mob">'+esc(m.a1)+'</td>'
@@ -1711,12 +1681,6 @@ function openEdit(idx){
   document.getElementById('e-gebdat').value=m.gebdat||'';
   document.getElementById('e-tel').value=m.tel||'';
   document.getElementById('e-email').value=m.email||'';
-  var foto=safeFoto(m.foto);
-  var prev=document.getElementById('foto-preview-img');
-  var ph=document.getElementById('foto-placeholder');
-  var delBtn=document.getElementById('foto-del-btn');
-  if(foto){prev.src=foto;prev.style.display='block';ph.style.display='none';delBtn.style.display='inline-flex';}
-  else{prev.src='';prev.style.display='none';ph.style.display='flex';delBtn.style.display='none';}
   document.getElementById('editModal').classList.add('open');
 }
 
@@ -1917,8 +1881,6 @@ function saveEdit(){
   if(gebNeu || isIsoDate(m.gebdat) || !m.gebdat) m.gebdat=gebNeu;
   m.tel=document.getElementById('e-tel').value.trim();
   m.email=document.getElementById('e-email').value.trim();
-  m.foto=document.getElementById('foto-preview-img').style.display!=='none'
-    ?document.getElementById('foto-preview-img').src:'';
   karteAdresseGeaendert(m, oldAddr);
   closeModal();renderAll();persist();
   var msg=m.name+(m.vor?', '+m.vor:'');
@@ -2298,45 +2260,6 @@ function safeFoto(v){
 }
 
 
-function handleFotoUpload(e){
-  var file=e.target.files[0];
-  if(!file)return;
-  var reader=new FileReader();
-  reader.onload=function(ev){
-    var img=new Image();
-    img.onload=function(){
-      var canvas=document.createElement('canvas');
-      var SIZE=80;
-      canvas.width=SIZE;canvas.height=SIZE;
-      var ctx=canvas.getContext('2d');
-      // crop to square from center
-      var s=Math.min(img.width,img.height);
-      var ox=(img.width-s)/2, oy=(img.height-s)/2;
-      ctx.drawImage(img,ox,oy,s,s,0,0,SIZE,SIZE);
-      var dataUrl=canvas.toDataURL('image/jpeg',0.82);
-      var prev=document.getElementById('foto-preview-img');
-      var ph=document.getElementById('foto-placeholder');
-      prev.src=dataUrl;prev.style.display='block';ph.style.display='none';
-      document.getElementById('foto-del-btn').style.display='inline-flex';
-    };
-    img.src=ev.target.result;
-  };
-  reader.readAsDataURL(file);
-  e.target.value='';
-}
-
-function deleteFoto(){
-  var prev=document.getElementById('foto-preview-img');
-  var ph=document.getElementById('foto-placeholder');
-  prev.src='';prev.style.display='none';ph.style.display='flex';
-  document.getElementById('foto-del-btn').style.display='none';
-}
-
-function uploadFotoFromTable(idx){
-  // open edit modal focused on foto
-  openEdit(idx);
-  setTimeout(function(){document.getElementById('foto-file-input').click();},300);
-}
 
 
 function exGetFiltered(){
