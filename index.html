@@ -2610,6 +2610,16 @@ function karteGroupByAddress(memberList){
   return order.map(function(k){ return groups[k]; });
 }
 
+function karteMapsZiel(p){
+  // Google Maps bekommt den Adresstext statt der OSM-Koordinaten:
+  // Google findet Hausnummern zuverlässiger als Nominatim.
+  // Startpunkt (ohne g): eingetippte Startadresse, sonst Koordinaten.
+  var a = p.g || p;
+  if (a.str) return a.str + ', ' + ((a.plz||'') + ' ' + (a.ort||'')).trim() + ', Deutschland';
+  if (!p.g) { var st = localStorage.getItem('sgO_start'); if (st) return st; }
+  return p.lat + ',' + p.lng;
+}
+
 function karteGroupPopup(g){
   // Mehrere Personen an einer Adresse: alle auflisten, jede mit eigenen Aktionen.
   var head = '<strong>'+esc(g.str||'')+'</strong><br>'+esc(g.plz||'')+' '+esc(g.ort||'');
@@ -2622,7 +2632,7 @@ function karteGroupPopup(g){
       +'<br><a style="color:#c0392b;cursor:pointer;font-size:.85rem" onclick="karteExcludeFromTour('+jsq(karteMemberKey(m))+');karteState.map.closePopup()">✕ Aus Tour entfernen</a>'
       +'</div>';
   }).join('');
-  var maps = '<br><a href="https://www.google.com/maps/search/?api=1&query='+g.lat+','+g.lng+'" target="_blank">📍 Adresse in Google Maps</a>';
+  var maps = '<br><a href="https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(karteMapsZiel(g))+'" target="_blank">📍 Adresse in Google Maps</a>';
   return head + maps + rows;
 }
 
@@ -3123,7 +3133,7 @@ function karteCalcRoute(){
         +'<br><a style="color:#c0392b;cursor:pointer;font-size:.85rem" onclick="karteExcludeFromTour('+jsq(karteMemberKey(m))+');karteState.map.closePopup()">✕ Aus Tour entfernen</a>'
         +'</div>';
     }).join('');
-    var maps = '<br><a href="https://www.google.com/maps/dir/?api=1&travelmode=bicycling&destination='+p.lat+','+p.lng+'" target="_blank">🚴 Navigation zu diesem Stopp</a>';
+    var maps = '<br><a href="https://www.google.com/maps/dir/?api=1&travelmode=bicycling&destination='+encodeURIComponent(karteMapsZiel(p))+'" target="_blank">🚴 Navigation zu diesem Stopp</a>';
     var mk = L.marker([p.lat, p.lng], {
       icon: L.divIcon({ className: '', html: iconHtml, iconSize: [28,28], iconAnchor: [14,14] })
     }).addTo(karteState.map).bindPopup(stopHead + maps + personRows);
@@ -3148,8 +3158,7 @@ function karteCalcRoute(){
   for (var i = 1; i < tour.length; i++) {
     var leg = haversine(tour[i-1], tour[i]).toFixed(2);
     var g = tour[i].g;
-    var lat = tour[i].lat, lng = tour[i].lng;
-    var navUrl = 'https://www.google.com/maps/dir/?api=1&travelmode=bicycling&destination='+lat+','+lng;
+    var navUrl = 'https://www.google.com/maps/dir/?api=1&travelmode=bicycling&destination='+encodeURIComponent(karteMapsZiel(tour[i]));
     var firstM = g.members[0];
     var nameLine = g.members.map(function(m){
       return esc(m.name)+(m.vor?', '+esc(m.vor):'');
@@ -3550,11 +3559,11 @@ function karteOpenInMaps(){
   for (var i = 0; i < t.length - 1; i += STOPS_PER_LINK - 1) {
     var chunk = t.slice(i, i + STOPS_PER_LINK);
     if (chunk.length < 2) continue;
-    var origin = chunk[0].lat + ',' + chunk[0].lng;
-    var destination = chunk[chunk.length-1].lat + ',' + chunk[chunk.length-1].lng;
-    var waypoints = chunk.slice(1, -1).map(function(p){ return p.lat + ',' + p.lng; }).join('|');
+    var origin = karteMapsZiel(chunk[0]);
+    var destination = karteMapsZiel(chunk[chunk.length-1]);
+    var waypoints = chunk.slice(1, -1).map(karteMapsZiel).join('|');
     var url = 'https://www.google.com/maps/dir/?api=1&travelmode=bicycling'
-      + '&origin=' + origin + '&destination=' + destination
+      + '&origin=' + encodeURIComponent(origin) + '&destination=' + encodeURIComponent(destination)
       + (waypoints ? '&waypoints=' + encodeURIComponent(waypoints) : '');
     links.push(url);
   }
