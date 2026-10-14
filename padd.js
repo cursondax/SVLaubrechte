@@ -74,6 +74,7 @@
     ".back{align-self:flex-start;height:22px;border:0;border-radius:11px;padding:0 12px;background:var(--b);color:#000;cursor:pointer;",
     "font-family:var(--lc);font-weight:600;font-size:12px;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}",
     ".back:hover{filter:brightness(1.15)}.back:focus-visible{outline:2px solid #fff;outline-offset:2px}",
+    ".back.full{background:var(--g)}.back[hidden]{display:none}",
     /* App-Rahmen */
     ".app{flex:1;min-height:0;position:relative;background:#fff}",
     ".app iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#fff}",
@@ -88,6 +89,8 @@
     ".hw .lft{position:absolute;left:calc(var(--edge) + 10px)}.hw .rgt{position:absolute;right:calc(var(--edge) + 10px)}",
     "@media (max-width:640px){.bar{height:38px}.elbow{width:58px;font-size:10px;padding-right:6px}.foot .first{width:58px}",
     ".seg.hide{display:none}.title small{display:none}.back{font-size:11px;padding:0 9px}.hw em{display:none}}",
+    ":fullscreen body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}",
+    ":-webkit-full-screen body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}",
     "@media (prefers-reduced-motion:no-preference){.screen{animation:on .5s ease-out both}",
     "@keyframes on{from{opacity:0;filter:brightness(2.2)}to{opacity:1;filter:none}}}"
   ].join("");
@@ -107,6 +110,7 @@
     '<div class="title"><b id="paddTitle">' + esc(appName) + "</b>" +
     "<small>NCC-1701-D · <i>STERNZEIT " + sternzeit() + "</i></small></div>" +
     '<span class="seg" style="width:14px"></span>' +
+    '<button class="back full" id="paddFull" type="button" hidden>Vollbild</button>' +
     '<button class="back" id="paddBack" type="button">◂ Enterprise</button></div>' +
     '<div class="app"><iframe id="paddFrame" title="' + esc(appName) + '" ' +
     'allow="geolocation; camera; microphone; clipboard-read; clipboard-write; fullscreen; screen-wake-lock; web-share; autoplay; display-capture" ' +
@@ -127,7 +131,26 @@
         if (t) { t = t.replace(/\s+[–—|-]\s+.*$/, ""); titleEl.textContent = t; document.title = t + " · PADD"; }
       } catch (e) {}
     });
+    // Vollbild: blendet Adressleiste und Tabs aus (iPad-Safari, Computer). iPhone-Safari
+    // erlaubt das nur fuer Videos, dort bleibt der Knopf verborgen.
+    var root = document.documentElement, fullBtn = document.getElementById("paddFull");
+    var canFull = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled) &&
+                  !!(root.requestFullscreen || root.webkitRequestFullscreen);
+    function isFull() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+    function paintFull() { fullBtn.textContent = isFull() ? "Fenster" : "Vollbild"; }
+    if (canFull) {
+      fullBtn.hidden = false;
+      fullBtn.addEventListener("click", function () {
+        try {
+          if (isFull()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+          else { var p = (root.requestFullscreen || root.webkitRequestFullscreen).call(root); if (p && p.catch) p.catch(function () {}); }
+        } catch (e) {}
+      });
+      document.addEventListener("fullscreenchange", paintFull);
+      document.addEventListener("webkitfullscreenchange", paintFull);
+    }
     document.getElementById("paddBack").addEventListener("click", function () {
+      try { if (isFull()) (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch (e) {}
       // In einem eigenen Tab geoeffnet: Tab schliessen; sonst zur Enterprise wechseln
       try { window.close(); } catch (e) {}
       setTimeout(function () { location.href = ENTERPRISE; }, 250);
