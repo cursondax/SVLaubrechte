@@ -358,6 +358,14 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
   /* Touch-friendly edit button */
   .btn-edit { padding: 5px 12px; font-size: .8rem; }
 
+  /* Meldungen oberhalb der unteren Leiste statt darueber */
+  .toast { left: .75rem; right: .75rem; bottom: calc(64px + var(--safe-bottom)); text-align: center; }
+
+  /* Karte: Aktions-Knoepfe zweispaltig, "Route berechnen" ueber volle Breite */
+  .k-actions { display: grid !important; grid-template-columns: 1fr 1fr; }
+  .k-actions .btn { justify-content: center; padding: .6rem .5rem; font-size: .85rem; }
+  .k-actions .k-route-btn { grid-column: 1 / -1; }
+
   /* OneDrive section */
   .onedrive-banner {
     background: linear-gradient(135deg, #0078d4, #005a9e);
@@ -450,12 +458,30 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
 .tour-list .btn-excl:hover{background:#c0392b;color:#fff;border-color:#c0392b}
 .tour-list .btn-tel{color:var(--green);border-color:var(--green)}
 .tour-list .btn-tel:hover{background:var(--green);color:#fff}
+/* Touch (iPhone): Knoepfe in der Tour-Liste gross genug fuer den Finger,
+   Anruf und Entfernen mit Abstand, damit man nicht daneben tippt */
+@media (pointer:coarse){
+  .tour-list li{grid-template-columns:30px minmax(0,1fr) auto auto auto auto;gap:.4rem;padding:.6rem .7rem}
+  .tour-list .btn-tel,.tour-list .btn-excl{min-width:44px;min-height:40px;font-size:1.1rem;display:inline-flex;align-items:center;justify-content:center}
+  .tour-list .btn-excl{margin-left:.4rem}
+  .tour-list .leg{font-size:.72rem}
+}
+/* iOS zoomt bei Eingabefeldern unter 16px beim Antippen in die Seite hinein */
+@media (pointer:coarse){
+  input,select,textarea{font-size:16px!important}
+}
+.k-filter>summary{cursor:pointer;font-weight:700;font-size:.9rem;color:var(--navy);padding:.5rem 0;list-style:none;display:flex;align-items:center;gap:.5rem;user-select:none}
+.k-filter>summary::-webkit-details-marker{display:none}
+.k-filter>summary::before{content:'▸';color:var(--navym);transition:transform .15s}
+.k-filter[open]>summary::before{transform:rotate(90deg)}
+.k-filter>summary .k-filter-info{font-weight:400;font-size:.78rem;color:var(--grey700)}
+#tbody tr{cursor:pointer}
 @media print {
   .tour-list li{cursor:auto}
   .tour-list .btn-excl,.tour-list .btn-tel,.tour-list .nav-hint{display:none}
 }
 .k-orte-box{display:flex;flex-wrap:wrap;gap:.45rem;padding:.5rem;border:1.5px solid var(--grey300);border-radius:6px;background:#fff;max-height:140px;overflow-y:auto}
-.k-orte-box label{display:inline-flex;align-items:center;gap:.3rem;padding:.18rem .55rem;background:var(--grey50);border-radius:14px;font-size:.82rem;cursor:pointer;user-select:none;border:1px solid var(--grey100)}
+.k-orte-box label{display:inline-flex;align-items:center;gap:.3rem;padding:.18rem .55rem;background:var(--grey50);border-radius:14px;font-size:.82rem;cursor:pointer;user-select:none;border:1px solid var(--grey100);text-transform:none;letter-spacing:0;font-weight:600;color:var(--grey700)}
 .k-orte-box label:has(input:checked){background:var(--navy);color:#fff;border-color:var(--navy)}
 .k-orte-box input{accent-color:var(--navy)}
 .k-orte-actions{display:flex;gap:.4rem;margin-top:.3rem;font-size:.78rem}
@@ -559,8 +585,8 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
     <div class="card">
       <div class="tbl-wrap">
         <table><thead><tr>
-          <th style="width:52px">Foto</th><th>Nr.</th><th>Bz.</th><th class="col-hide-mob">Anrede</th><th>Nachname</th><th>Vorname</th>
-          <th>Stra&#223;e</th><th>PLZ</th><th>Ort</th><th>Tel./Handy</th><th>E-Mail</th><th class="col-hide-mob">E</th><th class="col-hide-mob">H</th><th></th>
+          <th style="width:52px" class="col-hide-mob">Foto</th><th class="col-hide-mob">Nr.</th><th>Bz.</th><th class="col-hide-mob">Anrede</th><th>Nachname</th><th>Vorname</th>
+          <th>Stra&#223;e</th><th class="col-hide-mob">PLZ</th><th>Ort</th><th>Tel./Handy</th><th class="col-hide-mob">E-Mail</th><th class="col-hide-mob">E</th><th class="col-hide-mob">H</th><th></th>
         </tr></thead><tbody id="tbody"></tbody></table>
       </div>
     </div>
@@ -590,14 +616,14 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
           <div class="fg"><label>Nachname *</label><input type="text" id="f-na" placeholder="Mustermann"></div>
           <div class="fg"><label>Vorname</label><input type="text" id="f-vo" placeholder="Max"></div>
           <div class="fg"><label>Stra&#223;e &amp; Hausnummer</label><input type="text" id="f-st" placeholder="Musterstr. 12"></div>
-          <div class="fg"><label>PLZ</label><input type="text" id="f-plz" placeholder="48607"></div>
+          <div class="fg"><label>PLZ</label><input type="text" inputmode="numeric" id="f-plz" placeholder="48607"></div>
           <div class="fg"><label>Ort</label><input type="text" id="f-ort" placeholder="Lau-Brechte"></div>
           <div class="fg"><label>Ehrenmitglied</label>
             <select id="f-eh"><option value="">Nein</option><option value="x">Ja (x)</option></select></div>
           <div class="fg"><label>Helga-Liste</label>
             <select id="f-hg"><option value="">Nein</option><option value="Helga">Ja</option></select></div>
           <div class="fg"><label>Geburtsdatum</label><input type="date" id="f-gebdat"></div>
-          <div class="fg"><label>Handy / Tel.</label><input type="text" id="f-tel" placeholder="+49 123 456789"></div>
+          <div class="fg"><label>Handy / Tel.</label><input type="tel" id="f-tel" placeholder="+49 123 456789"></div>
           <div class="fg"><label>E-Mail</label><input type="email" id="f-email" placeholder="name@example.com"></div>
         </div>
         <div style="display:flex;gap:.75rem;margin-top:1.4rem">
@@ -872,13 +898,16 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
       <div class="card-bd">
 
         <div class="map-toolbar">
+          <!-- Auf dem Handy eingeklappt, damit Karte und Tour gleich sichtbar sind (siehe karteInit) -->
+          <details class="k-filter" id="k-filter" open>
+          <summary>Filter, Gebiet &amp; Startadresse <span class="k-filter-info" id="k-filter-info"></span></summary>
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.6rem">
             <div class="fg" style="grid-column:1 / -1">
               <label>Suche (Name, Stra&szlig;e, Ort, PLZ)</label>
-              <input type="search" id="k-search" placeholder="&#128269; z.B. Albers oder Wester" oninput="karteApplyFilter()">
+              <input type="search" id="k-search" placeholder="&#128269; z.B. Albers oder Wester" oninput="karteFilterGeaendert(400)">
             </div>
             <div class="fg"><label>Bezirk</label>
-              <select id="k-bz" onchange="karteApplyFilter()">
+              <select id="k-bz" onchange="karteFilterGeaendert()">
                 <option value="">Alle Bezirke</option>
                 <option value="1">Bezirk 1</option><option value="2">Bezirk 2</option>
                 <option value="3">Bezirk 3</option><option value="4">Bezirk 4</option>
@@ -886,7 +915,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
               </select>
             </div>
             <div class="fg"><label>Anrede</label>
-              <select id="k-anrede" onchange="karteApplyFilter()">
+              <select id="k-anrede" onchange="karteFilterGeaendert()">
                 <option value="">Alle Anreden</option>
                 <option value="Familie">Familie</option>
                 <option value="Frau">Frau</option>
@@ -895,14 +924,14 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
               </select>
             </div>
             <div class="fg"><label>Ehrenmitglied</label>
-              <select id="k-ehren" onchange="karteApplyFilter()">
+              <select id="k-ehren" onchange="karteFilterGeaendert()">
                 <option value="">Alle</option>
                 <option value="ja">Nur Ehrenmitglieder</option>
                 <option value="nein">Keine Ehrenmitglieder</option>
               </select>
             </div>
             <div class="fg"><label>Helga-Liste</label>
-              <select id="k-helga" onchange="karteApplyFilter()">
+              <select id="k-helga" onchange="karteFilterGeaendert()">
                 <option value="">Alle</option>
                 <option value="ja">Nur Helga-Liste</option>
                 <option value="nein">Nicht auf Helga-Liste</option>
@@ -926,9 +955,10 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
               <input type="text" id="k-start" placeholder="Mustermannstr. 12, 48607 Ochtrup">
             </div>
           </div>
-          <div style="display:flex;flex-direction:column;gap:.45rem">
+          </details>
+          <div class="k-actions" style="display:flex;flex-direction:column;gap:.45rem">
+            <button class="btn btn-save k-route-btn" onclick="karteCalcRoute()">&#128640; Route berechnen</button>
             <button class="btn btn-navy" onclick="karteGeocodeAll()" id="btn-geocode">&#128270; Adressen geocoden</button>
-            <button class="btn btn-save" onclick="karteCalcRoute()">&#128640; Route berechnen</button>
             <button class="btn btn-import" onclick="karteOpenInMaps()">&#128205; In Google Maps</button>
             <button class="btn btn-clear" onclick="karteExportGPX()" title="Für Komoot, OsmAnd, Garmin">&#128190; GPX exportieren</button>
             <button class="btn btn-clear" onclick="karteExportKML()" title="Für Google MyMaps – eigene Karte mit allen Pins anlegen">&#128507; KML f&uuml;r MyMaps</button>
@@ -940,7 +970,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
           <span>&middot;</span>
           <span><strong id="k-stat-geo">0</strong> geocodiert</span>
           <span>&middot;</span>
-          <span><strong id="k-stat-tour">&ndash;</strong> Stopps in Tour</span>
+          <span>Tour: <strong id="k-stat-tour">&ndash;</strong></span>
           <span>&middot;</span>
           <span>Gesamt: <strong id="k-stat-km">&ndash;</strong> km <span id="k-stat-km-art">Luftlinie</span></span>
         </div>
@@ -1033,14 +1063,14 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
         <div class="fg"><label>Nachname *</label><input type="text" id="e-na"></div>
         <div class="fg"><label>Vorname</label><input type="text" id="e-vo"></div>
         <div class="fg"><label>Stra&#223;e &amp; Hausnummer</label><input type="text" id="e-st"></div>
-        <div class="fg"><label>PLZ</label><input type="text" id="e-plz"></div>
+        <div class="fg"><label>PLZ</label><input type="text" inputmode="numeric" id="e-plz"></div>
         <div class="fg"><label>Ort</label><input type="text" id="e-ort"></div>
         <div class="fg"><label>Ehrenmitglied</label>
           <select id="e-eh"><option value="">Nein</option><option value="x">Ja (x)</option></select></div>
         <div class="fg"><label>Helga-Liste</label>
           <select id="e-hg"><option value="">Nein</option><option value="Helga">Ja</option></select></div>
         <div class="fg"><label>Geburtsdatum</label><input type="date" id="e-gebdat"></div>
-        <div class="fg"><label>Handy / Tel.</label><input type="text" id="e-tel" placeholder="+49 123 456789"></div>
+        <div class="fg"><label>Handy / Tel.</label><input type="tel" id="e-tel" placeholder="+49 123 456789"></div>
         <div class="fg"><label>E-Mail</label><input type="email" id="e-email" placeholder="name@example.com"></div>
       </div>
     </div>
@@ -1175,8 +1205,8 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
       <button class="modal-close" onclick="closeMoreSheet()">&#10005;</button>
     </div>
     <div class="modal-bd" style="display:flex;flex-direction:column;gap:.6rem">
-      <button class="btn btn-navy" style="justify-content:flex-start;width:100%" onclick="closeMoreSheet();showTab('koenige',document.querySelectorAll('.tab')[3])">&#128081; K&ouml;nige</button>
-      <button class="btn btn-navy" style="justify-content:flex-start;width:100%" onclick="closeMoreSheet();showTab('import',document.querySelectorAll('.tab')[4])">&#128229; Import / Speichern</button>
+      <button class="btn btn-navy" style="justify-content:flex-start;width:100%" onclick="closeMoreSheet();showTab('koenige',document.querySelectorAll('.tab')[3],'bn-more')">&#128081; K&ouml;nige</button>
+      <button class="btn btn-navy" style="justify-content:flex-start;width:100%" onclick="closeMoreSheet();showTab('import',document.querySelectorAll('.tab')[4],'bn-more')">&#128229; Import / Speichern</button>
     </div>
   </div>
 </div>
@@ -1378,22 +1408,23 @@ function renderTable(){
   document.getElementById('rcnt').textContent=f.length+' von '+members.length;
   var rows=f.map(function(m){
     var idx=members.indexOf(m);
-    var fotoCell=safeFoto(m.foto)?'<td class="td-foto"><img class="member-foto" src="'+esc(m.foto)+'" alt=""></td>':'<td class="td-foto"><div class="foto-placeholder" onclick="uploadFotoFromTable('+idx+')" title="Foto hinzufügen">&#128247;</div></td>';
-    return '<tr>'
+    var fotoCell=safeFoto(m.foto)?'<td class="td-foto col-hide-mob"><img class="member-foto" src="'+esc(m.foto)+'" alt=""></td>':'<td class="td-foto col-hide-mob"><div class="foto-placeholder" onclick="event.stopPropagation();uploadFotoFromTable('+idx+')" title="Foto hinzufügen">&#128247;</div></td>';
+    // Ganze Zeile antippen = Bearbeiten (auf dem Handy liegt der ✎-Knopf sonst ausserhalb des Bildschirms)
+    return '<tr onclick="openEdit('+idx+')" title="Antippen zum Bearbeiten">'
       +fotoCell
-      +'<td>'+m.nr+'</td>'
+      +'<td class="col-hide-mob">'+m.nr+'</td>'
       +'<td><span class="badge b'+(m.bz||0)+'">'+(m.bz?'B'+m.bz:'—')+'</span></td>'
       +'<td class="col-hide-mob">'+esc(m.a1)+'</td>'
       +'<td><strong>'+esc(m.name)+'</strong></td>'
       +'<td>'+esc(m.vor)+'</td>'
       +'<td>'+esc(m.str)+'</td>'
-      +'<td>'+esc(m.plz)+'</td>'
+      +'<td class="col-hide-mob">'+esc(m.plz)+'</td>'
       +'<td>'+esc(m.ort)+'</td>'
-      +'<td>'+(m.tel?'<a href="tel:'+esc(m.tel)+'">'+esc(m.tel)+'</a>':'')+'</td>'
-      +'<td>'+(m.email?'<a href="mailto:'+esc(m.email)+'">'+esc(m.email)+'</a>':'')+'</td>'
+      +'<td>'+(m.tel?'<a href="tel:'+esc(m.tel)+'" onclick="event.stopPropagation()">'+esc(m.tel)+'</a>':'')+'</td>'
+      +'<td class="col-hide-mob">'+(m.email?'<a href="mailto:'+esc(m.email)+'" onclick="event.stopPropagation()">'+esc(m.email)+'</a>':'')+'</td>'
       +'<td class="col-hide-mob">'+(m.ehren?'<span class="badge be">E</span>':'')+'</td>'
       +'<td class="col-hide-mob">'+(m.helga?'&#10003;':'')+'</td>'
-      +'<td><button class="btn-edit" onclick="openEdit('+idx+')">&#9998;</button></td>'
+      +'<td><button class="btn-edit" onclick="event.stopPropagation();openEdit('+idx+')">&#9998;</button></td>'
       +'</tr>';
   });
   document.getElementById('tbody').innerHTML=rows.join('');
@@ -1442,7 +1473,9 @@ function showTab(id,btn,bnId){
   if(id==='bezirke' && istIOS()) pdfLibLaden().catch(function(){});  // siehe pdfTeilen
   if(id==='karte'){
     if(!karteState.map) karteInit();
-    else { setTimeout(function(){ karteState.map.invalidateSize(); }, 50); karteApplyFilter(); }
+    // karteRecalc statt karteApplyFilter: eine berechnete Route bleibt beim
+    // Zurueckkehren auf die Karte erhalten
+    else { setTimeout(function(){ karteState.map.invalidateSize(); }, 50); karteRecalc(); }
   }
 }
 
@@ -2234,12 +2267,10 @@ function exportCSV(){
   function xt(v){var s=String(v||'').trim();return /^[0+]/.test(s)?'="'+s+'"':s;}
   var lines=[cols.map(q).join(SEP)];
   members.forEach(function(m){lines.push([m.nr,m.bz,m.a1,m.a2,m.name,m.vor,m.str,xt(m.plz),m.ort,m.ehren,m.helga,fmtDateDE(m.gebdat),xt(m.tel),m.email||''].map(q).join(SEP));});
-  var blob=new Blob(['\uFEFF'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
-  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
-  a.download='Adressliste_'+karteDateiStempel().slice(0,10)+'.csv';
-  document.body.appendChild(a);a.click();document.body.removeChild(a);
-  setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
-  toast('CSV exportiert - in Excel öffenbar');
+  // Ohne charset im Typ: sonst bietet iOS das Teilen-Menue nicht an (UTF-8 steckt im BOM)
+  var blob=new Blob(['\uFEFF'+lines.join('\n')],{type:'text/csv'});
+  // Ueber karteDateiAusgeben: auf dem iPhone Teilen-Menue (Download geht dort ins Leere)
+  karteDateiAusgeben(blob, 'Adressliste_'+karteDateiStempel().slice(0,10)+'.csv', 'CSV exportiert - in Excel öffenbar');
 }
 
 function toast(msg,err){
@@ -2371,12 +2402,8 @@ function exExportCSV(){
     var an = exAnreden(m);
     lines.push([an[0],an[1],m.name,m.vor,m.str,m.plz,m.ort,m.bz||'',m.ehren,m.helga,m.tel||'',m.email||''].map(q).join(SEP));
   });
-  var blob=new Blob(['\uFEFF'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
-  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
-  a.download='Serienbrief_'+karteDateiStempel().slice(0,10)+'.csv';
-  document.body.appendChild(a);a.click();document.body.removeChild(a);
-  setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
-  toast(filtered.length+' Adressen als CSV exportiert');
+  var blob=new Blob(['\uFEFF'+lines.join('\n')],{type:'text/csv'});
+  karteDateiAusgeben(blob, 'Serienbrief_'+karteDateiStempel().slice(0,10)+'.csv', filtered.length+' Adressen als CSV exportiert');
 }
 
 function exExportVCF(){
@@ -2397,12 +2424,8 @@ function exExportVCF(){
     lines.push('END:VCARD');
     lines.push('');
   });
-  var blob=new Blob([lines.join('\r\n')],{type:'text/vcard;charset=utf-8'});
-  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
-  a.download='Kontakte_'+karteDateiStempel().slice(0,10)+'.vcf';
-  document.body.appendChild(a);a.click();document.body.removeChild(a);
-  setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
-  toast(filtered.length+' Kontakte als VCF exportiert');
+  var blob=new Blob([lines.join('\r\n')],{type:'text/vcard'});
+  karteDateiAusgeben(blob, 'Kontakte_'+karteDateiStempel().slice(0,10)+'.vcf', filtered.length+' Kontakte als VCF exportiert');
 }
 
 function vcf(s){
@@ -2556,13 +2579,40 @@ function karteRenderOrte(){
 
 function karteToggleOrt(input){
   karteState.orteChecked[input.value] = input.checked;
-  karteApplyFilter();
+  karteFilterGeaendert();
 }
 
 function karteAllOrte(on){
   Object.keys(karteState.orteChecked).forEach(function(o){ karteState.orteChecked[o] = on; });
   karteRenderOrte();
-  karteApplyFilter();
+  karteFilterGeaendert();
+}
+
+// Filter geaendert: ist eine Tour berechnet, wird sie fuer den neuen Filter
+// neu gerechnet (vorher verschwand die Route, die Tour-Liste blieb alt stehen).
+// Bei der Suche verzoegert, damit nicht jeder Tastendruck neu rechnet.
+var karteFilterTimer = null;
+function karteFilterGeaendert(delay){
+  if (karteFilterTimer) clearTimeout(karteFilterTimer);
+  karteFilterTimer = setTimeout(function(){ karteFilterTimer = null; karteRecalc(); }, delay || 0);
+}
+
+// Kurzinfo neben "Filter, Gebiet & Startadresse", damit man aktive Filter
+// auch im eingeklappten Zustand sieht
+function karteFilterInfo(){
+  var el = document.getElementById('k-filter-info');
+  if (!el) return;
+  var aktiv = [];
+  if (document.getElementById('k-search').value.trim()) aktiv.push('Suche');
+  var bz = document.getElementById('k-bz').value;
+  if (bz) aktiv.push(bz === '0' ? 'ohne Bezirk' : 'Bezirk ' + bz);
+  if (document.getElementById('k-anrede').value) aktiv.push(document.getElementById('k-anrede').value);
+  if (document.getElementById('k-ehren').value) aktiv.push('Ehren');
+  if (document.getElementById('k-helga').value) aktiv.push('Helga');
+  var oc = karteState.orteChecked || {};
+  if (Object.keys(oc).some(function(o){ return oc[o] === false; })) aktiv.push('Ortsteile');
+  if (karteState.gebiet) aktiv.push('Gebiet' + (karteState.gebiet.name ? ' „' + karteState.gebiet.name + '“' : ''));
+  el.textContent = aktiv.length ? '(aktiv: ' + aktiv.join(', ') + ')' : '(keine)';
 }
 
 function karteFiltered(){
@@ -2657,6 +2707,11 @@ function karteInit(){
   karteLoadGeocache();
   karteUpdateGeoInfo();
   karteRenderOrte();
+  // Handy: Filter einklappen, damit Karte und Tour ohne langes Scrollen sichtbar sind.
+  // Ohne Startadresse offen lassen, die braucht man zuerst.
+  if (window.matchMedia('(max-width:700px)').matches && localStorage.getItem('sgO_start')) {
+    document.getElementById('k-filter').open = false;
+  }
   document.getElementById('k-start').addEventListener('change', function(){
     var v = this.value.trim();
     localStorage.setItem('sgO_start', v);
@@ -2728,6 +2783,7 @@ function karteApplyFilter(){
   if (!karteState.map) return;
   karteSyncCoords();
   karteState.filtered = karteFiltered();
+  karteFilterInfo();
   var withGeo = karteState.filtered.filter(function(m){ return m.lat && m.lng; });
   document.getElementById('k-stat-treffer').textContent = karteState.filtered.length;
   document.getElementById('k-stat-geo').textContent = withGeo.length;
@@ -3092,11 +3148,19 @@ function twoOpt(start, points, order){
 function karteCalcRoute(){
   if (!karteState.map) { toast('Karte noch nicht geladen', true); return; }
   if (!karteState.startCoord) {
+    document.getElementById('k-filter').open = true;
     toast('Bitte Startadresse eintragen und "Adressen geocoden" klicken', true);
     return;
   }
   var withGeo = karteState.filtered.filter(function(m){ return m.lat && m.lng; });
-  if (withGeo.length < 1) { toast('Keine geocodierten Adressen im Filter', true); return; }
+  if (withGeo.length < 1) {
+    // alte Tour nicht stehen lassen, sie passt nicht mehr zum Filter
+    karteState.tour = null;
+    document.getElementById('tour-list-items').innerHTML = '';
+    if (!Object.keys(karteState.excluded).length) document.getElementById('tour-list').style.display = 'none';
+    toast('Keine geocodierten Adressen im Filter', true);
+    return;
+  }
   // Pro Adresse einen Stopp — mehrere Personen an einer Adresse werden zu einer Gruppe.
   var groups = karteGroupByAddress(withGeo);
   var points = groups.map(function(g){ return { lat: g.lat, lng: g.lng, g: g }; });
@@ -3169,7 +3233,7 @@ function karteCalcRoute(){
     var firstTel = g.members.find(function(m){ return m.tel; });
     var telBtn = firstTel
       ? '<button class="btn-tel" title="Anrufen: '+esc(firstTel.tel)+' ('+esc(firstTel.name)+')" onclick="event.stopPropagation();location.href='+jsq('tel:'+firstTel.tel)+'">📞</button>'
-      : '';
+      : '<span></span>';   // Platzhalter: sonst rutscht der ▶-Pfeil in eine eigene Zeile
     html += '<li title="Antippen für Navigation zu diesem Stopp" onclick="window.open('+jsq(navUrl)+',\'_blank\')">'
       +'<span>'+nameLine+multiBadge
       +'<br><span style="font-size:.78rem;color:var(--grey700)">'+esc(g.str||'')+', '+esc(g.plz||'')+' '+esc(g.ort||'')+'</span></span>'
@@ -4388,12 +4452,8 @@ function exportKingsCSV(){
   kings.slice().sort(function(a,b){return (a.jahr||0)-(b.jahr||0);}).forEach(function(k){
     lines.push([k.jahr,k.koenig_vor,k.koenig_nach,k.koenigin_vor,k.koenigin_nach,k.notiz||''].map(q).join(SEP));
   });
-  var blob=new Blob([lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
-  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
-  a.download='Schuetzenkoenige_'+karteDateiStempel().slice(0,10)+'.csv';
-  document.body.appendChild(a);a.click();document.body.removeChild(a);
-  setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
-  toast(kings.length+' Könige als CSV exportiert');
+  var blob=new Blob([lines.join('\r\n')],{type:'text/csv'});
+  karteDateiAusgeben(blob, 'Schuetzenkoenige_'+karteDateiStempel().slice(0,10)+'.csv', kings.length+' Könige als CSV exportiert');
 }
 
 function importKingsCSVFile(ev){
