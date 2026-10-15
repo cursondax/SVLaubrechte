@@ -465,6 +465,7 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
 .tour-list li.next::before{background:var(--orange)}
 .tour-progress{display:flex;align-items:center;justify-content:space-between;gap:.6rem;flex-wrap:wrap;padding:.6rem .85rem;border-top:1px solid var(--grey100);background:var(--greenbg);font-size:.85rem;color:var(--green)}
 .tour-progress .btn{padding:.35rem .8rem;font-size:.8rem}
+.tour-heim{display:flex;justify-content:space-between;align-items:center;gap:.6rem;padding:.55rem .85rem .55rem calc(.85rem + 34px + .45rem);border-top:1px solid var(--grey100);font-size:.88rem;color:var(--grey700)}
 .tour-num-icon.done{background:#9aa0a6;opacity:.75}
 /* Touch (iPhone): Knoepfe in der Tour-Liste gross genug fuer den Finger,
    Anruf und Entfernen mit Abstand, damit man nicht daneben tippt */
@@ -1002,11 +1003,12 @@ tbody td{padding:.5rem .85rem;border-bottom:1px solid var(--grey100);vertical-al
             <button class="btn btn-clear" style="padding:.3rem .85rem;font-size:.8rem" onclick="karteDrucken()">&#128438; Drucken</button>
           </div>
           <ol id="tour-list-items"></ol>
+          <div class="tour-heim"><span>&#127968; Zur&uuml;ck nach Hause</span><span class="leg" id="tour-heim-km"></span></div>
         </div>
 
         <p style="margin-top:.9rem;font-size:.78rem;color:var(--grey700);line-height:1.55">
           <strong>So funktioniert's:</strong> Beim ersten Aufruf ruft die App f&uuml;r jede Adresse die OpenStreetMap-Geocoding-API auf (rund 1 Sekunde pro Adresse, einmaliger Vorgang &ndash; danach wird alles lokal gespeichert).
-          Mit „Route berechnen" wird eine optimierte Reise-Reihenfolge ab deiner Startadresse berechnet (Nearest-Neighbor + 2-opt, Distanz per Luftlinie).<br><br>
+          Mit „Route berechnen" wird eine optimierte Reise-Reihenfolge ab deiner Startadresse berechnet, als Rundtour mit Rückweg nach Hause. Die Reihenfolge richtet sich nach den echten Fahrrad-Wegen (OpenStreetMap-Routing, es gehen nur Koordinaten raus); bei großen Touren dauert das beim ersten Mal bis zu einer Minute, danach ist sie gespeichert. Ohne Netz wird nach Luftlinie gerechnet.<br><br>
           <strong>Gebiet markieren:</strong> Statt Adressen einzeln aus der Tour zu l&ouml;schen, tippe auf „Gebiet zeichnen“ und setze auf der Karte die Eckpunkte um das Verteilgebiet (mindestens 3). Mit „Fertig“ werden nur noch Mitglieder innerhalb dieser Fl&auml;che angezeigt und f&uuml;r die Route verwendet; die anderen Filter gelten zus&auml;tzlich. Mit „Speichern“ legst du das Gebiet unter einem Namen ab (z.&nbsp;B. „Brechte Nord“) und kannst es n&auml;chstes Jahr wieder ausw&auml;hlen. Hinweis: Nur geocodierte Adressen lassen sich einem Gebiet zuordnen.<br><br>
           <strong>Namen auf der Karte:</strong> Nach „Route berechnen“ steht neben jedem Stopp die Nummer und der Name. Die Namen erscheinen, sobald du nah genug heranzoomst (Stra&szlig;enebene), damit sie sich beim Herauszoomen nicht gegenseitig verdecken.<br><br>
           <strong>Unterwegs am Handy:</strong> Tippe in der <strong>Tour-Liste</strong> einen Eintrag an &ndash; Google Maps &ouml;ffnet sich mit Fahrrad-Navigation zu genau diesem Stopp. Wenn du da bist, zur&uuml;ck zur App, n&auml;chsten Eintrag tippen. Das ist der zuverl&auml;ssigste Weg, weil Name und Adresse direkt aus der App kommen.<br><br>
@@ -3117,43 +3119,101 @@ function tourTotalKm(coords){
   return sum;
 }
 
-function nearestNeighborOrder(start, points){
-  var remaining = points.map(function(_,i){ return i; });
-  var current = start, order = [];
-  while (remaining.length) {
-    var bestIdx = 0, bestDist = Infinity;
-    for (var k = 0; k < remaining.length; k++) {
-      var d = haversine(current, points[remaining[k]]);
-      if (d < bestDist) { bestDist = d; bestIdx = k; }
-    }
-    var picked = remaining[bestIdx];
-    order.push(picked);
-    current = points[picked];
-    remaining.splice(bestIdx, 1);
-  }
-  return order;
+// ── Reihenfolge der Stopps ──────────────────────────────────────────────
+// Rundtour: Start (Zuhause) → alle Stopps → zurück nach Hause.
+// D ist eine Entfernungstabelle D[von][nach], Knoten 0 = Zuhause, Knoten i = points[i-1].
+// Online kommen die Werte vom Fahrrad-Router (echte Wege), sonst Luftlinie.
+// Verfahren: Nächster Nachbar, dann 2-opt + Or-opt (Stücke von 1–3 Stopps
+// umsetzen), danach mit kleinen Störungen weitersuchen, solange Zeit ist.
+function tourLaenge(D, r){
+  var s = 0;
+  for (var i = 1; i < r.length; i++) s += D[r[i-1]][r[i]];
+  return s;
 }
 
-function twoOpt(start, points, order){
-  var improved = true, iter = 0, maxIter = 50;
-  while (improved && iter < maxIter) {
-    improved = false; iter++;
-    for (var i = 0; i < order.length - 1; i++) {
-      for (var j = i + 1; j < order.length; j++) {
-        var prevI = (i === 0 ? start : points[order[i-1]]);
-        var pi = points[order[i]], pj = points[order[j]];
-        var nextJ = (j === order.length - 1 ? null : points[order[j+1]]);
-        var dOld = haversine(prevI, pi) + (nextJ ? haversine(pj, nextJ) : 0);
-        var dNew = haversine(prevI, pj) + (nextJ ? haversine(pi, nextJ) : 0);
-        if (dNew + 1e-9 < dOld) {
-          var sub = order.slice(i, j+1).reverse();
-          order.splice.apply(order, [i, sub.length].concat(sub));
-          improved = true;
+function tourNaechsterNachbar(D){
+  var n = D.length, frei = [], r = [0], cur = 0;
+  for (var i = 1; i < n; i++) frei.push(i);
+  while (frei.length) {
+    var best = 0;
+    for (var k = 1; k < frei.length; k++) if (D[cur][frei[k]] < D[cur][frei[best]]) best = k;
+    cur = frei.splice(best, 1)[0];
+    r.push(cur);
+  }
+  r.push(0);
+  return r;
+}
+
+// r = [0, a, b, …, 0]; verbessert r an Ort und Stelle
+function tourVerbessern(D, r, bisZeit){
+  var n = r.length - 1, besser = true, EPS = 1e-6;
+  while (besser && Date.now() < bisZeit) {
+    besser = false;
+    // 2-opt: Stück i..j umdrehen (Hin- und Rückweg können verschieden lang sein)
+    for (var i = 1; i < n - 1; i++) {
+      var umgedreht = 0;
+      for (var j = i + 1; j < n; j++) {
+        umgedreht += D[r[j]][r[j-1]] - D[r[j-1]][r[j]];
+        var delta = D[r[i-1]][r[j]] + D[r[i]][r[j+1]] - D[r[i-1]][r[i]] - D[r[j]][r[j+1]] + umgedreht;
+        if (delta < -EPS) {
+          var seg = r.slice(i, j + 1).reverse();
+          for (var k = 0; k < seg.length; k++) r[i + k] = seg[k];
+          besser = true;
+          break;
+        }
+      }
+    }
+    // Or-opt: 1–3 Stopps an eine andere Stelle der Tour setzen
+    for (var len = 1; len <= 3; len++) {
+      for (var s = 1; s + len - 1 < n; s++) {
+        var e = s + len - 1, p = r[s-1], q = r[e+1];
+        var gewinn = D[p][r[s]] + D[r[e]][q] - D[p][q];
+        for (var m = 0; m < n; m++) {
+          if (m >= s - 1 && m <= e) continue;
+          var a = r[m], b = r[m+1];
+          if (D[a][r[s]] + D[r[e]][b] - D[a][b] - gewinn < -EPS) {
+            var stueck = r.splice(s, len);
+            var ziel = m > e ? m - len : m;
+            r.splice.apply(r, [ziel + 1, 0].concat(stueck));
+            besser = true;
+            break;
+          }
         }
       }
     }
   }
-  return order;
+  return r;
+}
+
+// Liefert die Reihenfolge als Indizes in points (ohne Zuhause)
+function tourOptimieren(D, zeitMs){
+  var bis = Date.now() + (zeitMs || 800);
+  var best = tourVerbessern(D, tourNaechsterNachbar(D), bis);
+  var bestLen = tourLaenge(D, best), n = best.length - 1;
+  // Weitersuchen: Tour an drei Stellen aufschneiden, Teile tauschen, neu verbessern
+  var seed = 1;
+  function zufall(max){ seed = (seed * 16807) % 2147483647; return 1 + seed % max; }
+  while (n > 8 && Date.now() < bis) {
+    var c = [zufall(n-1), zufall(n-1), zufall(n-1)].sort(function(x, y){ return x - y; });
+    if (c[0] === c[1] || c[1] === c[2]) continue;
+    var r = best.slice(0, c[0]).concat(best.slice(c[1], c[2]), best.slice(c[0], c[1]), best.slice(c[2]));
+    tourVerbessern(D, r, bis);
+    var len = tourLaenge(D, r);
+    if (len < bestLen - 1e-6) { best = r; bestLen = len; }
+  }
+  return best.slice(1, -1).map(function(k){ return k - 1; });
+}
+
+function tourLuftlinienTabelle(knoten){
+  return knoten.map(function(a){ return knoten.map(function(b){ return haversine(a, b); }); });
+}
+
+// Fahrrad-Rückweg vom letzten Stopp nach Hause (km)
+function karteHeimKm(){
+  var t = karteState.tour, road = karteState.roadRoute;
+  if (!t || t.length < 2) return 0;
+  if (road && road.legs && road.legs.length >= t.length) return road.legs[t.length - 1];
+  return haversine(t[t.length - 1], t[0]);
 }
 
 function karteCalcRoute(opts){
@@ -3169,6 +3229,7 @@ function karteCalcRoute(opts){
   if (withGeo.length < 1) {
     // alte Tour nicht stehen lassen, sie passt nicht mehr zum Filter
     karteState.tour = null;
+    karteState.optReq = (karteState.optReq || 0) + 1;
     document.getElementById('tour-list-items').innerHTML = '';
     if (!Object.keys(karteState.excluded).length) document.getElementById('tour-list').style.display = 'none';
     toast('Keine geocodierten Adressen im Filter', true);
@@ -3179,10 +3240,16 @@ function karteCalcRoute(opts){
   var points = groups.map(function(g){ return { lat: g.lat, lng: g.lng, g: g }; });
   var totalPersons = withGeo.length;
   var start = karteState.startCoord;
-  var order = nearestNeighborOrder(start, points);
-  order = twoOpt(start, points, order);
+  // Reihenfolge: zuerst eine schon nach Fahrradwegen optimierte fuer genau diese
+  // Stopps (klappt auch offline), sonst sofort nach Luftlinie und im Hintergrund
+  // nach echten Wegen nachbessern (karteOptimiereNachWegen).
+  var folgeSig = karteFolgeSig(start, points);
+  var order = karteGespeicherteFolge(folgeSig, points);
+  var nachWegen = !!order;
+  if (!order) order = tourOptimieren(tourLuftlinienTabelle([start].concat(points)), 150);
+  karteState.optReq = (karteState.optReq || 0) + 1;   // laufende Optimierung verwerfen
   var tour = [start].concat(order.map(function(i){ return points[i]; }));
-  var totalKm = tourTotalKm(tour);
+  var totalKm = tourTotalKm(tour.concat([start]));
   if (karteState.routeLayer) karteState.map.removeLayer(karteState.routeLayer);
   var latlngs = tour.map(function(p){ return [p.lat, p.lng]; });
   karteState.routeLayer = L.polyline(latlngs, { color: '#1F4E79', weight: 4, opacity: 0.7 }).addTo(karteState.map);
@@ -3257,6 +3324,7 @@ function karteCalcRoute(opts){
       +'</li>';
   }
   document.getElementById('tour-list-items').innerHTML = html;
+  document.getElementById('tour-heim-km').textContent = haversine(tour[tour.length-1], start).toFixed(2)+' km';
   document.getElementById('tour-list').style.display = 'block';
   karteErledigtRender(false);
   var stopsTxt = order.length + (totalPersons !== order.length ? ' Stopps (' + totalPersons + ' Personen)' : ' Stopps');
@@ -3268,7 +3336,109 @@ function karteCalcRoute(opts){
   karteRenderExcludedBox();
   // km stehen in der Statuszeile (dort nach dem Laden mit Fahrradstrecke)
   if (!opts.still) toast('Route berechnet: '+order.length+' Stopps · '+totalPersons+' Personen');
-  karteFetchRoadRoute(tour, opts);
+  if (nachWegen || order.length < 2) karteFetchRoadRoute(tour, opts);
+  else karteOptimiereNachWegen(start, points, folgeSig, tour, opts);
+}
+
+// ── Reihenfolge nach echten Fahrrad-Entfernungen ─────────────────────────
+// Der Router liefert eine Tabelle "von jedem Punkt zu jedem Punkt, in Metern
+// mit dem Rad" (OSRM table). Max. 100 Punkte pro Anfrage, groessere Touren in
+// Bloecken à 50. Es gehen nur Koordinaten raus. Die fertige Reihenfolge wird
+// pro Stopp-Auswahl gespeichert (sgO_tourfolge) und offline wiederverwendet.
+var KARTE_TABLE_URL = 'https://routing.openstreetmap.de/routed-bike/table/v1/bike/';
+var KARTE_TABLE_BLOCK = 50;
+
+function karteKoordKey(p){ return (+p.lat).toFixed(5)+','+(+p.lng).toFixed(5); }
+
+function karteFolgeSig(start, points){
+  return karteKoordKey(start) + '#' + points.map(karteKoordKey).sort().join(';');
+}
+
+function karteGespeicherteFolge(sig, points){
+  try {
+    var gesp = JSON.parse(localStorage.getItem('sgO_tourfolge') || 'null');
+    if (!gesp || gesp.sig !== sig || !Array.isArray(gesp.folge) || gesp.folge.length !== points.length) return null;
+    var idx = {};
+    points.forEach(function(p, i){ idx[karteKoordKey(p)] = i; });
+    var order = gesp.folge.map(function(k){ return idx[k]; });
+    return order.every(function(i){ return i !== undefined; }) ? order : null;
+  } catch(e){ return null; }
+}
+
+// Fahrrad-Meter zwischen zwei Punkten, nur im Speicher (Tabelle waere fuer
+// localStorage zu gross). Spart Anfragen, wenn ein Stopp raus- oder reinkommt.
+var karteDistCache = {};
+
+function karteHoleTabelle(knoten, reqId){
+  var keys = knoten.map(karteKoordKey), n = knoten.length;
+  function fehlt(){
+    for (var i = 0; i < n; i++) for (var j = 0; j < n; j++)
+      if (i !== j && karteDistCache[keys[i]+'>'+keys[j]] === undefined) return true;
+    return false;
+  }
+  var bloecke = [];
+  if (fehlt()) {
+    if (n <= 100) bloecke.push([0, n, 0, n]);
+    else for (var a = 0; a < n; a += KARTE_TABLE_BLOCK)
+      for (var b = 0; b < n; b += KARTE_TABLE_BLOCK)
+        bloecke.push([a, Math.min(a + KARTE_TABLE_BLOCK, n), b, Math.min(b + KARTE_TABLE_BLOCK, n)]);
+  }
+  var art = document.getElementById('k-stat-km-art');
+  var p = Promise.resolve();
+  bloecke.forEach(function(bl, nr){
+    p = p.then(function(){
+      if (reqId !== karteState.optReq) throw { stale: true };
+      if (art && bloecke.length > 1) art.textContent = 'Luftlinie (Fahrradwege werden ausgewertet … ' + Math.round(nr / bloecke.length * 100) + ' %)';
+      // Quell- und Zielblock in eine Koordinatenliste, ueber sources/destinations adressiert
+      var liste = [], quellen = [], ziele = [];
+      for (var i = bl[0]; i < bl[1]; i++) { quellen.push(liste.length); liste.push(i); }
+      for (var j = bl[2]; j < bl[3]; j++) {
+        var pos = liste.indexOf(j);
+        if (pos < 0) { pos = liste.length; liste.push(j); }
+        ziele.push(pos);
+      }
+      var path = liste.map(function(i){ return (+knoten[i].lng).toFixed(6)+','+(+knoten[i].lat).toFixed(6); }).join(';');
+      return fetch(KARTE_TABLE_URL + path + '?annotations=distance&sources=' + quellen.join(';') + '&destinations=' + ziele.join(';'))
+        .then(function(r){ if (!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+        .then(function(d){
+          if (d.code !== 'Ok' || !d.distances) throw new Error(d.code || 'keine Tabelle');
+          d.distances.forEach(function(zeile, qi){
+            zeile.forEach(function(m, zi){
+              var von = liste[quellen[qi]], nach = liste[ziele[zi]];
+              // null = Punkt nicht erreichbar: grob mit doppelter Luftlinie schaetzen
+              karteDistCache[keys[von]+'>'+keys[nach]] = m == null ? haversine(knoten[von], knoten[nach]) * 2 : m / 1000;
+            });
+          });
+        });
+    });
+  });
+  return p.then(function(){
+    return knoten.map(function(a, i){
+      return knoten.map(function(b, j){ return i === j ? 0 : karteDistCache[keys[i]+'>'+keys[j]]; });
+    });
+  });
+}
+
+function karteOptimiereNachWegen(start, points, sig, luftTour, opts){
+  karteResetRoadRoute();
+  var reqId = karteState.optReq;
+  var art = document.getElementById('k-stat-km-art');
+  if (art) art.textContent = 'Luftlinie (Reihenfolge wird nach Fahrradwegen optimiert …)';
+  var knoten = [start].concat(points);
+  karteHoleTabelle(knoten, reqId).then(function(D){
+    if (reqId !== karteState.optReq) return;
+    var order = tourOptimieren(D, 1000);
+    try {
+      localStorage.setItem('sgO_tourfolge', JSON.stringify({ sig: sig, folge: order.map(function(i){ return karteKoordKey(points[i]); }) }));
+    } catch(e){}
+    // Neu zeichnen: karteCalcRoute findet jetzt die gespeicherte Reihenfolge
+    // und laedt dazu die Fahrradstrecke
+    karteCalcRoute({ still: true });
+  }).catch(function(e){
+    if ((e && e.stale) || reqId !== karteState.optReq) return;
+    // Ohne Tabelle: Luftlinien-Reihenfolge behalten, Strecke trotzdem laden
+    karteFetchRoadRoute(luftTour, opts);
+  });
 }
 
 // ── Fahrradstrecke über echte Wege (OSRM, routing.openstreetmap.de) ──
@@ -3297,14 +3467,17 @@ function karteRoadAnwenden(rr, gespeichert){
   karteState.routeLayer = L.polyline(rr.coords, { color: '#1F4E79', weight: 4, opacity: 0.75 }).addTo(karteState.map);
   document.getElementById('k-stat-km').textContent = rr.km.toFixed(1);
   var art = document.getElementById('k-stat-km-art');
-  if (art) art.textContent = 'mit dem Fahrrad' + (gespeichert ? ' (gespeichert)' : '');
+  if (art) art.textContent = 'mit dem Fahrrad, inkl. Rückweg' + (gespeichert ? ' (gespeichert)' : '');
   var legEls = document.querySelectorAll('#tour-list-items .leg');
   for (var i = 0; i < legEls.length && i < rr.legs.length; i++) legEls[i].textContent = rr.legs[i].toFixed(2)+' km';
+  if (rr.legs.length > legEls.length) document.getElementById('tour-heim-km').textContent = rr.legs[legEls.length].toFixed(2)+' km';
 }
 
 function karteFetchRoadRoute(tour, opts){
   opts = opts || {};
   karteResetRoadRoute();
+  // Rundtour: zum Schluss zurueck nach Hause (letztes Teilstueck = Rueckweg)
+  tour = tour.concat([tour[0]]);
   var reqId = karteState.roadReq;
   // Dieselbe Tour wurde schon einmal geladen: gespeicherte Strecke nehmen
   // (klappt auch ohne Netz, spart Anfragen an den Routing-Server)
@@ -3418,7 +3591,7 @@ function karteExportKML(){
   if (karteState.tour && karteState.tour.length > 1) {
     var linePts = karteState.roadRoute
       ? karteState.roadRoute.coords.map(function(c){ return { lat: c[0], lng: c[1] }; })
-      : karteState.tour;
+      : karteState.tour.concat([karteState.tour[0]]);
     var coords = linePts.map(function(p){ return p.lng+','+p.lat+',0'; }).join(' ');
     L.push('  <Placemark>');
     L.push('    <name>Tour-Route ('+(karteState.tour.length-1)+' Stopps)</name>');
@@ -3446,8 +3619,8 @@ function karteTourPdf(lib){
   var personen = 0;
   for (var i = 1; i < t.length; i++) personen += t[i].g.members.length;
   var today = new Date().toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric' });
-  var sub = (t.length-1) + ' Stopps · ' + personen + ' Personen · ' + km(road ? road.km : tourTotalKm(t)) + ' km '
-    + (road ? 'Fahrradstrecke' : 'Luftlinie')
+  var sub = (t.length-1) + ' Stopps · ' + personen + ' Personen · ' + km(road ? road.km : tourTotalKm(t.concat([t[0]]))) + ' km '
+    + (road ? 'Fahrradstrecke' : 'Luftlinie') + ' inkl. Rückweg nach Hause (' + km(karteHeimKm()) + ' km)'
     + (karteState.gebiet ? ' · Gebiet: ' + (karteState.gebiet.name || 'eingezeichnet') : '')
     + ' · Stand ' + today;
   var y, seite = 0;
@@ -3534,9 +3707,10 @@ function karteRenderTourPrint(){
   var road = karteState.roadRoute;
   var personen = 0;
   for (var i = 1; i < t.length; i++) personen += t[i].g.members.length;
-  var kmGesamt = road ? road.km : tourTotalKm(t);
+  var kmGesamt = road ? road.km : tourTotalKm(t.concat([t[0]]));
   function km(v){ return v.toLocaleString('de-DE', { minimumFractionDigits:1, maximumFractionDigits:1 }); }
   var sub = (t.length-1) + ' Stopps · ' + personen + ' Personen · ' + km(kmGesamt) + ' km ' + (road ? 'Fahrradstrecke' : 'Luftlinie')
+    + ' inkl. Rückweg nach Hause (' + km(karteHeimKm()) + ' km)'
     + (karteState.gebiet ? ' · Gebiet: ' + (karteState.gebiet.name || 'eingezeichnet') : '')
     + ' · Stand ' + today;
   var rows = '';
@@ -3642,7 +3816,7 @@ function karteExportGPX(){
   // Mit geladener Fahrradstrecke über echte Wege, sonst Luftlinie von Stopp zu Stopp.
   var trackPts = karteState.roadRoute
     ? karteState.roadRoute.coords.map(function(c){ return { lat: c[0], lng: c[1] }; })
-    : t;
+    : t.concat([t[0]]);
   lines.push('  <trk><name>'+xe(name)+'</name><trkseg>');
   for (var j = 0; j < trackPts.length; j++) {
     lines.push('    <trkpt lat="'+trackPts[j].lat+'" lon="'+trackPts[j].lng+'"></trkpt>');
@@ -3881,6 +4055,7 @@ function karteOpenInMaps(){
   var offen = karteState.tour.slice(1).filter(function(p){ return !karteState.erledigt[p.g.key]; });
   if (!offen.length) { toast('Alle Stopps sind erledigt'); return; }
   var t = offen.length < karteState.tour.length - 1 ? [null].concat(offen) : karteState.tour;
+  t = t.concat([karteState.tour[0]]);   // zum Schluss zurueck nach Hause
   var STOPS_PER_LINK = 11;
   var links = [];
   for (var i = 0; i < t.length - 1; i += STOPS_PER_LINK - 1) {
